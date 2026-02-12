@@ -1,0 +1,16 @@
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/database
+
+# JWT Secret (cambia questo con una stringa casuale molto lunga)
+JWT_SECRET=cambia-questo-con-qualcosa-di-super-sicuro-e-lungo
+
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Frontend URL (il tuo dominio Vercel)
+FRONTEND_URL=http://localhost:5173
+
+# MetaTrader API (opzionale - da configurare dopo)
+MT_API_KEY=
+MT_API_SECRET=
