@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TierAlba - Trading Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-bg: #040640;
+            --secondary-bg: #0a0b5e;
+            --card-bg: #0d0e7a;
+            --primary-blue: #2d47d6;
+            --light-blue: #4d67ff;
+            --accent-cyan: #00d4ff;
+            --text-primary: #ffffff;
+            --text-secondary: #b8c1ec;
+            --text-muted: #7a82b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --error: #ff3366;
+            --warning: #ffb800;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+        }
+
+        .bg-gradient::before {
+            content: '';
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(45, 71, 214, 0.15) 0%, transparent 70%);
+            top: -400px;
+            right: -200px;
+            animation: float 25s ease-in-out infinite;
+        }
+
+        .bg-gradient::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            bottom: -300px;
+            left: -100px;
+            animation: float 30s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(120px, -60px) rotate(120deg); }
+            66% { transform: translate(-60px, 120px) rotate(240deg); }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: rgba(13, 14, 122, 0.6);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 2rem 0;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.mobile-hidden {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-img {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 70%;
+            background: var(--primary-blue);
+            border-radius: 0 4px 4px 0;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--text-primary);
+            background: rgba(45, 71, 214, 0.1);
+        }
+
+        .nav-link.active::before {
+            width: 4px;
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.full-width {
+            margin-left: 0;
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            background: rgba(45, 71, 214, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 1.3rem;
+        }
+
+        .topbar-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(45, 71, 214, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .btn-icon:hover {
+            background: var(--primary-blue);
+            transform: translateY(-2px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: var(--error);
+            border-radius: 50%;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.5rem 1rem;
+            background: rgba(45, 71, 214, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-info:hover {
+            background: rgba(45, 71, 214, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(13, 14, 122, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.8rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-cyan));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-blue);
+            box-shadow: 0 20px 40px rgba(45, 71, 214, 0.2);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--error); }
+
+        /* Card */
+        .card {
+            background: rgba(13, 14, 122, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            padding: 0.9rem 1.8rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+            border: none;
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(45, 71, 214, 0.4);
+        }
+
+        .btn-secondary {
+            padding: 0.9rem 1.8rem;
+            background: transparent;
+            border: 2px solid var(--primary-blue);
+            border-radius: 10px;
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-blue);
+            color: var(--text-primary);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 350px;
+            background: rgba(4, 6, 64, 0.5);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: rgba(13, 14, 122, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--error); }
+        .toast.info { border-left: 3px solid var(--primary-blue); }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .toast-close {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+
+        .toast-close:hover {
+            color: var(--text-primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 6, 64, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideUp 0.3s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(50px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: var(--error);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(4, 6, 64, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(45, 71, 214, 0.2);
+        }
+
+        /* Broker Cards */
+        .broker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .broker-card {
+            background: rgba(4, 6, 64, 0.5);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .broker-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-blue);
+            box-shadow: 0 15px 40px rgba(45, 71, 214, 0.2);
+        }
+
+        .broker-card.connected {
+            border-color: var(--success);
+        }
+
+        .broker-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            background: rgba(45, 71, 214, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .broker-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .broker-status {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .broker-status.connected {
+            color: var(--success);
+        }
+
+        /* Performance Grid */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .perf-item {
+            background: rgba(4, 6, 64, 0.5);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .perf-item:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-3px);
+        }
+
+        .perf-label {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .perf-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Calculator */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .calc-result {
+            background: rgba(45, 71, 214, 0.15);
+            border: 2px solid var(--primary-blue);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .calc-result-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .calc-result-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary-blue);
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .topbar-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .stats-grid,
+            .broker-grid,
+            .performance-grid,
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topbar-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .chart-container {
+                height: 250px;
+                padding: 1rem;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--text-primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Utilities */
+        .hidden { display: none; }
+        .mt-2 { margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAYAAAA+VemSAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8klEQVR4nO3dS4hdVRzH8f+dO5lMJpOZJI1pUqM1WqMxahUfrRaLVrEPqYgPXBTBhS5cuHLhQkEQXLhwISKCC0FEEBcuXLgQFy5EUBDEhYiIj/igNZo0aZpMJjP3Hsmd..." class="logo-img" alt="TierAlba Logo">
+                <span class="logo-text">TierAlba</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-section="overview">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                            </svg>
+                        </div>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="brokers">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                        </div>
+                        <span>Connetti Broker</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="calculator">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                                <line x1="8" y1="6" x2="16" y2="6"/>
+                                <line x1="8" y1="10" x2="16" y2="10"/>
+                                <line x1="8" y1="14" x2="16" y2="14"/>
+                                <line x1="8" y1="18" x2="16" y2="18"/>
+                            </svg>
+                        </div>
+                        <span>Calcolatore</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="performance">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                        </div>
+                        <span>Performance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="analytics">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="20" x2="12" y2="10"/>
+                                <line x1="18" y1="20" x2="18" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="16"/>
+                            </svg>
+                        </div>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="referral">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                        </div>
+                        <span>Referral</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="settings">
+                        <div class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 1v6m0 6v6m-6-6h6m6 0h-6"/>
+                            </svg>
+                        </div>
+                        <span>Impostazioni</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" id="menuToggle">☰</div>
+                <h1 class="topbar-title">Dashboard</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="btn-icon" id="notificationBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notification-badge">3</span>
+                </div>
+                <div class="btn-icon" id="exportBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">TU</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Trading User</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Pro Plan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div id="overview" class="content-section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Equity Totale</div>
+                    <div class="stat-value" id="equityValue">€52,847</div>
+                    <div class="stat-change positive">+12.4% questo mese</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value">68.5%</div>
+                    <div class="stat-change positive">+3.2% vs. mese scorso</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Profit Factor</div>
+                    <div class="stat-value">2.34</div>
+                    <div class="stat-change positive">Ottimo rendimento</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Max Drawdown</div>
+                    <div class="stat-value">-8.2%</div>
+                    <div class="stat-change">Sotto controllo</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Equity Curve</h2>
+                    <button class="btn-secondary" onclick="exportChart('equity')">Esporta Grafico</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Performance Mensile</h2>
+                    <button class="btn-secondary" onclick="exportChart('monthly')">Esporta Grafico</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brokers Section -->
+        <div id="brokers" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Connetti i Tuoi Broker</h2>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                    Collega i tuoi account broker per sincronizzare automaticamente le performance.
+                </p>
+
+                <div class="broker-grid">
+                    <div class="broker-card connected" data-broker="ftmo">
+                        <div class="broker-icon">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="broker-name">FTMO</div>
+                        <div class="broker-status connected">Connesso</div>
+                    </div>
+
+                    <div class="broker-card" data-broker="mff">
+                        <div class="broker-icon">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="broker-name">MyForexFunds</div>
+                        <div class="broker-status">Connetti</div>
+                    </div>
+
+                    <div class="broker-card" data-broker="the5ers">
+                        <div class="broker-icon">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="broker-name">The5ers</div>
+                        <div class="broker-status">Connetti</div>
+                    </div>
+
+                    <div class="broker-card" data-broker="fundednext">
+                        <div class="broker-icon">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="broker-name">FundedNext</div>
+                        <div class="broker-status">Connetti</div>
+                    </div>
+
+                    <div class="broker-card" data-broker="mt4">
+                        <div class="broker-icon">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                                <line x1="12" y1="20" x2="12" y2="10"/>
+                                <line x1="18" y1="20" x2="18" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="broker-name">MetaTrader 4/5</div>
+                        <div class="broker-status">Connetti</div>
+                    </div>
+
+                    <div class="broker-card" data-broker="ctrader">
+                        <div class="broker-icon">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                                <line x1="12" y1="20" x2="12" y2="10"/>
+                                <line x1="18" y1="20" x2="18" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="broker-name">cTrader</div>
+                        <div class="broker-status">Connetti</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator Section -->
+        <div id="calculator" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Calcolatore di Trading</h2>
+                </div>
+
+                <div class="calculator-grid">
+                    <div class="form-group">
+                        <label class="form-label">Account Size (€)</label>
+                        <input type="number" class="form-input" id="accountSize" value="10000" step="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Risk per Trade (%)</label>
+                        <input type="number" class="form-input" id="riskPercent" value="1" step="0.1" max="5">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Entry Price</label>
+                        <input type="number" class="form-input" id="entryPrice" value="1.0850" step="0.0001">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Stop Loss</label>
+                        <input type="number" class="form-input" id="stopLoss" value="1.0800" step="0.0001">
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="calculatePosition()" style="display: block; margin: 0 auto; max-width: 300px;">
+                    Calcola Position Size
+                </button>
+
+                <div class="calc-result hidden" id="calcResult">
+                    <div class="calc-result-label">Position Size Ottimale</div>
+                    <div class="calc-result-value" id="positionSize">0.00 Lots</div>
+                    <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                        Risk: <span id="riskAmount">€0</span> | Pips: <span id="pipsDistance">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Quick Stats</h2>
+                </div>
+                <div class="performance-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Lot Size</div>
+                        <div class="perf-value" id="lotSize">0.00</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Risk/Reward</div>
+                        <div class="perf-value" id="rrRatio">1:2</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Potential Profit</div>
+                        <div class="perf-value" style="color: var(--success);" id="potentialProfit">€200</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Max Loss</div>
+                        <div class="perf-value" style="color: var(--error);" id="maxLoss">€100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Section -->
+        <div id="performance" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Statistiche Dettagliate</h2>
+                </div>
+
+                <div class="performance-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Totale Operazioni</div>
+                        <div class="perf-value">247</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Vincenti</div>
+                        <div class="perf-value" style="color: var(--success);">169</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Perdenti</div>
+                        <div class="perf-value" style="color: var(--error);">78</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Win Rate</div>
+                        <div class="perf-value">68.4%</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Profit Factor</div>
+                        <div class="perf-value">2.34</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Avg Win</div>
+                        <div class="perf-value" style="color: var(--success);">€284</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Avg Loss</div>
+                        <div class="perf-value" style="color: var(--error);">€142</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Max Drawdown</div>
+                        <div class="perf-value">-8.2%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Drawdown Analysis</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="drawdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Trade Distribution</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Hourly Performance</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referral Section -->
+        <div id="referral" class="content-section">
+            <div class="card">
+                <div style="background: rgba(45, 71, 214, 0.15); border: 2px solid var(--primary-blue); border-radius: 16px; padding: 3rem; text-align: center;">
+                    <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem;">Invita i Tuoi Amici</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;">
+                        Guadagna il 20% di commissione ricorrente per ogni referral!
+                    </p>
+
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 2rem 0;">
+                        <div style="padding: 1.2rem 2.5rem; background: rgba(4, 6, 64, 0.7); border: 1px solid var(--border); border-radius: 12px; font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; color: var(--primary-blue);">
+                            TIER-XR4K9M
+                        </div>
+                        <button class="btn-primary" onclick="copyReferralCode()">
+                            Copia Codice
+                        </button>
+                    </div>
+
+                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                        Link: <strong style="color: var(--primary-blue);">tieralba.com/ref/XR4K9M</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">I Tuoi Referral</h2>
+                </div>
+
+                <div class="performance-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Utenti Invitati</div>
+                        <div class="perf-value">12</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Utenti Attivi</div>
+                        <div class="perf-value" style="color: var(--success);">8</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Commissioni Totali</div>
+                        <div class="perf-value" style="color: var(--primary-blue);">€847</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Questo Mese</div>
+                        <div class="perf-value" style="color: var(--primary-blue);">€124</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Informazioni Account</h2>
+                </div>
+
+                <div class="performance-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Piano Attuale</div>
+                        <div class="perf-value" style="font-size: 1.2rem;">Pro Plan</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Data Iscrizione</div>
+                        <div class="perf-value" style="font-size: 1.2rem;">15 Gen 2025</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Prossimo Rinnovo</div>
+                        <div class="perf-value" style="font-size: 1.2rem;">15 Mar 2026</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Licenza</div>
+                        <div class="perf-value" style="color: var(--success); font-size: 1.2rem;">Attiva</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Chiave di Licenza</h2>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Utilizza questa chiave per attivare i software TierAlba
+                </p>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                    <div style="padding: 1.2rem 2rem; background: rgba(4, 6, 64, 0.7); border: 1px solid var(--border); border-radius: 12px; font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: var(--primary-blue);">
+                        TALB-8K9X-M4R2-P7Q5
+                    </div>
+                    <button class="btn-primary" onclick="copyLicenseKey()">Copia Chiave</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Broker Connection -->
+    <div class="modal-overlay" id="brokerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalBrokerName">Connetti Broker</h2>
+                <button class="modal-close" onclick="closeBrokerModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">API Key</label>
+                <input type="text" class="form-input" placeholder="Inserisci la tua API key">
+            </div>
+            <div class="form-group">
+                <label class="form-label">API Secret</label>
+                <input type="password" class="form-input" placeholder="Inserisci il secret">
+            </div>
+            <button class="btn-primary" onclick="connectBroker()" style="width: 100%;">
+                Connetti Account
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURAZIONE API - CAMBIA QUESTO URL!
+        // ============================================
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000'
+            : 'https://tieralba-backend-production.up.railway.app';
+
+        // ============================================
+        // AUTH HELPER
+        // ============================================
+        function getToken() {
+            return localStorage.getItem('auth_token');
+        }
+
+        function getUserData() {
+            try { return JSON.parse(localStorage.getItem('user_data')); } 
+            catch { return null; }
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
+            window.location.href = 'login.html';
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+                if (response.status === 401 || response.status === 403) {
+                    logout();
+                    return null;
+                }
+                return await response.json();
+            } catch (error) {
+                console.error(`API Error (${endpoint}):`, error);
+                return null;
+            }
+        }
+
+        // ============================================
+        // AUTH CHECK - Redirect se non loggato
+        // ============================================
+        (function checkAuth() {
+            const token = getToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+        })();
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                contentSections.forEach(section => section.classList.remove('active'));
+                const targetSection = this.getAttribute('data-section');
+                document.getElementById(targetSection)?.classList.add('active');
+                document.querySelector('.topbar-title').textContent = this.textContent.trim();
+                document.getElementById('sidebar').classList.remove('mobile-active');
+            });
+        });
+
+        document.getElementById('menuToggle')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('mobile-active');
+        });
+
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function showToast(type, title, message) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <div class="toast-close" onclick="this.parentElement.remove()">×</div>
+            `;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        document.getElementById('notificationBtn')?.addEventListener('click', function() {
+            showToast('info', 'Notifiche', 'Nessuna nuova notifica');
+        });
+
+        // ============================================
+        // LOAD DASHBOARD DATA FROM API
+        // ============================================
+        async function loadDashboardData() {
+            // Load user info
+            const userData = getUserData();
+            if (userData) {
+                const initials = (userData.name || userData.email || 'U').substring(0, 2).toUpperCase();
+                const displayName = userData.name || userData.email?.split('@')[0] || 'Utente';
+                document.querySelector('.user-avatar').textContent = initials;
+                document.querySelector('.user-info div div:first-child').textContent = displayName;
+            }
+
+            // Verify token is still valid
+            const meData = await apiCall('/api/auth/me');
+            if (!meData) return;
+
+            // Load stats
+            const stats = await apiCall('/api/stats');
+            if (stats) {
+                updateStatsCards(stats);
+                updatePerformanceSection(stats);
+            }
+
+            // Load equity history for chart
+            const equityData = await apiCall('/api/equity-history?days=30');
+            if (equityData && equityData.history) {
+                updateEquityChart(equityData.history);
+            }
+
+            // Load trades for analytics
+            const tradesData = await apiCall('/api/trades?limit=100');
+            if (tradesData && tradesData.trades) {
+                updateAnalyticsCharts(tradesData.trades, stats);
+                updateMonthlyChart(tradesData.trades);
+            }
+
+            showToast('success', 'Benvenuto', `Dashboard aggiornata, ${userData?.name || 'utente'}!`);
+        }
+
+        // ============================================
+        // UPDATE UI WITH REAL DATA
+        // ============================================
+        function formatCurrency(value) {
+            return '€' + Math.round(value).toLocaleString('it-IT');
+        }
+
+        function updateStatsCards(stats) {
+            // Equity
+            const equityEl = document.getElementById('equityValue');
+            if (equityEl) equityEl.textContent = formatCurrency(stats.equity || 0);
+
+            // Win Rate
+            const statCards = document.querySelectorAll('.stat-card');
+            if (statCards[1]) {
+                statCards[1].querySelector('.stat-value').textContent = (stats.winRate || 0).toFixed(1) + '%';
+                const wr = stats.winRate || 0;
+                const changeEl = statCards[1].querySelector('.stat-change');
+                changeEl.textContent = wr >= 50 ? 'Buon rendimento' : 'Da migliorare';
+                changeEl.className = 'stat-change ' + (wr >= 50 ? 'positive' : '');
+            }
+
+            // Profit Factor
+            if (statCards[2]) {
+                statCards[2].querySelector('.stat-value').textContent = (stats.profitFactor || 0).toFixed(2);
+                const pf = stats.profitFactor || 0;
+                const changeEl = statCards[2].querySelector('.stat-change');
+                changeEl.textContent = pf >= 1.5 ? 'Ottimo rendimento' : pf >= 1 ? 'Rendimento discreto' : 'In perdita';
+                changeEl.className = 'stat-change ' + (pf >= 1.5 ? 'positive' : '');
+            }
+
+            // Total Profit (use as 4th card instead of drawdown since we don't have that endpoint)
+            if (statCards[3]) {
+                statCards[3].querySelector('.stat-label').textContent = 'Profitto Totale';
+                statCards[3].querySelector('.stat-value').textContent = formatCurrency(stats.totalProfit || 0);
+                const tp = stats.totalProfit || 0;
+                const changeEl = statCards[3].querySelector('.stat-change');
+                changeEl.textContent = tp >= 0 ? 'In profitto' : 'In perdita';
+                changeEl.className = 'stat-change ' + (tp >= 0 ? 'positive' : '');
+            }
+        }
+
+        function updatePerformanceSection(stats) {
+            const perfSection = document.getElementById('performance');
+            if (!perfSection) return;
+            const perfValues = perfSection.querySelectorAll('.perf-value');
+            if (perfValues.length >= 8) {
+                perfValues[0].textContent = stats.totalTrades || 0;
+                perfValues[1].textContent = stats.winningTrades || 0;
+                perfValues[2].textContent = stats.losingTrades || 0;
+                perfValues[3].textContent = (stats.winRate || 0).toFixed(1) + '%';
+                perfValues[4].textContent = (stats.profitFactor || 0).toFixed(2);
+                perfValues[5].textContent = formatCurrency(stats.avgProfit || 0);
+                perfValues[6].textContent = formatCurrency(stats.worstTrade || 0);
+                perfValues[7].textContent = stats.totalTrades > 0 ? 'Calcolato' : 'N/D';
+            }
+        }
+
+        // ============================================
+        // CHARTS - Updated with real data
+        // ============================================
+        let equityChart, monthlyChart, drawdownChart, distributionChart, hourlyChart;
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(13, 14, 122, 0.95)',
+                    padding: 12,
+                    titleColor: '#2d47d6',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(45, 71, 214, 0.3)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#b8c1ec' } },
+                x: { grid: { display: false }, ticks: { color: '#b8c1ec' } }
+            }
+        };
+
+        function updateEquityChart(history) {
+            const ctx = document.getElementById('equityChart');
+            if (!ctx) return;
+
+            const labels = history.map(h => new Date(h.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }));
+            const data = history.map(h => h.equity);
+
+            if (equityChart) equityChart.destroy();
+            equityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : generateDateLabels(30),
+                    datasets: [{
+                        label: 'Equity',
+                        data: data.length > 0 ? data : [0],
+                        borderColor: '#2d47d6',
+                        backgroundColor: 'rgba(45, 71, 214, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2d47d6'
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        function updateMonthlyChart(trades) {
+            const ctx = document.getElementById('monthlyChart');
+            if (!ctx) return;
+
+            // Aggregate profit by month
+            const monthlyProfits = {};
+            const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+            monthNames.forEach(m => monthlyProfits[m] = 0);
+
+            trades.forEach(t => {
+                if (t.closed_at && t.profit) {
+                    const month = new Date(t.closed_at).getMonth();
+                    monthlyProfits[monthNames[month]] += parseFloat(t.profit);
+                }
+            });
+
+            const data = monthNames.map(m => parseFloat(monthlyProfits[m].toFixed(2)));
+
+            if (monthlyChart) monthlyChart.destroy();
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthNames,
+                    datasets: [{
+                        label: 'Profitto €',
+                        data,
+                        backgroundColor: function(context) {
+                            return (context.parsed?.y || 0) >= 0 ? 'rgba(0, 255, 136, 0.8)' : 'rgba(255, 51, 102, 0.8)';
+                        },
+                        borderRadius: 8
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        function updateAnalyticsCharts(trades, stats) {
+            // Distribution Chart
+            const distCtx = document.getElementById('distributionChart');
+            if (distCtx) {
+                if (distributionChart) distributionChart.destroy();
+                distributionChart = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Vincenti', 'Perdenti'],
+                        datasets: [{
+                            data: [stats?.winningTrades || 0, stats?.losingTrades || 0],
+                            backgroundColor: ['#00ff88', '#ff3366'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#b8c1ec', padding: 20, font: { size: 14 } } }
+                        }
+                    }
+                });
+            }
+
+            // Hourly performance from real trades
+            const hourlyCtx = document.getElementById('hourlyChart');
+            if (hourlyCtx) {
+                const hourBuckets = Array(12).fill(0);
+                trades.forEach(t => {
+                    if (t.opened_at) {
+                        const hour = new Date(t.opened_at).getHours();
+                        hourBuckets[Math.floor(hour / 2)]++;
+                    }
+                });
+
+                if (hourlyChart) hourlyChart.destroy();
+                hourlyChart = new Chart(hourlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['0h', '2h', '4h', '6h', '8h', '10h', '12h', '14h', '16h', '18h', '20h', '22h'],
+                        datasets: [{
+                            label: 'Trades',
+                            data: hourBuckets,
+                            backgroundColor: 'rgba(45, 71, 214, 0.8)',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: chartOptions
+                });
+            }
+
+            // Drawdown chart from equity history
+            const ddCtx = document.getElementById('drawdownChart');
+            if (ddCtx) {
+                if (drawdownChart) drawdownChart.destroy();
+                // Calculate drawdown from trades cumulative profit
+                let cumProfit = 0;
+                let peak = 0;
+                const ddData = [];
+                const ddLabels = [];
+                const sortedTrades = [...trades].filter(t => t.closed_at).sort((a, b) => new Date(a.closed_at) - new Date(b.closed_at));
+                
+                sortedTrades.forEach(t => {
+                    cumProfit += parseFloat(t.profit) || 0;
+                    if (cumProfit > peak) peak = cumProfit;
+                    const dd = peak > 0 ? ((cumProfit - peak) / peak * 100) : 0;
+                    ddData.push(parseFloat(dd.toFixed(2)));
+                    ddLabels.push(new Date(t.closed_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }));
+                });
+
+                drawdownChart = new Chart(ddCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ddLabels.length > 0 ? ddLabels : ['N/D'],
+                        datasets: [{
+                            label: 'Drawdown %',
+                            data: ddData.length > 0 ? ddData : [0],
+                            borderColor: '#ff3366',
+                            backgroundColor: 'rgba(255, 51, 102, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: chartOptions
+                });
+            }
+        }
+
+        function generateDateLabels(days) {
+            const labels = [];
+            const today = new Date();
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }));
+            }
+            return labels;
+        }
+
+        // ============================================
+        // BROKER CONNECTION (real API)
+        // ============================================
+        const brokerCards = document.querySelectorAll('.broker-card:not(.connected)');
+        let selectedBrokerPlatform = 'mt4';
+
+        brokerCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const brokerName = this.querySelector('.broker-name').textContent;
+                selectedBrokerPlatform = this.dataset.broker === 'mt4' ? 'mt4' : 'mt5';
+                document.getElementById('modalBrokerName').textContent = `Connetti ${brokerName}`;
+                document.getElementById('brokerModal').classList.add('active');
+            });
+        });
+
+        function closeBrokerModal() {
+            document.getElementById('brokerModal').classList.remove('active');
+        }
+
+        async function connectBroker() {
+            const apiKey = document.querySelector('#brokerModal .form-input[type="text"]').value;
+            const apiSecret = document.querySelector('#brokerModal .form-input[type="password"]').value;
+            
+            if (!apiKey || !apiSecret) {
+                showToast('error', 'Errore', 'Compila tutti i campi');
+                return;
+            }
+
+            const result = await apiCall('/api/broker/connect', {
+                method: 'POST',
+                body: JSON.stringify({
+                    platform: selectedBrokerPlatform,
+                    apiKey,
+                    apiSecret,
+                    accountNumber: apiKey.substring(0, 8)
+                })
+            });
+
+            if (result && result.success) {
+                showToast('success', 'Broker Connesso', 'Il tuo account è stato connesso con successo!');
+                closeBrokerModal();
+            } else {
+                showToast('error', 'Errore', result?.error || 'Errore nella connessione');
+            }
+        }
+
+        // ============================================
+        // TRADING CALCULATOR (local, no API needed)
+        // ============================================
+        function calculatePosition() {
+            const accountSize = parseFloat(document.getElementById('accountSize').value);
+            const riskPercent = parseFloat(document.getElementById('riskPercent').value);
+            const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+            const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+            
+            if (!accountSize || !riskPercent || !entryPrice || !stopLoss) {
+                showToast('error', 'Errore', 'Compila tutti i campi');
+                return;
+            }
+
+            const riskAmount = accountSize * (riskPercent / 100);
+            const pipsDistance = Math.abs(entryPrice - stopLoss) * 10000;
+            if (pipsDistance === 0) { showToast('error', 'Errore', 'Entry e Stop Loss non possono essere uguali'); return; }
+            const lotSize = (riskAmount / (pipsDistance * 10)).toFixed(2);
+            
+            document.getElementById('calcResult').classList.remove('hidden');
+            document.getElementById('positionSize').textContent = lotSize + ' Lots';
+            document.getElementById('riskAmount').textContent = '€' + riskAmount.toFixed(2);
+            document.getElementById('pipsDistance').textContent = pipsDistance.toFixed(1);
+            document.getElementById('lotSize').textContent = lotSize;
+            document.getElementById('maxLoss').textContent = '€' + riskAmount.toFixed(2);
+            document.getElementById('potentialProfit').textContent = '€' + (riskAmount * 2).toFixed(2);
+            
+            showToast('success', 'Calcolo Completato', `Position size ottimale: ${lotSize} lots`);
+        }
+
+        // ============================================
+        // COPY FUNCTIONS
+        // ============================================
+        function copyReferralCode() {
+            navigator.clipboard.writeText('TIER-XR4K9M').then(() => {
+                showToast('success', 'Codice Copiato', 'Il codice referral è stato copiato!');
+            });
+        }
+
+        function copyLicenseKey() {
+            navigator.clipboard.writeText('TALB-8K9X-M4R2-P7Q5').then(() => {
+                showToast('success', 'Chiave Copiata', 'La chiave di licenza è stata copiata!');
+            });
+        }
+
+        function exportChart(chartType) {
+            showToast('info', 'Export in Corso', `Esportazione del grafico ${chartType}...`);
+            setTimeout(() => {
+                showToast('success', 'Export Completato', 'Il grafico è stato esportato!');
+            }, 1500);
+        }
+
+        // ============================================
+        // LOGOUT BUTTON (add to user-info click)
+        // ============================================
+        document.querySelector('.user-info')?.addEventListener('click', function() {
+            if (confirm('Vuoi effettuare il logout?')) {
+                logout();
+            }
+        });
+
+        // ============================================
+        // INIT - Load everything on page load
+        // ============================================
+        window.addEventListener('load', () => {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>
