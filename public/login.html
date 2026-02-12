@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TierAlba — Accedi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0b0f;
+            --surface: #12131a;
+            --surface-2: #1a1b25;
+            --border: rgba(255,255,255,0.06);
+            --border-focus: rgba(200,170,110,0.4);
+            --gold: #c8aa6e;
+            --gold-light: #e8d5a8;
+            --gold-dim: rgba(200,170,110,0.15);
+            --text: #f0ede6;
+            --text-2: #9b978f;
+            --text-3: #5c5952;
+            --red: #e05252;
+            --green: #5cb87a;
+            --radius: 10px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Left panel — branding */
+        .brand-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 60% at 20% 80%, rgba(200,170,110,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,170,110,0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .brand-panel::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, var(--border), transparent);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 3rem;
+        }
+
+        .brand-logo-mark {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--bg);
+        }
+
+        .brand-logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 3.5vw, 3.2rem);
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            max-width: 420px;
+        }
+
+        .brand-headline span {
+            color: var(--gold);
+        }
+
+        .brand-sub {
+            font-size: 16px;
+            color: var(--text-2);
+            line-height: 1.7;
+            max-width: 380px;
+        }
+
+        .brand-stats {
+            display: flex;
+            gap: 2.5rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .brand-stat-value {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .brand-stat-label {
+            font-size: 13px;
+            color: var(--text-3);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Right panel — form */
+        .auth-panel {
+            width: 480px;
+            min-width: 480px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem 3.5rem;
+            background: var(--surface);
+        }
+
+        .auth-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 15px;
+            color: var(--text-2);
+            margin-bottom: 2.5rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: none;
+            color: var(--text-3);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .auth-tab.active {
+            color: var(--gold);
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold);
+        }
+
+        .auth-tab:hover:not(.active) {
+            color: var(--text-2);
+        }
+
+        .auth-form { display: none; }
+        .auth-form.active {
+            display: block;
+            animation: fadeUp 0.35s ease;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 13px 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--gold-dim);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-3);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--gold), #b89a5a);
+            border: none;
+            border-radius: var(--radius);
+            color: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+            margin-top: 0.75rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(200,170,110,0.25);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .msg {
+            padding: 11px 14px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            margin-bottom: 1rem;
+            display: none;
+            line-height: 1.5;
+        }
+
+        .msg.error {
+            background: rgba(224,82,82,0.1);
+            border: 1px solid rgba(224,82,82,0.25);
+            color: var(--red);
+        }
+
+        .msg.success {
+            background: rgba(92,184,122,0.1);
+            border: 1px solid rgba(92,184,122,0.25);
+            color: var(--green);
+        }
+
+        .msg.show { display: block; }
+
+        .forgot-link {
+            display: inline-block;
+            margin-top: 0.75rem;
+            font-size: 13px;
+            color: var(--text-3);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .forgot-link:hover { color: var(--gold); }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(10,11,15,0.2);
+            border-top-color: var(--bg);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .brand-panel { padding: 2.5rem 2rem 2rem; min-height: auto; }
+            .brand-headline { font-size: 1.8rem; }
+            .brand-stats { display: none; }
+            .auth-panel { width: 100%; min-width: unset; padding: 2.5rem 2rem; }
+        }
+
+        @media (max-width: 480px) {
+            .brand-panel { padding: 2rem 1.5rem 1.5rem; }
+            .auth-panel { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Branding Side -->
+    <div class="brand-panel">
+        <div class="brand-logo">
+            <div class="brand-logo-mark">T</div>
+            <div class="brand-logo-text">TierAlba</div>
+        </div>
+        <h1 class="brand-headline">Il controllo del tuo <span>trading</span>, in un unico posto.</h1>
+        <p class="brand-sub">Dashboard professionale per monitorare performance, gestire i tuoi account broker e far crescere il tuo capitale con consapevolezza.</p>
+        <div class="brand-stats">
+            <div>
+                <div class="brand-stat-value">2.4K+</div>
+                <div class="brand-stat-label">Trader attivi</div>
+            </div>
+            <div>
+                <div class="brand-stat-value">€14M+</div>
+                <div class="brand-stat-label">Equity gestita</div>
+            </div>
+            <div>
+                <div class="brand-stat-value">99.9%</div>
+                <div class="brand-stat-label">Uptime</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Side -->
+    <div class="auth-panel">
+        <h2 class="auth-title">Bentornato</h2>
+        <p class="auth-subtitle">Accedi al tuo account o creane uno nuovo</p>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Accedi</button>
+            <button class="auth-tab" data-tab="register">Registrati</button>
+        </div>
+
+        <div id="msgError" class="msg error"></div>
+        <div id="msgSuccess" class="msg success"></div>
+
+        <!-- Login -->
+        <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="loginEmail" placeholder="nome@email.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="La tua password" required>
+            </div>
+            <button type="submit" class="btn-submit" id="loginBtn">Accedi</button>
+            <a href="#" class="forgot-link">Password dimenticata?</a>
+        </form>
+
+        <!-- Register -->
+        <form id="registerForm" class="auth-form" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label class="form-label">Nome completo</label>
+                <input type="text" class="form-input" id="regName" placeholder="Mario Rossi" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="regEmail" placeholder="nome@email.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="regPassword" placeholder="Minimo 8 caratteri" required minlength="8">
+            </div>
+            <button type="submit" class="btn-submit" id="regBtn">Crea Account</button>
+        </form>
+    </div>
+
+<script>
+    // ── Config ──
+    const API_URL = window.location.origin;
+
+    // ── Tabs ──
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab.dataset.tab === 'login' ? 'loginForm' : 'registerForm').classList.add('active');
+            hideMessages();
+            // Update title
+            document.querySelector('.auth-title').textContent = tab.dataset.tab === 'login' ? 'Bentornato' : 'Crea il tuo account';
+            document.querySelector('.auth-subtitle').textContent = tab.dataset.tab === 'login' 
+                ? 'Accedi al tuo account o creane uno nuovo' 
+                : 'Inizia a monitorare il tuo trading';
+        });
+    });
+
+    // ── Messages ──
+    function showError(msg) {
+        const el = document.getElementById('msgError');
+        el.textContent = msg; el.classList.add('show');
+        document.getElementById('msgSuccess').classList.remove('show');
+    }
+    function showSuccess(msg) {
+        const el = document.getElementById('msgSuccess');
+        el.textContent = msg; el.classList.add('show');
+        document.getElementById('msgError').classList.remove('show');
+    }
+    function hideMessages() {
+        document.getElementById('msgError').classList.remove('show');
+        document.getElementById('msgSuccess').classList.remove('show');
+    }
+
+    // ── Login ──
+    async function handleLogin(e) {
+        e.preventDefault();
+        hideMessages();
+        const btn = document.getElementById('loginBtn');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Accesso...';
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Login fallito');
+
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('user_data', JSON.stringify(data.user));
+            showSuccess('Accesso effettuato! Reindirizzamento...');
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        } catch (err) {
+            showError(err.message);
+            btn.disabled = false;
+            btn.textContent = orig;
+        }
+    }
+
+    // ── Register ──
+    async function handleRegister(e) {
+        e.preventDefault();
+        hideMessages();
+        const btn = document.getElementById('regBtn');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Registrazione...';
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('regName').value,
+                    email: document.getElementById('regEmail').value,
+                    password: document.getElementById('regPassword').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Registrazione fallita');
+
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('user_data', JSON.stringify(data.user));
+            showSuccess('Account creato! Reindirizzamento...');
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        } catch (err) {
+            showError(err.message);
+            btn.disabled = false;
+            btn.textContent = orig;
+        }
+    }
+
+    // ── Already logged in? ──
+    if (localStorage.getItem('auth_token')) {
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>
