@@ -46,7 +46,10 @@ pool.connect((err, client, release) => {
 // ============================================
 
 // Helmet: protezione base contro attacchi comuni
-app.use(helmet());
+// Configurato per permettere script inline nelle pagine frontend
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 
 // CORS: permette al frontend di comunicare con il backend
 const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim()).filter(Boolean);
