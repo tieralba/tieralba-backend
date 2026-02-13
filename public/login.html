@@ -180,6 +180,7 @@
             font-weight: 600;
             cursor: pointer;
             position: relative;
+            z-index: 1;
             transition: color 0.3s;
             text-transform: uppercase;
             letter-spacing: 1.5px;
@@ -375,8 +376,8 @@
         <p class="auth-subtitle">Accedi al tuo account o creane uno nuovo</p>
 
         <div class="auth-tabs">
-            <button class="auth-tab active" data-tab="login">Accedi</button>
-            <button class="auth-tab" data-tab="register">Registrati</button>
+            <button class="auth-tab active" onclick="switchTab('login')" id="tabLogin">Accedi</button>
+            <button class="auth-tab" onclick="switchTab('register')" id="tabRegister">Registrati</button>
         </div>
 
         <div id="msgError" class="msg error"></div>
@@ -419,20 +420,20 @@
     const API_URL = window.location.origin;
 
     // ── Tabs ──
-    document.querySelectorAll('.auth-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-            document.getElementById(tab.dataset.tab === 'login' ? 'loginForm' : 'registerForm').classList.add('active');
-            hideMessages();
-            // Update title
-            document.querySelector('.auth-title').textContent = tab.dataset.tab === 'login' ? 'Bentornato' : 'Crea il tuo account';
-            document.querySelector('.auth-subtitle').textContent = tab.dataset.tab === 'login' 
-                ? 'Accedi al tuo account o creane uno nuovo' 
-                : 'Inizia a monitorare il tuo trading';
-        });
-    });
+    function switchTab(tab) {
+        // Update tabs
+        document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+        document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+        // Update forms
+        document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+        document.getElementById('registerForm').classList.toggle('active', tab === 'register');
+        // Update title
+        document.querySelector('.auth-title').textContent = tab === 'login' ? 'Bentornato' : 'Crea il tuo account';
+        document.querySelector('.auth-subtitle').textContent = tab === 'login' 
+            ? 'Accedi al tuo account o creane uno nuovo' 
+            : 'Inizia a monitorare il tuo trading';
+        hideMessages();
+    }
 
     // ── Messages ──
     function showError(msg) {
