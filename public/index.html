@@ -1,826 +1,1990 @@
-// ============================================
-// TIERALBA BACKEND API
-// ============================================
-// Questo è il server principale che gestisce:
-// - Autenticazione utenti (login/register)
-// - Gestione trade
-// - Statistiche dashboard
-// - Connessione broker MetaTrader
-// ============================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TierAlba — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+        :root {
+            --bg: #0a0b0f;
+            --surface: #12131a;
+            --surface-2: #1a1b25;
+            --surface-3: #22232f;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --gold: #c8aa6e;
+            --gold-light: #e8d5a8;
+            --gold-dim: rgba(200,170,110,0.12);
+            --gold-glow: rgba(200,170,110,0.06);
+            --text: #f0ede6;
+            --text-2: #9b978f;
+            --text-3: #5c5952;
+            --green: #5cb87a;
+            --green-dim: rgba(92,184,122,0.12);
+            --red: #e05252;
+            --red-dim: rgba(224,82,82,0.12);
+            --radius: 10px;
+            --radius-lg: 14px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-// Stripe (optional - only if STRIPE_SECRET_KEY is set)
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
 
-// ============================================
-// CONFIGURAZIONE SERVER
-// ============================================
+        /* ── Sidebar ── */
+        .sidebar {
+            position: fixed;
+            left: 0; top: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.75rem 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
 
-const app = express();
-const port = process.env.PORT || 3000;
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 1.5rem 1.75rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
 
-// Connessione al database PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+        .logo-mark {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700; font-size: 18px; color: var(--bg);
+        }
 
-// Test connessione database
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Errore connessione database:', err.stack);
-  } else {
-    console.log('✅ Database connesso con successo');
-    release();
-  }
-});
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px; font-weight: 700;
+            letter-spacing: -0.3px;
+        }
 
-// ============================================
-// MIDDLEWARE (funzioni che processano ogni richiesta)
-// ============================================
+        .nav-menu { list-style: none; padding: 0.5rem 0.75rem; flex: 1; }
 
-// Helmet: protezione base contro attacchi comuni
-// Configurato per permettere script inline nelle pagine frontend
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
+        .nav-item { margin-bottom: 2px; }
 
-// CORS: permette al frontend di comunicare con il backend
-const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-      return callback(null, true);
+        .nav-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px;
+            color: var(--text-2);
+            text-decoration: none;
+            font-size: 14px; font-weight: 500;
+            border-radius: 8px;
+            transition: all var(--transition);
+            cursor: pointer;
+        }
+
+        .nav-link:hover { color: var(--text); background: var(--surface-2); }
+
+        .nav-link.active {
+            color: var(--gold);
+            background: var(--gold-dim);
+        }
+
+        .nav-link.nav-locked { opacity: 0.4; }
+        .nav-link.nav-locked:hover { opacity: 0.6; }
+        .lock-icon { margin-left: auto; opacity: 0.5; display: flex; }
+
+        .nav-icon {
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.7;
+        }
+
+        .nav-link.active .nav-icon { opacity: 1; }
+
+        .nav-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+        .sidebar-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+
+        .user-card:hover { background: var(--surface-2); }
+
+        .user-avatar {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--gold), #b89a5a);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: var(--bg);
+        }
+
+        .user-name { font-size: 13px; font-weight: 600; }
+        .user-email { font-size: 11px; color: var(--text-3); }
+
+        /* ── Main Layout ── */
+        .main {
+            margin-left: 260px;
+            min-height: 100vh;
+            padding: 2rem 2.5rem;
+            transition: margin-left 0.3s;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .topbar-left { display: flex; align-items: center; gap: 1rem; }
+
+        .menu-toggle {
+            display: none;
+            width: 38px; height: 38px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text); font-size: 18px;
+        }
+
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px; font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+
+        .btn-icon {
+            width: 38px; height: 38px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-2);
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .btn-icon:hover { border-color: var(--border-hover); color: var(--text); }
+        .btn-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-2);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            transition: border-color var(--transition);
+        }
+
+        .card:hover { border-color: var(--border-hover); }
+
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 15px; font-weight: 600;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Stats Grid ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            transition: all var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--gold-dim);
+            box-shadow: 0 0 0 1px var(--gold-dim);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 26px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-3);
+        }
+
+        .stat-change.positive { color: var(--green); }
+        .stat-change.negative { color: var(--red); }
+
+        /* ── Chart Container ── */
+        .chart-wrap {
+            height: 300px;
+            position: relative;
+        }
+
+        /* ── Grids ── */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        /* ── Content Sections ── */
+        .section { display: none; }
+        .section.active {
+            display: block;
+            animation: fadeIn 0.35s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Performance Items ── */
+        .perf-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .perf-item {
+            background: var(--surface-2);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            text-align: center;
+        }
+
+        .perf-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        .perf-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .perf-value.green { color: var(--green); }
+        .perf-value.red { color: var(--red); }
+        .perf-value.gold { color: var(--gold); }
+
+        /* ── Broker Cards ── */
+        .broker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .broker-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .broker-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .broker-card.connected { border-color: var(--green); }
+
+        .broker-icon {
+            width: 42px; height: 42px;
+            background: var(--surface-3);
+            border-radius: 10px;
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-bottom: 10px;
+            color: var(--gold);
+        }
+
+        .broker-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+        .broker-name {
+            font-size: 14px; font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .broker-status {
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-3);
+        }
+
+        .broker-card.connected .broker-status { color: var(--green); }
+
+        /* ── Calculator ── */
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+
+        .form-label {
+            display: block;
+            font-size: 11px; font-weight: 600;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-dim);
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--gold), #b89a5a);
+            border: none;
+            border-radius: var(--radius);
+            color: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(200,170,110,0.25);
+        }
+
+        .calc-result {
+            background: var(--gold-dim);
+            border: 1px solid rgba(200,170,110,0.2);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1.25rem;
+            display: none;
+        }
+
+        .calc-result.show { display: block; animation: fadeIn 0.3s ease; }
+
+        .calc-result-label {
+            font-size: 11px; font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .calc-result-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 32px; font-weight: 500;
+            color: var(--gold-light);
+        }
+
+        /* ── Referral ── */
+        .referral-hero {
+            background: var(--gold-dim);
+            border: 1px solid rgba(200,170,110,0.15);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            text-align: center;
+        }
+
+        .referral-hero h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px; margin-bottom: 0.75rem;
+        }
+
+        .referral-code {
+            display: inline-block;
+            padding: 12px 28px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-family: 'DM Mono', monospace;
+            font-size: 20px; font-weight: 500;
+            color: var(--gold);
+            margin: 1.25rem 0;
+            letter-spacing: 2px;
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: none;
+            align-items: center; justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            width: 420px;
+            max-width: 90vw;
+        }
+
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            width: 32px; height: 32px;
+            background: var(--surface-2);
+            border: none; border-radius: 6px;
+            color: var(--text-2); font-size: 18px;
+            cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            transition: all var(--transition);
+        }
+
+        .modal-close:hover { background: var(--surface-3); color: var(--text); }
+
+        /* ── Toast ── */
+        .toast-container {
+            position: fixed; top: 1.5rem; right: 1.5rem;
+            z-index: 300; display: flex;
+            flex-direction: column; gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            display: flex; gap: 10px;
+            align-items: flex-start;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { border-left: 3px solid var(--green); }
+        .toast.error { border-left: 3px solid var(--red); }
+        .toast.info { border-left: 3px solid var(--gold); }
+
+        .toast-title { font-size: 13px; font-weight: 600; }
+        .toast-msg { font-size: 12px; color: var(--text-2); }
+        .toast-close {
+            margin-left: auto; cursor: pointer;
+            color: var(--text-3); font-size: 16px;
+            line-height: 1;
+        }
+        .toast-close:hover { color: var(--text); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ── Loading State ── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ── Progress Bar (Challenge) ── */
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: var(--surface-2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            transition: width 0.8s ease;
+        }
+
+        /* ── Drawdown Bars ── */
+        .dd-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dd-bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.6s ease, background 0.3s;
+        }
+
+        .dd-bar-fill.dd-safe { background: linear-gradient(90deg, #3a8a5c, var(--green)); }
+        .dd-bar-fill.dd-warning { background: linear-gradient(90deg, #c89a2e, #e8b830); }
+        .dd-bar-fill.dd-danger { background: linear-gradient(90deg, #c84040, var(--red)); }
+
+        .dd-status-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .dd-status-badge.warning { background: rgba(232,184,48,0.12); color: #e8b830; }
+        .dd-status-badge.danger { background: var(--red-dim); color: var(--red); }
+
+        /* ── Equity Protector ── */
+        .equity-protector {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+        }
+
+        /* ── Toggle Switch ── */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--surface-3);
+            border-radius: 26px;
+            transition: background 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            left: 3px; bottom: 3px;
+            background: var(--text-2);
+            border-radius: 50%;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider { background: var(--gold-dim); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); background: var(--gold); }
+
+        /* ── Bot Status ── */
+        .bot-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: var(--surface-2);
+            color: var(--text-2);
+        }
+
+        .bot-pulse {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--text-3);
+        }
+
+        .bot-pulse.online {
+            background: var(--green);
+            box-shadow: 0 0 0 3px rgba(92,184,122,0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .bot-pulse.offline {
+            background: var(--red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(92,184,122,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(92,184,122,0.1); }
+        }
+
+        /* ── Panic Button ── */
+        .panic-btn {
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #c83030, #e05252);
+            border: 2px solid rgba(224,82,82,0.3);
+            border-radius: var(--radius);
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .panic-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(224,82,82,0.35);
+        }
+
+        .panic-btn:active { transform: translateY(0); }
+
+        /* ── EA Download Cards ── */
+        .ea-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+        .ea-card {
+            display: flex; align-items: center; gap: 1rem;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1rem 1.25rem;
+            transition: border-color var(--transition);
+        }
+        .ea-card:hover { border-color: var(--gold); }
+        .ea-icon { color: var(--gold); flex-shrink: 0; }
+        .ea-name { font-size: 14px; font-weight: 600; }
+        .ea-meta { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+        .btn-download {
+            margin-left: auto;
+            padding: 8px 18px;
+            background: var(--gold-dim); border: 1px solid rgba(200,170,110,0.2);
+            border-radius: var(--radius); color: var(--gold);
+            font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-download:hover { background: var(--gold); color: var(--bg); }
+
+        /* ── Setup Steps ── */
+        .setup-steps { display: flex; flex-direction: column; gap: 0; }
+        .setup-step {
+            display: flex; align-items: flex-start; gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .setup-step:last-child { border-bottom: none; }
+        .step-num {
+            width: 30px; height: 30px; flex-shrink: 0;
+            background: var(--gold-dim); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: var(--gold);
+        }
+        .step-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .step-desc { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle-btn {
+            width: 38px; height: 38px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-2); transition: all var(--transition);
+        }
+        .theme-toggle-btn:hover { border-color: var(--border-hover); color: var(--text); }
+        .theme-toggle-btn svg { width: 18px; height: 18px; }
+
+        /* ── LIGHT MODE ── */
+        body.light {
+            --bg: #f5f3ee;
+            --surface: #ffffff;
+            --surface-2: #f0ede6;
+            --surface-3: #e8e4dc;
+            --border: rgba(0,0,0,0.08);
+            --border-hover: rgba(0,0,0,0.15);
+            --gold: #b89a50;
+            --gold-light: #c8aa6e;
+            --gold-dim: rgba(184,154,80,0.1);
+            --gold-glow: rgba(184,154,80,0.05);
+            --text: #1a1815;
+            --text-2: #5c5952;
+            --text-3: #9b978f;
+            --green: #3a8a5c;
+            --green-dim: rgba(58,138,92,0.1);
+            --red: #c83030;
+            --red-dim: rgba(200,48,48,0.1);
+        }
+
+        body.light .sidebar { background: #ffffff; border-right-color: rgba(0,0,0,0.08); }
+        body.light .card { background: #ffffff; }
+        body.light .stat-card { background: #ffffff; }
+        body.light .nav-link.active { background: rgba(184,154,80,0.1); }
+        body.light .perf-item { background: #f0ede6; }
+        body.light .equity-protector { background: #f0ede6; }
+        body.light .broker-card { background: #f0ede6; }
+        body.light .form-input { background: #f0ede6; color: #1a1815; }
+        body.light .modal { background: #ffffff; }
+        body.light .toast { background: #ffffff; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        body.light .btn-primary { color: #ffffff; }
+        body.light .panic-btn { box-shadow: 0 4px 16px rgba(200,48,48,0.2); }
+        body.light .dd-status-badge { background: rgba(58,138,92,0.1); color: #3a8a5c; }
+        body.light .bot-status-badge { background: #f0ede6; }
+        body.light .ea-card { background: #f0ede6; }
+        body.light .btn-download { background: rgba(184,154,80,0.1); }
+        body.light .btn-download:hover { background: #b89a50; color: #ffffff; }
+        body.light .theme-toggle-btn { background: #ffffff; }
+        body.light .btn-logout { border-color: rgba(0,0,0,0.1); }
+        body.light .user-card:hover { background: #f0ede6; }
+        body.light .progress-bar-bg { background: #e8e4dc; }
+        body.light .dd-bar-bg { background: #e8e4dc; }
+
+        body.light .dark-only { display: none !important; }
+        body.light .light-only { display: inline-block !important; }
+        body:not(.light) .light-only { display: none !important; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-left: 0; }
+            .menu-toggle { display: flex; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .perf-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .main { padding: 1.25rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .calc-grid { grid-template-columns: 1fr; }
+            .perf-grid { grid-template-columns: 1fr 1fr; }
+            .page-title { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <img class="logo-img logo-dark-only" src="data:image/png;base64,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" alt="TierAlba" style="width:36px;height:36px;border-radius:8px;"><img class="logo-img logo-light-only" src="data:image/png;base64,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" alt="TierAlba" style="width:36px;height:36px;border-radius:8px;display:none;">
+            <div class="logo-text">TierAlba</div>
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" data-section="overview">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="riskguard">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                        <span>Risk Guardian</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="experts">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="12" y1="2" x2="12" y2="6"/></svg></div>
+                        <span>Experts</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="performance">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                        <span>Performance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="analytics">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="brokers">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+                        <span>Broker</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="calculator">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg></div>
+                        <span>Calculator</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" data-section="settings">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-card" id="userCard">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div>
+                    <div class="user-name" id="userName">User</div>
+                    <div class="user-email" id="userEmail">email@test.com</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main" id="mainContent">
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" id="menuToggle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </div>
+                <h1 class="page-title" id="pageTitle">Dashboard</h1>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme">
+                    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+                <button class="btn-logout" onclick="logout()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Esci
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══════ OVERVIEW ═══════ -->
+        <div id="overview" class="section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Equity</div>
+                    <div class="stat-value" id="statEquity">—</div>
+                    <div class="stat-change" id="statEquityChange">Loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value" id="statWinRate">—</div>
+                    <div class="stat-change" id="statWinRateChange">Loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Profit Factor</div>
+                    <div class="stat-value" id="statPF">—</div>
+                    <div class="stat-change" id="statPFChange">Loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Profit</div>
+                    <div class="stat-value" id="statProfit">—</div>
+                    <div class="stat-change" id="statProfitChange">Loading...</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Equity Curve</span></div>
+                    <div class="chart-wrap"><canvas id="equityChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Monthly Performance</span></div>
+                    <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ RISK GUARDIAN ═══════ -->
+        <div id="riskguard" class="section">
+            <!-- Challenge Progress -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Road to Funded</span>
+                    <span style="font-size:12px;color:var(--gold);font-weight:600;" id="challengePhase">PHASE 1 — CHALLENGE</span>
+                </div>
+                <div style="margin-bottom:1.25rem;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="font-size:13px;color:var(--text-2);">Profit Target</span>
+                        <span style="font-size:13px;font-weight:600;" id="challengeTarget">€0 / €1,000</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="challengeProgress" style="width:0%"></div>
+                    </div>
+                    <div style="text-align:right;margin-top:4px;font-size:12px;color:var(--text-3);" id="challengePercent">0% completed</div>
+                </div>
+                <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
+                    <div class="perf-item">
+                        <div class="perf-label">Days Left</div>
+                        <div class="perf-value gold" id="challengeDays">30</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Current Profit</div>
+                        <div class="perf-value green" id="challengeProfit">€0</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Status</div>
+                        <div class="perf-value green" id="challengeStatus">In Progress</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drawdown Monitor -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Drawdown Monitor</span>
+                    <span class="dd-status-badge" id="ddStatusBadge">SAFE</span>
+                </div>
+                <!-- Daily Drawdown -->
+                <div style="margin-bottom:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:13px;font-weight:600;color:var(--text-2);">Daily Loss</span>
+                        <span style="font-size:13px;font-weight:600;" id="ddDailyValue">0% / 5%</span>
+                    </div>
+                    <div class="dd-bar-bg">
+                        <div class="dd-bar-fill dd-safe" id="ddDailyBar" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Max Drawdown -->
+                <div style="margin-bottom:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:13px;font-weight:600;color:var(--text-2);">Max Total Drawdown</span>
+                        <span style="font-size:13px;font-weight:600;" id="ddMaxValue">0% / 10%</span>
+                    </div>
+                    <div class="dd-bar-bg">
+                        <div class="dd-bar-fill dd-safe" id="ddMaxBar" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Equity Protector -->
+                <div class="equity-protector">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:14px;font-weight:600;">Equity Protector</div>
+                            <div style="font-size:12px;color:var(--text-3);">Close everything if I exceed the daily loss limit</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="equityProtectorToggle" onchange="toggleEquityProtector()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div id="epSettings" style="display:none;margin-top:1rem;">
+                        <div style="display:flex;gap:1rem;align-items:end;">
+                            <div style="flex:1;">
+                                <label class="form-label">Daily loss limit (%)</label>
+                                <input type="number" class="form-input" id="epLimit" value="4" step="0.5" min="1" max="10">
+                            </div>
+                            <button class="btn-primary" onclick="saveEquityProtector()">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Settings -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">Challenge Settings</span></div>
+                <div class="calc-grid">
+                    <div class="form-group">
+                        <label class="form-label">Challenge Capital (€)</label>
+                        <input type="number" class="form-input" id="riskCapital" value="100000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Profit Target (%)</label>
+                        <input type="number" class="form-input" id="riskTarget" value="10" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Daily Drawdown (%)</label>
+                        <input type="number" class="form-input" id="riskDailyDD" value="5" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Total Drawdown (%)</label>
+                        <input type="number" class="form-input" id="riskMaxDD" value="10" step="0.5">
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:0.5rem;">
+                    <button class="btn-primary" onclick="saveRiskSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ EXPERTS ═══════ -->
+        <div id="experts" class="section">
+            <!-- Bot Status -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Expert Advisor Status</span>
+                    <span class="bot-status-badge" id="botBadge">
+                        <span class="bot-pulse" id="botPulse"></span>
+                        <span id="botStatusText">Checking...</span>
+                    </span>
+                </div>
+                <div class="perf-grid" style="grid-template-columns:repeat(4,1fr);">
+                    <div class="perf-item">
+                        <div class="perf-label">EA Status</div>
+                        <div class="perf-value" id="botEAStatus" style="font-size:15px;">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Connection</div>
+                        <div class="perf-value" id="botConnection" style="font-size:15px;">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Open Trades</div>
+                        <div class="perf-value" id="botOpenTrades" style="font-size:15px;">0</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Last Heartbeat</div>
+                        <div class="perf-value" id="botLastBeat" style="font-size:15px;">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EA Downloads -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Download Expert Advisors</span></div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Download and install our proprietary EAs on your MetaTrader platform.</p>
+                <div class="ea-grid">
+                    <div class="ea-card">
+                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg></div>
+                        <div>
+                            <div class="ea-name">TierAlba EA v3.2</div>
+                            <div class="ea-meta">MetaTrader 4 · .ex4 · 245 KB</div>
+                        </div>
+                        <button class="btn-download" onclick="downloadEA('tieralba-ea-v3.2.ex4')">Download</button>
+                    </div>
+                    <div class="ea-card">
+                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg></div>
+                        <div>
+                            <div class="ea-name">TierAlba EA v3.2</div>
+                            <div class="ea-meta">MetaTrader 5 · .ex5 · 268 KB</div>
+                        </div>
+                        <button class="btn-download" onclick="downloadEA('tieralba-ea-v3.2.ex5')">Download</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Setup Guide -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Setup Guide</span></div>
+                <div class="setup-steps">
+                    <div class="setup-step">
+                        <div class="step-num">1</div>
+                        <div>
+                            <div class="step-title">Download the EA file</div>
+                            <div class="step-desc">Choose the correct version for your platform (MT4 or MT5) above.</div>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">2</div>
+                        <div>
+                            <div class="step-title">Open MetaTrader Data Folder</div>
+                            <div class="step-desc">In MetaTrader go to File → Open Data Folder → MQL4 (or MQL5) → Experts</div>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">3</div>
+                        <div>
+                            <div class="step-title">Copy the EA file</div>
+                            <div class="step-desc">Paste the downloaded .ex4/.ex5 file into the Experts folder.</div>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">4</div>
+                        <div>
+                            <div class="step-title">Restart & Attach</div>
+                            <div class="step-desc">Restart MetaTrader, find TierAlba EA in the Navigator panel, and drag it onto a chart. Enable AutoTrading.</div>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">5</div>
+                        <div>
+                            <div class="step-title">Enter your License Key</div>
+                            <div class="step-desc">When prompted, enter the license key from your Settings page to activate.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panic Button -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">Emergency Control</span></div>
+                <div style="text-align:center;padding:1.5rem 0;">
+                    <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Close all trades and stop the EA immediately</p>
+                    <button class="panic-btn" onclick="panicButton()">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:8px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        PANIC — CLOSE ALL
+                    </button>
+                    <p style="color:var(--text-3);margin-top:1rem;font-size:12px;">This action is irreversible. All open trades will be closed at market price.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ PERFORMANCE ═══════ -->
+        <div id="performance" class="section">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Detailed Statistics</span></div>
+                <div class="perf-grid" id="perfGrid">
+                    <div class="perf-item"><div class="perf-label">Total Trades</div><div class="perf-value" id="perfTotal">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Winners</div><div class="perf-value green" id="perfWins">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Losers</div><div class="perf-value red" id="perfLosses">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Win Rate</div><div class="perf-value gold" id="perfWR">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Profit Factor</div><div class="perf-value gold" id="perfPF">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Avg Profit</div><div class="perf-value green" id="perfAvg">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Best Trade</div><div class="perf-value green" id="perfBest">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Worst Trade</div><div class="perf-value red" id="perfWorst">—</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title">Drawdown</span></div>
+                <div class="chart-wrap"><canvas id="drawdownChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- ═══════ ANALYTICS ═══════ -->
+        <div id="analytics" class="section">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Trade Distribution</span></div>
+                    <div class="chart-wrap"><canvas id="distributionChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Hourly Activity</span></div>
+                    <div class="chart-wrap"><canvas id="hourlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ BROKERS ═══════ -->
+        <div id="brokers" class="section">
+            <div class="card">
+                <div class="card-header"><span class="card-title">Your Brokers</span></div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Connect your accounts to automatically sync your trades.</p>
+                <div class="broker-grid">
+                    <div class="broker-card" data-platform="mt4" onclick="openBrokerModal('MetaTrader 4','mt4')">
+                        <div class="broker-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+                        <div class="broker-name">MetaTrader 4</div>
+                        <div class="broker-status">Connect</div>
+                    </div>
+                    <div class="broker-card" data-platform="mt5" onclick="openBrokerModal('MetaTrader 5','mt5')">
+                        <div class="broker-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+                        <div class="broker-name">MetaTrader 5</div>
+                        <div class="broker-status">Connect</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ CALCULATOR ═══════ -->
+        <div id="calculator" class="section">
+            <div class="card">
+                <div class="card-header"><span class="card-title">Position Size Calculator</span></div>
+                <div class="calc-grid">
+                    <div class="form-group">
+                        <label class="form-label">Account Size (€)</label>
+                        <input type="number" class="form-input" id="calcAccount" value="10000" step="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Risk per Trade (%)</label>
+                        <input type="number" class="form-input" id="calcRisk" value="1" step="0.1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Entry Price</label>
+                        <input type="number" class="form-input" id="calcEntry" value="1.0850" step="0.0001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stop Loss</label>
+                        <input type="number" class="form-input" id="calcSL" value="1.0800" step="0.0001">
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:0.5rem;">
+                    <button class="btn-primary" onclick="calculatePosition()">Calculate Position Size</button>
+                </div>
+                <div class="calc-result" id="calcResult">
+                    <div class="calc-result-label">Optimal Position Size</div>
+                    <div class="calc-result-value" id="calcLots">0.00 Lots</div>
+                    <div style="margin-top:1rem;">
+                        <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
+                            <div class="perf-item"><div class="perf-label">Risk</div><div class="perf-value gold" id="calcRiskAmt">€0</div></div>
+                            <div class="perf-item"><div class="perf-label">Pips</div><div class="perf-value" id="calcPips">0</div></div>
+                            <div class="perf-item"><div class="perf-label">R:R 1:2</div><div class="perf-value green" id="calcProfit">€0</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ SETTINGS ═══════ -->
+        <div id="settings" class="section">
+            <div class="card">
+                <div class="card-header"><span class="card-title">Account</span></div>
+                <div class="perf-grid">
+                    <div class="perf-item"><div class="perf-label">Plan</div><div class="perf-value gold" id="settingsPlan">Free</div></div>
+                    <div class="perf-item"><div class="perf-label">Email</div><div class="perf-value" id="settingsEmail" style="font-size:14px;">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Member since</div><div class="perf-value" id="settingsDate" style="font-size:14px;">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Status</div><div class="perf-value green">Active</div></div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-header"><span class="card-title">License Key</span></div>
+                <div style="text-align:center;">
+                    <div class="referral-code">TALB-8K9X-M4R2-P7Q5</div>
+                    <br>
+                    <button class="btn-primary" onclick="copyLicense()" style="margin-top:0.75rem;">Copy Key</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Broker Modal -->
+    <div class="modal-overlay" id="brokerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Connect Broker</div>
+                <button class="modal-close" onclick="closeBrokerModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Account Number</label>
+                <input type="text" class="form-input" id="modalAccount" placeholder="Your account number">
+            </div>
+            <div class="form-group">
+                <label class="form-label">API Key</label>
+                <input type="text" class="form-input" id="modalApiKey" placeholder="Your API key">
+            </div>
+            <div class="form-group">
+                <label class="form-label">API Secret</label>
+                <input type="password" class="form-input" id="modalApiSecret" placeholder="Your API secret">
+            </div>
+            <button class="btn-primary" onclick="connectBroker()" style="width:100%;">Connect</button>
+        </div>
+    </div>
+
+<script>
+    // ══════════════════════════════════════════════
+    // CONFIG
+    // ══════════════════════════════════════════════
+    const API_URL = window.location.origin;
+    let selectedPlatform = 'mt4';
+
+    // ══════════════════════════════════════════════
+    // AUTH
+    // ══════════════════════════════════════════════
+    function getToken() { return localStorage.getItem('auth_token'); }
+    function getUserData() { try { return JSON.parse(localStorage.getItem('user_data')); } catch { return null; } }
+
+    function logout() {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        window.location.href = 'login.html';
     }
-    callback(null, true); // In production you can restrict this
-  },
-  credentials: true
-}));
 
-// Stripe webhook needs raw body - must be before express.json()
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
-  
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).json({ error: 'Invalid signature' });
-  }
+    // Auth check
+    if (!getToken()) { window.location.href = 'login.html'; }
 
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const customerEmail = session.customer_email || session.customer_details?.email;
-        const customerId = session.customer;
-        const subscriptionId = session.subscription;
+    async function apiCall(endpoint, options = {}) {
+        const token = getToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        try {
+            const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+            if (res.status === 401 || res.status === 403) { logout(); return null; }
+            return await res.json();
+        } catch (err) {
+            console.error(`API error: ${endpoint}`, err);
+            return null;
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    // NAVIGATION
+    // ══════════════════════════════════════════════
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('.section');
+    const pageTitle = document.getElementById('pageTitle');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const target = link.dataset.section;
+            const allowed = planAccess[userPlan] || planAccess.free;
+            
+            if (!allowed.includes(target)) {
+                const requiredPlan = planAccess.pro.includes(target) && !planAccess.standard.includes(target) ? 'pro' : 'standard';
+                showUpgradeModal(requiredPlan);
+                return;
+            }
+            
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            sections.forEach(s => s.classList.remove('active'));
+            document.getElementById(target)?.classList.add('active');
+            pageTitle.textContent = link.querySelector('span').textContent;
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    });
+
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    // ══════════════════════════════════════════════
+    // TOAST
+    // ══════════════════════════════════════════════
+    function toast(type, title, msg) {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<div><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div><div class="toast-close" onclick="this.parentElement.remove()">&times;</div>`;
+        container.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 4000);
+    }
+
+    // ══════════════════════════════════════════════
+    // CHARTS CONFIG
+    // ══════════════════════════════════════════════
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#1a1b25',
+                titleColor: '#c8aa6e',
+                bodyColor: '#f0ede6',
+                borderColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1,
+                padding: 10,
+                cornerRadius: 8
+            }
+        },
+        scales: {
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5c5952', font: { size: 11 } } },
+            x: { grid: { display: false }, ticks: { color: '#5c5952', font: { size: 11 } } }
+        }
+    };
+
+    let charts = {};
+
+    // ══════════════════════════════════════════════
+    // LOAD DATA
+    // ══════════════════════════════════════════════
+    async function loadDashboard() {
+        // User info
+        const user = getUserData();
+        if (user) {
+            const initials = (user.name || user.email || 'U').substring(0, 2).toUpperCase();
+            document.getElementById('userAvatar').textContent = initials;
+            document.getElementById('userName').textContent = user.name || user.email?.split('@')[0] || 'Utente';
+            document.getElementById('userEmail').textContent = user.email || '';
+            document.getElementById('settingsEmail').textContent = user.email || '—';
+        }
+
+        // Verify token
+        const me = await apiCall('/api/auth/me');
+        if (!me) return;
+
+        if (me.user?.created_at) {
+            document.getElementById('settingsDate').textContent = new Date(me.user.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        // Load stats
+        const stats = await apiCall('/api/stats');
+        if (stats) {
+            updateStats(stats);
+            updatePerf(stats);
+        }
+
+        // Load equity history
+        const equity = await apiCall('/api/equity-history?days=30');
+        if (equity?.history) drawEquityChart(equity.history);
+
+        // Load trades
+        const trades = await apiCall('/api/trades?limit=200');
+        if (trades?.trades) {
+            drawMonthlyChart(trades.trades);
+            drawAnalytics(trades.trades, stats);
+            drawDrawdown(trades.trades);
+        }
+
+        toast('success', 'Dashboard', `Welcome, ${user?.name || 'user'}!`);
+
+        // Load new features
+        updateRiskGuardian(stats);
+        updateBotStatus();
+
+        // Apply plan gating
+        const planData = await apiCall('/api/user/plan');
+        applyPlanGating(planData?.plan || me.user?.plan || 'free');
+
+        // Check for upgrade success
+        if (window.location.search.includes('upgrade=success')) {
+            toast('success', 'Upgrade Complete', 'Your plan has been upgraded!');
+            window.history.replaceState({}, '', 'index.html');
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    // UPDATE STATS
+    // ══════════════════════════════════════════════
+    function fmt(v) { return '€' + Math.round(v || 0).toLocaleString('it-IT'); }
+
+    function updateStats(s) {
+        document.getElementById('statEquity').textContent = fmt(s.equity);
+        document.getElementById('statEquityChange').textContent = s.equity > 0 ? 'Updated' : 'No data';
+        document.getElementById('statEquityChange').className = 'stat-change' + (s.equity > 0 ? ' positive' : '');
+
+        document.getElementById('statWinRate').textContent = (s.winRate || 0).toFixed(1) + '%';
+        document.getElementById('statWinRateChange').textContent = s.winRate >= 50 ? 'Good performance' : 'Needs improvement';
+        document.getElementById('statWinRateChange').className = 'stat-change' + (s.winRate >= 50 ? ' positive' : ' negative');
+
+        document.getElementById('statPF').textContent = (s.profitFactor || 0).toFixed(2);
+        const pfText = s.profitFactor >= 1.5 ? 'Excellent' : s.profitFactor >= 1 ? 'Decent' : 'At a loss';
+        document.getElementById('statPFChange').textContent = pfText;
+        document.getElementById('statPFChange').className = 'stat-change' + (s.profitFactor >= 1 ? ' positive' : ' negative');
+
+        document.getElementById('statProfit').textContent = fmt(s.totalProfit);
+        document.getElementById('statProfitChange').textContent = s.totalProfit >= 0 ? 'Profitable' : 'At a loss';
+        document.getElementById('statProfitChange').className = 'stat-change' + (s.totalProfit >= 0 ? ' positive' : ' negative');
+    }
+
+    function updatePerf(s) {
+        document.getElementById('perfTotal').textContent = s.totalTrades || 0;
+        document.getElementById('perfWins').textContent = s.winningTrades || 0;
+        document.getElementById('perfLosses').textContent = s.losingTrades || 0;
+        document.getElementById('perfWR').textContent = (s.winRate || 0).toFixed(1) + '%';
+        document.getElementById('perfPF').textContent = (s.profitFactor || 0).toFixed(2);
+        document.getElementById('perfAvg').textContent = fmt(s.avgProfit);
+        document.getElementById('perfBest').textContent = fmt(s.bestTrade);
+        document.getElementById('perfWorst').textContent = fmt(s.worstTrade);
+    }
+
+    // ══════════════════════════════════════════════
+    // CHARTS
+    // ══════════════════════════════════════════════
+    function drawEquityChart(history) {
+        const ctx = document.getElementById('equityChart');
+        if (charts.equity) charts.equity.destroy();
+        charts.equity = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: history.map(h => new Date(h.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })),
+                datasets: [{
+                    data: history.map(h => h.equity),
+                    borderColor: '#c8aa6e',
+                    backgroundColor: 'rgba(200,170,110,0.08)',
+                    borderWidth: 2, tension: 0.4, fill: true,
+                    pointRadius: 3, pointBackgroundColor: '#c8aa6e', pointBorderWidth: 0
+                }]
+            },
+            options: chartDefaults
+        });
+    }
+
+    function drawMonthlyChart(trades) {
+        const ctx = document.getElementById('monthlyChart');
+        const months = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+        const data = Array(12).fill(0);
+        trades.forEach(t => {
+            if (t.closed_at && t.profit) data[new Date(t.closed_at).getMonth()] += parseFloat(t.profit);
+        });
+        if (charts.monthly) charts.monthly.destroy();
+        charts.monthly = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    data: data.map(d => parseFloat(d.toFixed(2))),
+                    backgroundColor: data.map(d => d >= 0 ? 'rgba(92,184,122,0.7)' : 'rgba(224,82,82,0.7)'),
+                    borderRadius: 4, barPercentage: 0.6
+                }]
+            },
+            options: chartDefaults
+        });
+    }
+
+    function drawAnalytics(trades, stats) {
+        // Distribution
+        const distCtx = document.getElementById('distributionChart');
+        if (charts.dist) charts.dist.destroy();
+        charts.dist = new Chart(distCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Winners', 'Losers'],
+                datasets: [{ data: [stats?.winningTrades || 0, stats?.losingTrades || 0], backgroundColor: ['#5cb87a', '#e05252'], borderWidth: 0, spacing: 3 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { position: 'bottom', labels: { color: '#9b978f', padding: 16, font: { size: 12 }, usePointStyle: true } } }
+            }
+        });
+
+        // Hourly
+        const hourCtx = document.getElementById('hourlyChart');
+        const hourData = Array(12).fill(0);
+        trades.forEach(t => { if (t.opened_at) hourData[Math.floor(new Date(t.opened_at).getHours() / 2)]++; });
+        if (charts.hourly) charts.hourly.destroy();
+        charts.hourly = new Chart(hourCtx, {
+            type: 'bar',
+            data: {
+                labels: ['0h','2h','4h','6h','8h','10h','12h','14h','16h','18h','20h','22h'],
+                datasets: [{ data: hourData, backgroundColor: 'rgba(200,170,110,0.5)', borderRadius: 4, barPercentage: 0.5 }]
+            },
+            options: chartDefaults
+        });
+    }
+
+    function drawDrawdown(trades) {
+        const ctx = document.getElementById('drawdownChart');
+        const sorted = [...trades].filter(t => t.closed_at).sort((a, b) => new Date(a.closed_at) - new Date(b.closed_at));
+        let cum = 0, peak = 0;
+        const ddData = [], labels = [];
+        sorted.forEach(t => {
+            cum += parseFloat(t.profit) || 0;
+            if (cum > peak) peak = cum;
+            ddData.push(peak > 0 ? parseFloat(((cum - peak) / peak * 100).toFixed(2)) : 0);
+            labels.push(new Date(t.closed_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }));
+        });
+        if (charts.dd) charts.dd.destroy();
+        charts.dd = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length ? labels : ['N/D'],
+                datasets: [{ data: ddData.length ? ddData : [0], borderColor: '#e05252', backgroundColor: 'rgba(224,82,82,0.08)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0 }]
+            },
+            options: chartDefaults
+        });
+    }
+
+    // ══════════════════════════════════════════════
+    // CALCULATOR
+    // ══════════════════════════════════════════════
+    function calculatePosition() {
+        const account = parseFloat(document.getElementById('calcAccount').value);
+        const risk = parseFloat(document.getElementById('calcRisk').value);
+        const entry = parseFloat(document.getElementById('calcEntry').value);
+        const sl = parseFloat(document.getElementById('calcSL').value);
+        if (!account || !risk || !entry || !sl || entry === sl) {
+            toast('error', 'Error', 'Please fill in all fields correctly');
+            return;
+        }
+        const riskAmt = account * (risk / 100);
+        const pips = Math.abs(entry - sl) * 10000;
+        const lots = (riskAmt / (pips * 10)).toFixed(2);
+
+        document.getElementById('calcLots').textContent = lots + ' Lots';
+        document.getElementById('calcRiskAmt').textContent = '€' + riskAmt.toFixed(2);
+        document.getElementById('calcPips').textContent = pips.toFixed(1);
+        document.getElementById('calcProfit').textContent = '€' + (riskAmt * 2).toFixed(2);
+        document.getElementById('calcResult').classList.add('show');
+        toast('success', 'Calculated', `Position size: ${lots} lots`);
+    }
+
+    // ══════════════════════════════════════════════
+    // BROKER MODAL
+    // ══════════════════════════════════════════════
+    function openBrokerModal(name, platform) {
+        selectedPlatform = platform || 'mt4';
+        document.getElementById('modalTitle').textContent = 'Connect ' + name;
+        document.getElementById('brokerModal').classList.add('active');
+    }
+
+    function closeBrokerModal() {
+        document.getElementById('brokerModal').classList.remove('active');
+        document.getElementById('modalAccount').value = '';
+        document.getElementById('modalApiKey').value = '';
+        document.getElementById('modalApiSecret').value = '';
+    }
+
+    async function connectBroker() {
+        const account = document.getElementById('modalAccount').value;
+        const apiKey = document.getElementById('modalApiKey').value;
+        const apiSecret = document.getElementById('modalApiSecret').value;
+        if (!account || !apiKey || !apiSecret) { toast('error', 'Error', 'Please fill in all fields'); return; }
+
+        const res = await apiCall('/api/broker/connect', {
+            method: 'POST',
+            body: JSON.stringify({ platform: selectedPlatform, apiKey, apiSecret, accountNumber: account })
+        });
+        if (res?.success) {
+            toast('success', 'Connected', 'Broker connected successfully!');
+            closeBrokerModal();
+        } else {
+            toast('error', 'Error', res?.error || 'Connection failed');
+        }
+    }
+
+    // Close modal on overlay click
+    document.getElementById('brokerModal').addEventListener('click', function(e) {
+        if (e.target === this) closeBrokerModal();
+    });
+
+    // ══════════════════════════════════════════════
+    // COPY FUNCTIONS
+    // ══════════════════════════════════════════════
+    function copyReferral() {
+        navigator.clipboard.writeText('TIER-XR4K9M').then(() => toast('success', 'Copied', 'Referral code copied!'));
+    }
+
+    function copyLicense() {
+        navigator.clipboard.writeText('TALB-8K9X-M4R2-P7Q5').then(() => toast('success', 'Copied', 'License key copied!'));
+    }
+
+    // ══════════════════════════════════════════════
+    // RISK GUARDIAN
+    // ══════════════════════════════════════════════
+    let riskSettings = JSON.parse(localStorage.getItem('riskSettings') || '{"capital":100000,"target":10,"dailyDD":5,"maxDD":10}');
+
+    function saveRiskSettings() {
+        riskSettings = {
+            capital: parseFloat(document.getElementById('riskCapital').value) || 100000,
+            target: parseFloat(document.getElementById('riskTarget').value) || 10,
+            dailyDD: parseFloat(document.getElementById('riskDailyDD').value) || 5,
+            maxDD: parseFloat(document.getElementById('riskMaxDD').value) || 10
+        };
+        localStorage.setItem('riskSettings', JSON.stringify(riskSettings));
+        updateRiskGuardian();
+        toast('success', 'Saved', 'Challenge settings updated');
+    }
+
+    function updateRiskGuardian(stats) {
+        const s = stats || {};
+        const capital = riskSettings.capital;
+        const targetAmt = capital * (riskSettings.target / 100);
+        const profit = s.totalProfit || 0;
+        const progress = targetAmt > 0 ? Math.min((profit / targetAmt) * 100, 100) : 0;
+
+        // Challenge progress
+        document.getElementById('challengeTarget').textContent = fmt(Math.max(profit, 0)) + ' / ' + fmt(targetAmt);
+        document.getElementById('challengeProgress').style.width = Math.max(progress, 0) + '%';
+        document.getElementById('challengePercent').textContent = Math.max(progress, 0).toFixed(1) + '% completed';
+        document.getElementById('challengeProfit').textContent = fmt(profit);
+        document.getElementById('challengeStatus').textContent = profit >= targetAmt ? 'TARGET!' : profit >= 0 ? 'In Progress' : 'Caution';
+        document.getElementById('challengeStatus').className = 'perf-value ' + (profit >= targetAmt ? 'gold' : profit >= 0 ? 'green' : 'red');
+
+        // Drawdown (simulated from stats - in production would come from broker API)
+        const dailyLoss = Math.abs(Math.min(s.worstTrade || 0, 0));
+        const dailyDDPercent = capital > 0 ? (dailyLoss / capital * 100) : 0;
+        const maxDDPercent = capital > 0 ? (Math.abs(Math.min(s.totalProfit || 0, 0)) / capital * 100) : 0;
         
-        // Get subscription to determine plan
-        let plan = 'standard';
-        if (subscriptionId) {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
-          const priceId = sub.items.data[0]?.price?.id;
-          // Map price IDs to plans
-          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
-          if (proPriceIds.includes(priceId)) plan = 'pro';
+        const dailyLimit = riskSettings.dailyDD;
+        const maxLimit = riskSettings.maxDD;
+        const dailyRatio = Math.min(dailyDDPercent / dailyLimit * 100, 100);
+        const maxRatio = Math.min(maxDDPercent / maxLimit * 100, 100);
+
+        document.getElementById('ddDailyValue').textContent = dailyDDPercent.toFixed(1) + '% / ' + dailyLimit + '%';
+        document.getElementById('ddDailyBar').style.width = dailyRatio + '%';
+        document.getElementById('ddDailyBar').className = 'dd-bar-fill ' + (dailyRatio > 80 ? 'dd-danger' : dailyRatio > 50 ? 'dd-warning' : 'dd-safe');
+
+        document.getElementById('ddMaxValue').textContent = maxDDPercent.toFixed(1) + '% / ' + maxLimit + '%';
+        document.getElementById('ddMaxBar').style.width = maxRatio + '%';
+        document.getElementById('ddMaxBar').className = 'dd-bar-fill ' + (maxRatio > 80 ? 'dd-danger' : maxRatio > 50 ? 'dd-warning' : 'dd-safe');
+
+        // Badge
+        const badge = document.getElementById('ddStatusBadge');
+        if (dailyRatio > 80 || maxRatio > 80) {
+            badge.textContent = 'DANGER'; badge.className = 'dd-status-badge danger';
+        } else if (dailyRatio > 50 || maxRatio > 50) {
+            badge.textContent = 'WARNING'; badge.className = 'dd-status-badge warning';
+        } else {
+            badge.textContent = 'SAFE'; badge.className = 'dd-status-badge';
+        }
+
+        // Fill in settings form
+        document.getElementById('riskCapital').value = riskSettings.capital;
+        document.getElementById('riskTarget').value = riskSettings.target;
+        document.getElementById('riskDailyDD').value = riskSettings.dailyDD;
+        document.getElementById('riskMaxDD').value = riskSettings.maxDD;
+    }
+
+    function toggleEquityProtector() {
+        const on = document.getElementById('equityProtectorToggle').checked;
+        document.getElementById('epSettings').style.display = on ? 'block' : 'none';
+        if (on) toast('info', 'Equity Protector', 'Configure the loss limit');
+    }
+
+    function saveEquityProtector() {
+        const limit = document.getElementById('epLimit').value;
+        localStorage.setItem('equityProtectorLimit', limit);
+        toast('success', 'Protector Active', 'Will close everything if you lose more than ' + limit + '% today');
+    }
+
+    // ══════════════════════════════════════════════
+    // BOT CONTROL
+    // ══════════════════════════════════════════════
+    function updateBotStatus() {
+        // Check if broker is connected
+        apiCall('/api/broker/connections').then(data => {
+            const active = data?.connections?.find(c => c.is_active);
+            const pulse = document.getElementById('botPulse');
+            const text = document.getElementById('botStatusText');
+            
+            if (active) {
+                pulse.className = 'bot-pulse online';
+                text.textContent = 'Online';
+                document.getElementById('botEAStatus').textContent = 'Active';
+                document.getElementById('botEAStatus').className = 'perf-value green';
+                document.getElementById('botConnection').textContent = active.platform.toUpperCase();
+                document.getElementById('botConnection').className = 'perf-value green';
+                document.getElementById('botLastBeat').textContent = 'Now';
+            } else {
+                pulse.className = 'bot-pulse offline';
+                text.textContent = 'Not connected';
+                document.getElementById('botEAStatus').textContent = 'Inactive';
+                document.getElementById('botEAStatus').className = 'perf-value red';
+                document.getElementById('botConnection').textContent = 'None';
+                document.getElementById('botConnection').className = 'perf-value red';
+                document.getElementById('botLastBeat').textContent = '—';
+            }
+        });
+    }
+
+    function panicButton() {
+        if (!confirm('⚠️ WARNING!\n\nThis will CLOSE ALL open trades and stop the bot.\n\nAre you sure?')) return;
+        if (!confirm('Final confirmation: do you really want to close everything?')) return;
+        
+        // In production this would call the broker API to close all trades
+        toast('error', 'PANIC ACTIVATED', 'Command sent. All trades will be closed.');
+        document.getElementById('botOpenTrades').textContent = '0';
+        document.getElementById('botPulse').className = 'bot-pulse offline';
+        document.getElementById('botStatusText').textContent = 'Stopped';
+        document.getElementById('botEAStatus').textContent = 'Stopped';
+        document.getElementById('botEAStatus').className = 'perf-value red';
+    }
+
+    // ══════════════════════════════════════════════
+    // PLAN GATING
+    // ══════════════════════════════════════════════
+    const planAccess = {
+        free: ['overview', 'calculator', 'settings'],
+        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'settings'],
+        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'settings']
+    };
+
+    let userPlan = 'free';
+
+    function applyPlanGating(plan) {
+        userPlan = plan || 'free';
+        const allowed = planAccess[userPlan] || planAccess.free;
+        
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const section = link.dataset.section;
+            if (!section) return;
+            const locked = !allowed.includes(section);
+            link.classList.toggle('nav-locked', locked);
+            
+            // Add lock icon
+            let lockEl = link.querySelector('.lock-icon');
+            if (locked && !lockEl) {
+                lockEl = document.createElement('span');
+                lockEl.className = 'lock-icon';
+                lockEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+                link.appendChild(lockEl);
+            } else if (!locked && lockEl) {
+                lockEl.remove();
+            }
+        });
+
+        // Update plan badge in settings
+        const planEl = document.querySelector('#settingsPlan');
+        if (planEl) planEl.textContent = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
+    }
+
+    function showUpgradeModal(requiredPlan) {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            document.getElementById('upgradePlanName').textContent = requiredPlan === 'pro' ? 'Pro' : 'Standard';
+            document.getElementById('upgradePrice').textContent = requiredPlan === 'pro' ? '€89.99' : '€49.99';
+            modal.classList.add('active');
+        }
+    }
+
+    function closeUpgradeModal() {
+        document.getElementById('upgradeModal')?.classList.remove('active');
+    }
+
+    async function upgradePlan(plan) {
+        const priceIds = {
+            standard: window.STRIPE_STANDARD_PRICE_ID || '',
+            pro: window.STRIPE_PRO_PRICE_ID || ''
+        };
+        const priceId = priceIds[plan];
+        if (!priceId) {
+            // Fallback to Stripe payment links from the website
+            const links = {
+                standard: 'https://buy.stripe.com/4gM5kF3UVgRFapEci85kk0h',
+                pro: 'https://buy.stripe.com/6oU8wR0IJcBpbtI81S5kk0i'
+            };
+            window.open(links[plan], '_blank');
+            closeUpgradeModal();
+            return;
         }
         
-        // Update user
-        if (customerEmail) {
-          await pool.query(
-            'UPDATE users SET plan = $1, stripe_customer_id = $2, stripe_subscription_id = $3 WHERE LOWER(email) = LOWER($4)',
-            [plan, customerId, subscriptionId, customerEmail]
-          );
-          console.log(`✅ User ${customerEmail} upgraded to ${plan}`);
+        const res = await apiCall('/api/stripe/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ priceId })
+        });
+        if (res?.url) {
+            window.location.href = res.url;
+        } else {
+            toast('error', 'Error', 'Failed to start checkout');
         }
-        break;
-      }
-      
-      case 'customer.subscription.updated': {
-        const sub = event.data.object;
-        const status = sub.status;
-        if (status === 'active') {
-          const priceId = sub.items.data[0]?.price?.id;
-          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
-          const plan = proPriceIds.includes(priceId) ? 'pro' : 'standard';
-          await pool.query(
-            'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
-            [plan, sub.id]
-          );
+    }
+
+    async function manageSubscription() {
+        const res = await apiCall('/api/stripe/portal', { method: 'POST' });
+        if (res?.url) {
+            window.location.href = res.url;
+        } else {
+            toast('info', 'Info', 'No active subscription found');
         }
-        break;
-      }
-      
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object;
-        await pool.query(
-          'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
-          ['free', sub.id]
-        );
-        console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
-        break;
-      }
-    }
-  } catch (err) {
-    console.error('Webhook handler error:', err);
-  }
-  
-  res.json({ received: true });
-});
-
-// Body parser: permette di leggere JSON nelle richieste
-app.use(express.json());
-
-// Serve frontend static files (login.html, index.html)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Rate limiting: previene spam/attacchi
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 100, // max 100 richieste per IP
-  message: 'Troppe richieste, riprova tra 15 minuti'
-});
-app.use('/api/', limiter);
-
-// Logging richieste (utile per debug)
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// ============================================
-// MIDDLEWARE AUTENTICAZIONE
-// ============================================
-// Questa funzione verifica che l'utente sia loggato
-// controllando il token JWT
-
-const authenticateToken = (req, res, next) => {
-  // Prende il token dall'header Authorization
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
-  
-  if (!token) {
-    return res.status(401).json({ 
-      error: 'Accesso negato. Token non fornito.' 
-    });
-  }
-  
-  // Verifica che il token sia valido
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ 
-        error: 'Token non valido o scaduto' 
-      });
-    }
-    
-    // Salva l'ID utente nella richiesta per usarlo dopo
-    req.userId = user.userId;
-    next();
-  });
-};
-
-// ============================================
-// ENDPOINT: SALUTE DEL SERVER
-// ============================================
-
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    service: 'TierAlba API'
-  });
-});
-
-// ============================================
-// ENDPOINT: AUTENTICAZIONE
-// ============================================
-
-// REGISTRAZIONE NUOVO UTENTE
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { email, password, name, fullName } = req.body;
-    const userName = name || fullName || '';
-    
-    // Validazione input
-    if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Email e password sono obbligatori' 
-      });
-    }
-    
-    if (password.length < 8) {
-      return res.status(400).json({ 
-        error: 'La password deve essere di almeno 8 caratteri' 
-      });
-    }
-    
-    // Controlla se l'email esiste già
-    const existingUser = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email.toLowerCase()]
-    );
-    
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ 
-        error: 'Email già registrata' 
-      });
-    }
-    
-    // Hash della password (crittografia)
-    const passwordHash = await bcrypt.hash(password, 10);
-    
-    // Crea l'utente nel database
-    const result = await pool.query(
-      'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name, created_at',
-      [email.toLowerCase(), passwordHash, userName]
-    );
-    
-    const user = result.rows[0];
-    
-    // Genera token JWT (valido 7 giorni)
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        plan: 'free'
-      },
-      token 
-    });
-    
-  } catch (error) {
-    console.error('Errore registrazione:', error);
-    res.status(500).json({ 
-      error: 'Errore durante la registrazione' 
-    });
-  }
-});
-
-// LOGIN UTENTE
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Email e password sono obbligatori' 
-      });
-    }
-    
-    // Trova utente nel database
-    const result = await pool.query(
-      'SELECT id, email, name, password_hash, plan FROM users WHERE email = $1',
-      [email.toLowerCase()]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(401).json({ 
-        error: 'Email o password non corretti' 
-      });
-    }
-    
-    const user = result.rows[0];
-    
-    // Verifica password
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
-      return res.status(401).json({ 
-        error: 'Email o password non corretti' 
-      });
-    }
-    
-    // Genera token
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        plan: user.plan || 'free'
-      },
-      token
-    });
-    
-  } catch (error) {
-    console.error('Errore login:', error);
-    res.status(500).json({ 
-      error: 'Errore durante il login' 
-    });
-  }
-});
-
-// VERIFICA TOKEN (utile per il frontend)
-app.get('/api/auth/me', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, email, name, plan, created_at FROM users WHERE id = $1',
-      [req.userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Utente non trovato' });
-    }
-    
-    res.json({ user: result.rows[0] });
-  } catch (error) {
-    console.error('Errore verifica utente:', error);
-    res.status(500).json({ error: 'Errore server' });
-  }
-});
-
-// ============================================
-// ENDPOINT: STATISTICHE DASHBOARD
-// ============================================
-
-app.get('/api/stats', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    
-    // Ottieni l'equity più recente
-    const equityResult = await pool.query(
-      'SELECT equity FROM equity_snapshots WHERE user_id = $1 ORDER BY recorded_at DESC LIMIT 1',
-      [userId]
-    );
-    
-    // Calcola statistiche dai trade
-    const statsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_trades,
-        SUM(CASE WHEN profit > 0 THEN 1 ELSE 0 END) as winning_trades,
-        SUM(CASE WHEN profit < 0 THEN 1 ELSE 0 END) as losing_trades,
-        SUM(profit) as total_profit,
-        AVG(profit) as avg_profit,
-        MAX(profit) as best_trade,
-        MIN(profit) as worst_trade
-      FROM trades 
-      WHERE user_id = $1 AND closed_at IS NOT NULL
-    `, [userId]);
-    
-    const stats = statsResult.rows[0];
-    
-    // Calcola win rate
-    const totalTrades = parseInt(stats.total_trades) || 0;
-    const winningTrades = parseInt(stats.winning_trades) || 0;
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100) : 0;
-    
-    // Calcola profit factor
-    const winningSum = await pool.query(
-      'SELECT SUM(profit) as sum FROM trades WHERE user_id = $1 AND profit > 0',
-      [userId]
-    );
-    const losingSum = await pool.query(
-      'SELECT SUM(ABS(profit)) as sum FROM trades WHERE user_id = $1 AND profit < 0',
-      [userId]
-    );
-    
-    const profitFactor = losingSum.rows[0].sum > 0 
-      ? (winningSum.rows[0].sum / losingSum.rows[0].sum) 
-      : 0;
-    
-    res.json({
-      equity: parseFloat(equityResult.rows[0]?.equity) || 0,
-      totalTrades,
-      winningTrades,
-      losingTrades: parseInt(stats.losing_trades) || 0,
-      winRate: parseFloat(winRate.toFixed(1)),
-      profitFactor: parseFloat(profitFactor.toFixed(2)),
-      totalProfit: parseFloat(stats.total_profit) || 0,
-      avgProfit: parseFloat(stats.avg_profit) || 0,
-      bestTrade: parseFloat(stats.best_trade) || 0,
-      worstTrade: parseFloat(stats.worst_trade) || 0
-    });
-    
-  } catch (error) {
-    console.error('Errore statistiche:', error);
-    res.status(500).json({ error: 'Errore recupero statistiche' });
-  }
-});
-
-// ============================================
-// ENDPOINT: GESTIONE TRADE
-// ============================================
-
-// LISTA TRADE
-app.get('/api/trades', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
-    
-    const result = await pool.query(
-      `SELECT * FROM trades 
-       WHERE user_id = $1 
-       ORDER BY closed_at DESC NULLS FIRST
-       LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
-    );
-    
-    // Conta totale trade
-    const countResult = await pool.query(
-      'SELECT COUNT(*) FROM trades WHERE user_id = $1',
-      [userId]
-    );
-    
-    res.json({ 
-      trades: result.rows,
-      total: parseInt(countResult.rows[0].count),
-      limit,
-      offset
-    });
-    
-  } catch (error) {
-    console.error('Errore recupero trade:', error);
-    res.status(500).json({ error: 'Errore recupero trade' });
-  }
-});
-
-// AGGIUNGI TRADE MANUALMENTE
-app.post('/api/trades', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { symbol, type, lots, entryPrice, exitPrice, openedAt, closedAt } = req.body;
-    
-    // Validazione
-    if (!symbol || !type || !lots || !entryPrice) {
-      return res.status(400).json({ 
-        error: 'Campi obbligatori: symbol, type, lots, entryPrice' 
-      });
-    }
-    
-    // Calcola profit (semplificato - da adattare per simbolo)
-    let profit = 0;
-    if (exitPrice) {
-      const pipValue = 10; // Valore pip standard
-      const pips = (exitPrice - entryPrice) * 10000;
-      profit = pips * lots * pipValue * (type.toLowerCase() === 'buy' ? 1 : -1);
-    }
-    
-    const result = await pool.query(
-      `INSERT INTO trades (user_id, symbol, type, lots, entry_price, exit_price, profit, opened_at, closed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [userId, symbol, type.toUpperCase(), lots, entryPrice, exitPrice, profit, openedAt, closedAt]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      trade: result.rows[0] 
-    });
-    
-  } catch (error) {
-    console.error('Errore aggiunta trade:', error);
-    res.status(500).json({ error: 'Errore aggiunta trade' });
-  }
-});
-
-// ELIMINA TRADE
-app.delete('/api/trades/:id', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const tradeId = req.params.id;
-    
-    const result = await pool.query(
-      'DELETE FROM trades WHERE id = $1 AND user_id = $2 RETURNING id',
-      [tradeId, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Trade non trovato' });
-    }
-    
-    res.json({ success: true, message: 'Trade eliminato' });
-    
-  } catch (error) {
-    console.error('Errore eliminazione trade:', error);
-    res.status(500).json({ error: 'Errore eliminazione trade' });
-  }
-});
-
-// ============================================
-// ENDPOINT: STORICO EQUITY
-// ============================================
-
-app.get('/api/equity-history', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const days = parseInt(req.query.days) || 30;
-    
-    const result = await pool.query(
-      `SELECT equity, recorded_at 
-       FROM equity_snapshots 
-       WHERE user_id = $1 
-       AND recorded_at > NOW() - INTERVAL '1 day' * $2
-       ORDER BY recorded_at ASC`,
-      [userId, days]
-    );
-    
-    res.json({ 
-      history: result.rows.map(row => ({
-        equity: parseFloat(row.equity),
-        date: row.recorded_at
-      }))
-    });
-    
-  } catch (error) {
-    console.error('Errore storico equity:', error);
-    res.status(500).json({ error: 'Errore recupero storico' });
-  }
-});
-
-// AGGIUNGI SNAPSHOT EQUITY
-app.post('/api/equity-snapshot', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { equity } = req.body;
-    
-    if (!equity || isNaN(equity)) {
-      return res.status(400).json({ error: 'Equity non valido' });
-    }
-    
-    const result = await pool.query(
-      'INSERT INTO equity_snapshots (user_id, equity) VALUES ($1, $2) RETURNING *',
-      [userId, equity]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      snapshot: result.rows[0] 
-    });
-    
-  } catch (error) {
-    console.error('Errore snapshot equity:', error);
-    res.status(500).json({ error: 'Errore salvataggio equity' });
-  }
-});
-
-// ============================================
-// ENDPOINT: CONNESSIONE BROKER
-// ============================================
-
-app.post('/api/broker/connect', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { platform, apiKey, apiSecret, accountNumber } = req.body;
-    
-    // Validazione
-    if (!platform || !apiKey || !apiSecret || !accountNumber) {
-      return res.status(400).json({ 
-        error: 'Tutti i campi sono obbligatori' 
-      });
-    }
-    
-    if (!['mt4', 'mt5'].includes(platform.toLowerCase())) {
-      return res.status(400).json({ 
-        error: 'Piattaforma non supportata. Usa MT4 o MT5' 
-      });
-    }
-    
-    // TODO: Qui dovresti validare le credenziali con l'API MetaTrader
-    // TODO: Cripta apiKey e apiSecret prima di salvare
-    
-    // Controlla se esiste già una connessione attiva
-    const existing = await pool.query(
-      'SELECT id FROM broker_connections WHERE user_id = $1 AND is_active = true',
-      [userId]
-    );
-    
-    if (existing.rows.length > 0) {
-      // Disattiva la vecchia connessione
-      await pool.query(
-        'UPDATE broker_connections SET is_active = false WHERE user_id = $1',
-        [userId]
-      );
-    }
-    
-    // Salva nuova connessione
-    const result = await pool.query(
-      `INSERT INTO broker_connections (user_id, platform, api_key_encrypted, api_secret_encrypted, account_number, is_active)
-       VALUES ($1, $2, $3, $4, $5, true)
-       RETURNING id, platform, account_number, created_at`,
-      [userId, platform.toLowerCase(), apiKey, apiSecret, accountNumber]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      message: 'Broker connesso con successo',
-      connection: result.rows[0]
-    });
-    
-  } catch (error) {
-    console.error('Errore connessione broker:', error);
-    res.status(500).json({ error: 'Errore connessione broker' });
-  }
-});
-
-// OTTIENI CONNESSIONI BROKER
-app.get('/api/broker/connections', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    
-    const result = await pool.query(
-      `SELECT id, platform, account_number, is_active, created_at 
-       FROM broker_connections 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-    
-    res.json({ connections: result.rows });
-    
-  } catch (error) {
-    console.error('Errore recupero connessioni:', error);
-    res.status(500).json({ error: 'Errore recupero connessioni' });
-  }
-});
-
-// ============================================
-// SERVE FRONTEND per route non-API
-// ============================================
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// ============================================
-// GESTIONE ERRORI 404 (solo per API)
-// ============================================
-
-app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint non trovato',
-    path: req.path 
-  });
-});
-
-// ============================================
-// AVVIO SERVER
-// ============================================
-
-// ============================================
-// ENDPOINT: REFUND REQUESTS
-// ============================================
-
-app.post('/api/refund/request', authenticateToken, async (req, res) => {
-  try {
-    const { reason, details } = req.body;
-    if (!reason) return res.status(400).json({ error: 'Reason is required' });
-
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    // Check for existing pending request
-    const existing = await pool.query(
-      'SELECT id FROM refund_requests WHERE user_id = $1 AND status = $2',
-      [req.userId, 'pending']
-    );
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'You already have a pending refund request' });
     }
 
-    await pool.query(
-      'INSERT INTO refund_requests (user_id, email, reason, details) VALUES ($1, $2, $3, $4)',
-      [req.userId, userResult.rows[0].email, reason, details || '']
-    );
-
-    res.json({ success: true, message: 'Refund request submitted successfully' });
-  } catch (error) {
-    console.error('Refund request error:', error);
-    res.status(500).json({ error: 'Failed to submit refund request' });
-  }
-});
-
-app.get('/api/refund/status', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, reason, status, created_at, reviewed_at FROM refund_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5',
-      [req.userId]
-    );
-    res.json({ requests: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================
-// ENDPOINT: STRIPE SUBSCRIPTION
-// ============================================
-
-// Create checkout session
-app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
-  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
-  
-  try {
-    const { priceId } = req.body;
-    if (!priceId) return res.status(400).json({ error: 'Price ID required' });
-    
-    // Get user email
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      customer_email: userResult.rows[0].email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html?upgrade=success`,
-      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html?upgrade=cancelled`,
-      metadata: { userId: req.userId.toString() }
-    });
-    
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error('Stripe checkout error:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
-  }
-});
-
-// Get user plan
-app.get('/api/user/plan', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT plan, stripe_customer_id, stripe_subscription_id FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json({ plan: result.rows[0].plan || 'free' });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Stripe billing portal (manage subscription)
-app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
-  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
-  
-  try {
-    const result = await pool.query('SELECT stripe_customer_id FROM users WHERE id = $1', [req.userId]);
-    if (!result.rows[0]?.stripe_customer_id) {
-      return res.status(400).json({ error: 'No subscription found' });
+    // ══════════════════════════════════════════════
+    // THEME TOGGLE
+    // ══════════════════════════════════════════════
+    function toggleTheme() {
+        const isLight = document.body.classList.toggle('light');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        // Update icon
+        document.getElementById('themeIcon').innerHTML = isLight
+            ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+            : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
     }
-    
-    const session = await stripe.billingPortal.sessions.create({
-      customer: result.rows[0].stripe_customer_id,
-      return_url: `${req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html`
-    });
-    
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error('Portal error:', error);
-    res.status(500).json({ error: 'Failed to create portal session' });
-  }
-});
 
-// ============================================
-// AVVIO SERVER
-// ============================================
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light');
+        document.getElementById('themeIcon').innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+    }
 
-app.listen(port, () => {
-  console.log('=================================');
-  console.log('🚀 TierAlba API Server');
-  console.log('=================================');
-  console.log(`✅ Server avviato su porta ${port}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 URL: http://localhost:${port}`);
-  console.log('=================================');
-});
+    // ══════════════════════════════════════════════
+    // EA DOWNLOADS
+    // ══════════════════════════════════════════════
+    function downloadEA(filename) {
+        toast('info', 'Download', 'Preparing ' + filename + '...');
+        // In production: fetch from your server/CDN
+        // For now: show coming soon
+        setTimeout(() => {
+            toast('info', 'Coming Soon', 'EA files will be available for download shortly. Contact support for early access.');
+        }, 1000);
+    }
 
-// Gestione graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM ricevuto. Chiusura graceful...');
-  pool.end(() => {
-    console.log('Pool database chiuso');
-    process.exit(0);
-  });
-});
+    // ══════════════════════════════════════════════
+    // INIT
+    // ══════════════════════════════════════════════
+    window.addEventListener('load', loadDashboard);
+</script>
+    <!-- Upgrade Modal -->
+    <div class="modal-overlay" id="upgradeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Upgrade Required</div>
+                <button class="modal-close" onclick="closeUpgradeModal()">&times;</button>
+            </div>
+            <div style="text-align:center;padding:1rem 0;">
+                <div style="width:60px;height:60px;background:var(--gold-dim);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <p style="font-size:15px;margin-bottom:0.5rem;">This feature requires a <strong id="upgradePlanName">Standard</strong> plan.</p>
+                <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
+                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade to Standard — €49.99/mo</button>
+                <button class="btn-primary" onclick="upgradePlan('pro')" style="width:100%;background:linear-gradient(135deg, #2a6b4a, #3a8a5c);">Upgrade to Pro — €89.99/mo</button>
+                <p style="font-size:11px;color:var(--text-3);margin-top:1rem;">7-day money-back guarantee · Cancel anytime</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Stripe Price IDs (set these via environment or here)
+    // window.STRIPE_STANDARD_PRICE_ID = 'price_xxx';
+    // window.STRIPE_PRO_PRICE_ID = 'price_xxx';
+</script>
+</body>
+</html>
