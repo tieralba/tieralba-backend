@@ -21,6 +21,10 @@ const rateLimit = require('express-rate-limit');
 // Stripe (optional - only if STRIPE_SECRET_KEY is set)
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
+// Resend (email - optional)
+const { Resend } = process.env.RESEND_API_KEY ? require('resend') : { Resend: null };
+const resend = Resend ? new Resend(process.env.RESEND_API_KEY) : null;
+
 // ============================================
 // CONFIGURAZIONE SERVER
 // ============================================
@@ -217,43 +221,83 @@ app.post('/api/auth/register', async (req, res) => {
     const { email, password, name, fullName } = req.body;
     const userName = name || fullName || '';
     
-    // Validazione input
     if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Email e password sono obbligatori' 
-      });
+      return res.status(400).json({ error: 'Email and password are required' });
     }
     
     if (password.length < 8) {
-      return res.status(400).json({ 
-        error: 'La password deve essere di almeno 8 caratteri' 
-      });
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
     
-    // Controlla se l'email esiste già
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
     
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ 
-        error: 'Email già registrata' 
-      });
+      return res.status(400).json({ error: 'Email already registered' });
     }
     
-    // Hash della password (crittografia)
     const passwordHash = await bcrypt.hash(password, 10);
     
-    // Crea l'utente nel database
+    // Generate email verification token
+    const crypto = require('crypto');
+    const verifyToken = crypto.randomBytes(32).toString('hex');
+    
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name, created_at',
-      [email.toLowerCase(), passwordHash, userName]
+      'INSERT INTO users (email, password_hash, name, verify_token, email_verified) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, created_at',
+      [email.toLowerCase(), passwordHash, userName, verifyToken, false]
     );
     
     const user = result.rows[0];
     
-    // Genera token JWT (valido 7 giorni)
+    // Send welcome + verification email
+    const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
+    const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyToken}`;
+    
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          to: [email.toLowerCase()],
+          subject: 'Welcome to TierAlba — Verify Your Email',
+          html: `
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
+              <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <h1 style="margin:0;font-size:24px;color:#c8aa6e;letter-spacing:-0.3px;">TierAlba</h1>
+              </div>
+              <div style="padding:40px;">
+                <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Welcome${userName ? ', ' + userName : ''}!</h2>
+                <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                  Thank you for joining TierAlba. Your trading dashboard is ready.
+                </p>
+                <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 32px;">
+                  Please verify your email address to unlock all features:
+                </p>
+                <div style="text-align:center;margin:0 0 32px;">
+                  <a href="${verifyUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;text-transform:uppercase;letter-spacing:1.2px;">
+                    Verify Email
+                  </a>
+                </div>
+                <p style="color:#5c5952;font-size:12px;margin:0;">
+                  Or copy this link: ${verifyUrl}
+                </p>
+              </div>
+              <div style="background:#12131a;padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);">
+                <p style="color:#5c5952;font-size:12px;margin:0;text-align:center;">
+                  © ${new Date().getFullYear()} TierAlba · Trading involves risk
+                </p>
+              </div>
+            </div>
+          `
+        });
+        console.log(`✅ Welcome email sent to ${email}`);
+      } catch (emailErr) {
+        console.error('Email send error:', emailErr);
+        // Don't fail registration if email fails
+      }
+    }
+    
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
@@ -272,10 +316,8 @@ app.post('/api/auth/register', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore registrazione:', error);
-    res.status(500).json({ 
-      error: 'Errore durante la registrazione' 
-    });
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -354,6 +396,45 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Errore verifica utente:', error);
     res.status(500).json({ error: 'Errore server' });
+  }
+});
+
+// EMAIL VERIFICATION
+app.get('/api/auth/verify', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).send('Invalid verification link');
+    
+    const result = await pool.query(
+      'UPDATE users SET email_verified = true, verify_token = NULL WHERE verify_token = $1 RETURNING email',
+      [token]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.send(`
+        <html><body style="font-family:sans-serif;background:#0a0b0f;color:#f0ede6;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
+          <div style="text-align:center;">
+            <h1 style="color:#e05252;">Invalid or Expired Link</h1>
+            <p style="color:#9b978f;">This verification link is no longer valid.</p>
+            <a href="/login.html" style="color:#c8aa6e;">Go to Login</a>
+          </div>
+        </body></html>
+      `);
+    }
+    
+    res.send(`
+      <html><body style="font-family:sans-serif;background:#0a0b0f;color:#f0ede6;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
+        <div style="text-align:center;">
+          <div style="font-size:48px;margin-bottom:16px;">✅</div>
+          <h1 style="color:#c8aa6e;">Email Verified!</h1>
+          <p style="color:#9b978f;">Your email <strong>${result.rows[0].email}</strong> has been verified successfully.</p>
+          <a href="/login.html" style="display:inline-block;margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:8px;">Go to Dashboard</a>
+        </div>
+      </body></html>
+    `);
+  } catch (error) {
+    console.error('Verification error:', error);
+    res.status(500).send('Verification failed');
   }
 });
 
