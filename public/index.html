@@ -102,6 +102,10 @@
             background: var(--gold-dim);
         }
 
+        .nav-link.nav-locked { opacity: 0.4; }
+        .nav-link.nav-locked:hover { opacity: 0.6; }
+        .lock-icon { margin-left: auto; opacity: 0.5; display: flex; }
+
         .nav-icon {
             width: 20px; height: 20px;
             display: flex; align-items: center; justify-content: center;
@@ -1254,21 +1258,6 @@
                         <div class="broker-name">MetaTrader 5</div>
                         <div class="broker-status">Connect</div>
                     </div>
-                    <div class="broker-card" onclick="openBrokerModal('FTMO','mt5')">
-                        <div class="broker-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-                        <div class="broker-name">FTMO</div>
-                        <div class="broker-status">Connect</div>
-                    </div>
-                    <div class="broker-card" onclick="openBrokerModal('The5ers','mt5')">
-                        <div class="broker-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-                        <div class="broker-name">The5ers</div>
-                        <div class="broker-status">Connect</div>
-                    </div>
-                    <div class="broker-card" onclick="openBrokerModal('FundedNext','mt5')">
-                        <div class="broker-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-                        <div class="broker-name">FundedNext</div>
-                        <div class="broker-status">Connect</div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1317,7 +1306,7 @@
             <div class="card">
                 <div class="card-header"><span class="card-title">Account</span></div>
                 <div class="perf-grid">
-                    <div class="perf-item"><div class="perf-label">Plan</div><div class="perf-value gold">Pro</div></div>
+                    <div class="perf-item"><div class="perf-label">Plan</div><div class="perf-value gold" id="settingsPlan">Free</div></div>
                     <div class="perf-item"><div class="perf-label">Email</div><div class="perf-value" id="settingsEmail" style="font-size:14px;">—</div></div>
                     <div class="perf-item"><div class="perf-label">Member since</div><div class="perf-value" id="settingsDate" style="font-size:14px;">—</div></div>
                     <div class="perf-item"><div class="perf-label">Status</div><div class="perf-value green">Active</div></div>
@@ -1402,10 +1391,18 @@
 
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
+            const target = link.dataset.section;
+            const allowed = planAccess[userPlan] || planAccess.free;
+            
+            if (!allowed.includes(target)) {
+                const requiredPlan = planAccess.pro.includes(target) && !planAccess.standard.includes(target) ? 'pro' : 'standard';
+                showUpgradeModal(requiredPlan);
+                return;
+            }
+            
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             sections.forEach(s => s.classList.remove('active'));
-            const target = link.dataset.section;
             document.getElementById(target)?.classList.add('active');
             pageTitle.textContent = link.querySelector('span').textContent;
             document.getElementById('sidebar').classList.remove('open');
@@ -1500,6 +1497,16 @@
         // Load new features
         updateRiskGuardian(stats);
         updateBotStatus();
+
+        // Apply plan gating
+        const planData = await apiCall('/api/user/plan');
+        applyPlanGating(planData?.plan || me.user?.plan || 'free');
+
+        // Check for upgrade success
+        if (window.location.search.includes('upgrade=success')) {
+            toast('success', 'Upgrade Complete', 'Your plan has been upgraded!');
+            window.history.replaceState({}, '', 'index.html');
+        }
     }
 
     // ══════════════════════════════════════════════
@@ -1832,6 +1839,94 @@
     }
 
     // ══════════════════════════════════════════════
+    // PLAN GATING
+    // ══════════════════════════════════════════════
+    const planAccess = {
+        free: ['overview', 'calculator', 'settings'],
+        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'settings'],
+        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'settings']
+    };
+
+    let userPlan = 'free';
+
+    function applyPlanGating(plan) {
+        userPlan = plan || 'free';
+        const allowed = planAccess[userPlan] || planAccess.free;
+        
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const section = link.dataset.section;
+            if (!section) return;
+            const locked = !allowed.includes(section);
+            link.classList.toggle('nav-locked', locked);
+            
+            // Add lock icon
+            let lockEl = link.querySelector('.lock-icon');
+            if (locked && !lockEl) {
+                lockEl = document.createElement('span');
+                lockEl.className = 'lock-icon';
+                lockEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+                link.appendChild(lockEl);
+            } else if (!locked && lockEl) {
+                lockEl.remove();
+            }
+        });
+
+        // Update plan badge in settings
+        const planEl = document.querySelector('#settingsPlan');
+        if (planEl) planEl.textContent = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
+    }
+
+    function showUpgradeModal(requiredPlan) {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            document.getElementById('upgradePlanName').textContent = requiredPlan === 'pro' ? 'Pro' : 'Standard';
+            document.getElementById('upgradePrice').textContent = requiredPlan === 'pro' ? '€89.99' : '€49.99';
+            modal.classList.add('active');
+        }
+    }
+
+    function closeUpgradeModal() {
+        document.getElementById('upgradeModal')?.classList.remove('active');
+    }
+
+    async function upgradePlan(plan) {
+        const priceIds = {
+            standard: window.STRIPE_STANDARD_PRICE_ID || '',
+            pro: window.STRIPE_PRO_PRICE_ID || ''
+        };
+        const priceId = priceIds[plan];
+        if (!priceId) {
+            // Fallback to Stripe payment links from the website
+            const links = {
+                standard: 'https://buy.stripe.com/4gM5kF3UVgRFapEci85kk0h',
+                pro: 'https://buy.stripe.com/6oU8wR0IJcBpbtI81S5kk0i'
+            };
+            window.open(links[plan], '_blank');
+            closeUpgradeModal();
+            return;
+        }
+        
+        const res = await apiCall('/api/stripe/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ priceId })
+        });
+        if (res?.url) {
+            window.location.href = res.url;
+        } else {
+            toast('error', 'Error', 'Failed to start checkout');
+        }
+    }
+
+    async function manageSubscription() {
+        const res = await apiCall('/api/stripe/portal', { method: 'POST' });
+        if (res?.url) {
+            window.location.href = res.url;
+        } else {
+            toast('info', 'Info', 'No active subscription found');
+        }
+    }
+
+    // ══════════════════════════════════════════════
     // THEME TOGGLE
     // ══════════════════════════════════════════════
     function toggleTheme() {
@@ -1865,6 +1960,31 @@
     // INIT
     // ══════════════════════════════════════════════
     window.addEventListener('load', loadDashboard);
+</script>
+    <!-- Upgrade Modal -->
+    <div class="modal-overlay" id="upgradeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Upgrade Required</div>
+                <button class="modal-close" onclick="closeUpgradeModal()">&times;</button>
+            </div>
+            <div style="text-align:center;padding:1rem 0;">
+                <div style="width:60px;height:60px;background:var(--gold-dim);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <p style="font-size:15px;margin-bottom:0.5rem;">This feature requires a <strong id="upgradePlanName">Standard</strong> plan.</p>
+                <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
+                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade to Standard — €49.99/mo</button>
+                <button class="btn-primary" onclick="upgradePlan('pro')" style="width:100%;background:linear-gradient(135deg, #2a6b4a, #3a8a5c);">Upgrade to Pro — €89.99/mo</button>
+                <p style="font-size:11px;color:var(--text-3);margin-top:1rem;">7-day money-back guarantee · Cancel anytime</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Stripe Price IDs (set these via environment or here)
+    // window.STRIPE_STANDARD_PRICE_ID = 'price_xxx';
+    // window.STRIPE_PRO_PRICE_ID = 'price_xxx';
 </script>
 </body>
 </html>
