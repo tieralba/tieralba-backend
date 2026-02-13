@@ -689,6 +689,51 @@ app.use((req, res) => {
 // ============================================
 
 // ============================================
+// ENDPOINT: REFUND REQUESTS
+// ============================================
+
+app.post('/api/refund/request', authenticateToken, async (req, res) => {
+  try {
+    const { reason, details } = req.body;
+    if (!reason) return res.status(400).json({ error: 'Reason is required' });
+
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    // Check for existing pending request
+    const existing = await pool.query(
+      'SELECT id FROM refund_requests WHERE user_id = $1 AND status = $2',
+      [req.userId, 'pending']
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'You already have a pending refund request' });
+    }
+
+    await pool.query(
+      'INSERT INTO refund_requests (user_id, email, reason, details) VALUES ($1, $2, $3, $4)',
+      [req.userId, userResult.rows[0].email, reason, details || '']
+    );
+
+    res.json({ success: true, message: 'Refund request submitted successfully' });
+  } catch (error) {
+    console.error('Refund request error:', error);
+    res.status(500).json({ error: 'Failed to submit refund request' });
+  }
+});
+
+app.get('/api/refund/status', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, reason, status, created_at, reviewed_at FROM refund_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5',
+      [req.userId]
+    );
+    res.json({ requests: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ============================================
 // ENDPOINT: STRIPE SUBSCRIPTION
 // ============================================
 
