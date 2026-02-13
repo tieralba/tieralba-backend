@@ -688,63 +688,6 @@ app.post('/api/broker/connect', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'MetaApi not configured' });
     }
 
-    // ✅ CORREZIONE: Rimuovi connectionStatus e accessToken dal body
-    const metaApiRes = await fetch('https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'auth-token': metaApiToken  // ✅ Token va SOLO nell'header
-      },
-      body: JSON.stringify({
-        name: `TierAlba-${accountNumber}`,
-        type: 'cloud',
-        login: accountNumber,
-        password: investorPassword,
-        server: brokerName,
-        platform: platform.toLowerCase(),
-        magic: 0
-        // ❌ RIMOSSI: connectionStatus e accessToken
-      })
-    });
-
-    const metaAccount = await metaApiRes.json();
-    
-    if (metaAccount.error || !metaAccount.id) {
-      console.error('MetaApi error:', metaAccount);
-      return res.status(400).json({ 
-        error: metaAccount.message || 'Failed to connect. Check your credentials and broker server name.' 
-      });
-    }
-
-    // Deploy the account
-    await fetch(`https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${metaAccount.id}/deploy`, {
-      method: 'POST',
-      headers: { 'auth-token': metaApiToken }
-    });
-
-    // Deactivate old connections
-    await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [userId]);
-    
-    // Save new connection
-    const result = await pool.query(
-      `INSERT INTO broker_connections (user_id, platform, account_number, broker_name, metaapi_account_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, true)
-       RETURNING id, platform, account_number, broker_name, created_at`,
-      [userId, platform.toLowerCase(), accountNumber, brokerName, metaAccount.id]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      message: 'Account connected successfully! Syncing data...',
-      connection: result.rows[0]
-    });
-    
-  } catch (error) {
-    console.error('Broker connect error:', error);
-    res.status(500).json({ error: 'Failed to connect broker' });
-  }
-});
-
     // Create MetaApi account via REST API
     const metaApiRes = await fetch('https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts', {
       method: 'POST',
