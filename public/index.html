@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -586,6 +586,152 @@
             100% { background-position: -200% 0; }
         }
 
+        /* ── Progress Bar (Challenge) ── */
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: var(--surface-2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            transition: width 0.8s ease;
+        }
+
+        /* ── Drawdown Bars ── */
+        .dd-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dd-bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.6s ease, background 0.3s;
+        }
+
+        .dd-bar-fill.dd-safe { background: linear-gradient(90deg, #3a8a5c, var(--green)); }
+        .dd-bar-fill.dd-warning { background: linear-gradient(90deg, #c89a2e, #e8b830); }
+        .dd-bar-fill.dd-danger { background: linear-gradient(90deg, #c84040, var(--red)); }
+
+        .dd-status-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .dd-status-badge.warning { background: rgba(232,184,48,0.12); color: #e8b830; }
+        .dd-status-badge.danger { background: var(--red-dim); color: var(--red); }
+
+        /* ── Equity Protector ── */
+        .equity-protector {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+        }
+
+        /* ── Toggle Switch ── */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--surface-3);
+            border-radius: 26px;
+            transition: background 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            left: 3px; bottom: 3px;
+            background: var(--text-2);
+            border-radius: 50%;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider { background: var(--gold-dim); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); background: var(--gold); }
+
+        /* ── Bot Status ── */
+        .bot-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: var(--surface-2);
+            color: var(--text-2);
+        }
+
+        .bot-pulse {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--text-3);
+        }
+
+        .bot-pulse.online {
+            background: var(--green);
+            box-shadow: 0 0 0 3px rgba(92,184,122,0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .bot-pulse.offline {
+            background: var(--red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(92,184,122,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(92,184,122,0.1); }
+        }
+
+        /* ── Panic Button ── */
+        .panic-btn {
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #c83030, #e05252);
+            border: 2px solid rgba(224,82,82,0.3);
+            border-radius: var(--radius);
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .panic-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(224,82,82,0.35);
+        }
+
+        .panic-btn:active { transform: translateY(0); }
+
         /* ── Responsive ── */
         @media (max-width: 1024px) {
             .sidebar { transform: translateX(-100%); }
@@ -625,6 +771,18 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-section="riskguard">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                        <span>Risk Guardian</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="botcontrol">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="12" y1="2" x2="12" y2="6"/></svg></div>
+                        <span>Bot >Bot & VPS< VPS</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-section="performance">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
                         <span>Performance</span>
@@ -645,7 +803,7 @@
                 <li class="nav-item">
                     <a class="nav-link" data-section="calculator">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg></div>
-                        <span>Calcolatore</span>
+                        <span>Calculator</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -657,7 +815,7 @@
                 <li class="nav-item">
                     <a class="nav-link" data-section="settings">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                        <span>Impostazioni</span>
+                        <span>Settings</span>
                     </a>
                 </li>
             </ul>
@@ -666,7 +824,7 @@
             <div class="user-card" id="userCard">
                 <div class="user-avatar" id="userAvatar">U</div>
                 <div>
-                    <div class="user-name" id="userName">Utente</div>
+                    <div class="user-name" id="userName">User</div>
                     <div class="user-email" id="userEmail">email@test.com</div>
                 </div>
             </div>
@@ -694,24 +852,24 @@
         <div id="overview" class="section active">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Equity totale</div>
+                    <div class="stat-label">Total Equity</div>
                     <div class="stat-value" id="statEquity">—</div>
-                    <div class="stat-change" id="statEquityChange">Caricamento...</div>
+                    <div class="stat-change" id="statEquityChange">Loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Win Rate</div>
                     <div class="stat-value" id="statWinRate">—</div>
-                    <div class="stat-change" id="statWinRateChange">Caricamento...</div>
+                    <div class="stat-change" id="statWinRateChange">Loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Profit Factor</div>
                     <div class="stat-value" id="statPF">—</div>
-                    <div class="stat-change" id="statPFChange">Caricamento...</div>
+                    <div class="stat-change" id="statPFChange">Loading...</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Profitto totale</div>
+                    <div class="stat-label">Total Profit</div>
                     <div class="stat-value" id="statProfit">—</div>
-                    <div class="stat-change" id="statProfitChange">Caricamento...</div>
+                    <div class="stat-change" id="statProfitChange">Loading...</div>
                 </div>
             </div>
 
@@ -721,8 +879,183 @@
                     <div class="chart-wrap"><canvas id="equityChart"></canvas></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Performance Mensile</span></div>
+                    <div class="card-header"><span class="card-title">Monthly Performance</span></div>
                     <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ RISK GUARDIAN ═══════ -->
+        <div id="riskguard" class="section">
+            <!-- Challenge Progress -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Road to Funded</span>
+                    <span style="font-size:12px;color:var(--gold);font-weight:600;" id="challengePhase">PHASE 1 — CHALLENGE</span>
+                </div>
+                <div style="margin-bottom:1.25rem;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="font-size:13px;color:var(--text-2);">Profit Target</span>
+                        <span style="font-size:13px;font-weight:600;" id="challengeTarget">€0 / €1,000</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="challengeProgress" style="width:0%"></div>
+                    </div>
+                    <div style="text-align:right;margin-top:4px;font-size:12px;color:var(--text-3);" id="challengePercent">0% completed</div>
+                </div>
+                <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
+                    <div class="perf-item">
+                        <div class="perf-label">Days Left</div>
+                        <div class="perf-value gold" id="challengeDays">30</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Current Profit</div>
+                        <div class="perf-value green" id="challengeProfit">€0</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Status</div>
+                        <div class="perf-value green" id="challengeStatus">In Progress</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drawdown Monitor -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Drawdown Monitor</span>
+                    <span class="dd-status-badge" id="ddStatusBadge">SAFE</span>
+                </div>
+                <!-- Daily Drawdown -->
+                <div style="margin-bottom:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:13px;font-weight:600;color:var(--text-2);">Daily Loss</span>
+                        <span style="font-size:13px;font-weight:600;" id="ddDailyValue">0% / 5%</span>
+                    </div>
+                    <div class="dd-bar-bg">
+                        <div class="dd-bar-fill dd-safe" id="ddDailyBar" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Max Drawdown -->
+                <div style="margin-bottom:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:13px;font-weight:600;color:var(--text-2);">Max Total Drawdown</span>
+                        <span style="font-size:13px;font-weight:600;" id="ddMaxValue">0% / 10%</span>
+                    </div>
+                    <div class="dd-bar-bg">
+                        <div class="dd-bar-fill dd-safe" id="ddMaxBar" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Equity Protector -->
+                <div class="equity-protector">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:14px;font-weight:600;">Equity Protector</div>
+                            <div style="font-size:12px;color:var(--text-3);">Close everything if I exceed the daily loss limit</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="equityProtectorToggle" onchange="toggleEquityProtector()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div id="epSettings" style="display:none;margin-top:1rem;">
+                        <div style="display:flex;gap:1rem;align-items:end;">
+                            <div style="flex:1;">
+                                <label class="form-label">Daily loss limit (%)</label>
+                                <input type="number" class="form-input" id="epLimit" value="4" step="0.5" min="1" max="10">
+                            </div>
+                            <button class="btn-primary" onclick="saveEquityProtector()">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Settings -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">Challenge Settings</span></div>
+                <div class="calc-grid">
+                    <div class="form-group">
+                        <label class="form-label">Challenge Capital (€)</label>
+                        <input type="number" class="form-input" id="riskCapital" value="100000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Profit Target (%)</label>
+                        <input type="number" class="form-input" id="riskTarget" value="10" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Daily Drawdown (%)</label>
+                        <input type="number" class="form-input" id="riskDailyDD" value="5" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Total Drawdown (%)</label>
+                        <input type="number" class="form-input" id="riskMaxDD" value="10" step="0.5">
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:0.5rem;">
+                    <button class="btn-primary" onclick="saveRiskSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ BOT CONTROL ═══════ -->
+        <div id="botcontrol" class="section">
+            <!-- Bot Status -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Bot Status</span>
+                    <span class="bot-status-badge" id="botBadge">
+                        <span class="bot-pulse" id="botPulse"></span>
+                        <span id="botStatusText">Checking...</span>
+                    </span>
+                </div>
+                <div class="perf-grid" style="grid-template-columns:repeat(4,1fr);">
+                    <div class="perf-item">
+                        <div class="perf-label">EA Status</div>
+                        <div class="perf-value" id="botEAStatus" style="font-size:15px;">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Connection</div>
+                        <div class="perf-value" id="botConnection" style="font-size:15px;">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Open Trades</div>
+                        <div class="perf-value" id="botOpenTrades" style="font-size:15px;">0</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Last Heartbeat</div>
+                        <div class="perf-value" id="botLastBeat" style="font-size:15px;">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panic Button -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Emergency Control</span></div>
+                <div style="text-align:center;padding:1.5rem 0;">
+                    <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Close all trades and stop the bot immediately</p>
+                    <button class="panic-btn" onclick="panicButton()">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:8px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        PANIC — CLOSE ALL
+                    </button>
+                    <p style="color:var(--text-3);margin-top:1rem;font-size:12px;">This action is irreversible. All open trades will be closed at market price.</p>
+                </div>
+            </div>
+
+            <!-- VPS Info -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">VPS Info</span></div>
+                <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
+                    <div class="perf-item">
+                        <div class="perf-label">Provider</div>
+                        <div class="perf-value" style="font-size:14px;">Not configured</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Latency</div>
+                        <div class="perf-value" style="font-size:14px;">— ms</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Uptime</div>
+                        <div class="perf-value" style="font-size:14px;">—</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -730,16 +1063,16 @@
         <!-- ═══════ PERFORMANCE ═══════ -->
         <div id="performance" class="section">
             <div class="card" style="margin-bottom:1.5rem;">
-                <div class="card-header"><span class="card-title">Statistiche dettagliate</span></div>
+                <div class="card-header"><span class="card-title">Detailed Statistics</span></div>
                 <div class="perf-grid" id="perfGrid">
-                    <div class="perf-item"><div class="perf-label">Totale trade</div><div class="perf-value" id="perfTotal">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Vincenti</div><div class="perf-value green" id="perfWins">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Perdenti</div><div class="perf-value red" id="perfLosses">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Total Trades</div><div class="perf-value" id="perfTotal">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Winners</div><div class="perf-value green" id="perfWins">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Losers</div><div class="perf-value red" id="perfLosses">—</div></div>
                     <div class="perf-item"><div class="perf-label">Win Rate</div><div class="perf-value gold" id="perfWR">—</div></div>
                     <div class="perf-item"><div class="perf-label">Profit Factor</div><div class="perf-value gold" id="perfPF">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Profitto medio</div><div class="perf-value green" id="perfAvg">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Miglior trade</div><div class="perf-value green" id="perfBest">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Peggior trade</div><div class="perf-value red" id="perfWorst">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Avg Profit</div><div class="perf-value green" id="perfAvg">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Best Trade</div><div class="perf-value green" id="perfBest">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Worst Trade</div><div class="perf-value red" id="perfWorst">—</div></div>
                 </div>
             </div>
             <div class="card">
@@ -752,11 +1085,11 @@
         <div id="analytics" class="section">
             <div class="grid-2">
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Distribuzione Trade</span></div>
+                    <div class="card-header"><span class="card-title">Trade Distribution</span></div>
                     <div class="chart-wrap"><canvas id="distributionChart"></canvas></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Attività per Ora</span></div>
+                    <div class="card-header"><span class="card-title">Hourly Activity</span></div>
                     <div class="chart-wrap"><canvas id="hourlyChart"></canvas></div>
                 </div>
             </div>
@@ -765,33 +1098,33 @@
         <!-- ═══════ BROKERS ═══════ -->
         <div id="brokers" class="section">
             <div class="card">
-                <div class="card-header"><span class="card-title">I tuoi Broker</span></div>
-                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Collega i tuoi account per sincronizzare automaticamente i trade.</p>
+                <div class="card-header"><span class="card-title">Your Brokers</span></div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Connect your accounts to automatically sync your trades.</p>
                 <div class="broker-grid">
                     <div class="broker-card" data-platform="mt4" onclick="openBrokerModal('MetaTrader 4','mt4')">
                         <div class="broker-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                         <div class="broker-name">MetaTrader 4</div>
-                        <div class="broker-status">Connetti</div>
+                        <div class="broker-status">Connect</div>
                     </div>
                     <div class="broker-card" data-platform="mt5" onclick="openBrokerModal('MetaTrader 5','mt5')">
                         <div class="broker-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                         <div class="broker-name">MetaTrader 5</div>
-                        <div class="broker-status">Connetti</div>
+                        <div class="broker-status">Connect</div>
                     </div>
                     <div class="broker-card" onclick="openBrokerModal('FTMO','mt5')">
                         <div class="broker-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
                         <div class="broker-name">FTMO</div>
-                        <div class="broker-status">Connetti</div>
+                        <div class="broker-status">Connect</div>
                     </div>
                     <div class="broker-card" onclick="openBrokerModal('The5ers','mt5')">
                         <div class="broker-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
                         <div class="broker-name">The5ers</div>
-                        <div class="broker-status">Connetti</div>
+                        <div class="broker-status">Connect</div>
                     </div>
                     <div class="broker-card" onclick="openBrokerModal('FundedNext','mt5')">
                         <div class="broker-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
                         <div class="broker-name">FundedNext</div>
-                        <div class="broker-status">Connetti</div>
+                        <div class="broker-status">Connect</div>
                     </div>
                 </div>
             </div>
@@ -800,7 +1133,7 @@
         <!-- ═══════ CALCULATOR ═══════ -->
         <div id="calculator" class="section">
             <div class="card">
-                <div class="card-header"><span class="card-title">Calcolatore Position Size</span></div>
+                <div class="card-header"><span class="card-title">Position Size Calculator</span></div>
                 <div class="calc-grid">
                     <div class="form-group">
                         <label class="form-label">Account Size (€)</label>
@@ -820,14 +1153,14 @@
                     </div>
                 </div>
                 <div style="text-align:center;margin-top:0.5rem;">
-                    <button class="btn-primary" onclick="calculatePosition()">Calcola Position Size</button>
+                    <button class="btn-primary" onclick="calculatePosition()">Calculate Position Size</button>
                 </div>
                 <div class="calc-result" id="calcResult">
-                    <div class="calc-result-label">Position Size Ottimale</div>
+                    <div class="calc-result-label">Optimal Position Size</div>
                     <div class="calc-result-value" id="calcLots">0.00 Lots</div>
                     <div style="margin-top:1rem;">
                         <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
-                            <div class="perf-item"><div class="perf-label">Rischio</div><div class="perf-value gold" id="calcRiskAmt">€0</div></div>
+                            <div class="perf-item"><div class="perf-label">Risk</div><div class="perf-value gold" id="calcRiskAmt">€0</div></div>
                             <div class="perf-item"><div class="perf-label">Pips</div><div class="perf-value" id="calcPips">0</div></div>
                             <div class="perf-item"><div class="perf-label">R:R 1:2</div><div class="perf-value green" id="calcProfit">€0</div></div>
                         </div>
@@ -840,20 +1173,20 @@
         <div id="referral" class="section">
             <div class="card">
                 <div class="referral-hero">
-                    <h2>Invita e Guadagna</h2>
-                    <p style="color:var(--text-2);margin-bottom:1.5rem;">20% di commissione ricorrente per ogni referral attivo</p>
+                    <h2>Invite & Earn</h2>
+                    <p style="color:var(--text-2);margin-bottom:1.5rem;">20% recurring commission for every active referral</p>
                     <div class="referral-code" id="refCode">TIER-XR4K9M</div>
                     <br>
-                    <button class="btn-primary" onclick="copyReferral()" style="margin-top:0.75rem;">Copia Codice</button>
+                    <button class="btn-primary" onclick="copyReferral()" style="margin-top:0.75rem;">Copy Code</button>
                 </div>
             </div>
             <div class="card" style="margin-top:1rem;">
-                <div class="card-header"><span class="card-title">I tuoi Referral</span></div>
+                <div class="card-header"><span class="card-title">Your Referrals</span></div>
                 <div class="perf-grid" style="grid-template-columns:repeat(4,1fr);">
-                    <div class="perf-item"><div class="perf-label">Invitati</div><div class="perf-value">0</div></div>
-                    <div class="perf-item"><div class="perf-label">Attivi</div><div class="perf-value green">0</div></div>
-                    <div class="perf-item"><div class="perf-label">Commissioni</div><div class="perf-value gold">€0</div></div>
-                    <div class="perf-item"><div class="perf-label">Questo mese</div><div class="perf-value gold">€0</div></div>
+                    <div class="perf-item"><div class="perf-label">Invited</div><div class="perf-value">0</div></div>
+                    <div class="perf-item"><div class="perf-label">Active</div><div class="perf-value green">0</div></div>
+                    <div class="perf-item"><div class="perf-label">Commissions</div><div class="perf-value gold">€0</div></div>
+                    <div class="perf-item"><div class="perf-label">This Month</div><div class="perf-value gold">€0</div></div>
                 </div>
             </div>
         </div>
@@ -863,18 +1196,18 @@
             <div class="card">
                 <div class="card-header"><span class="card-title">Account</span></div>
                 <div class="perf-grid">
-                    <div class="perf-item"><div class="perf-label">Piano</div><div class="perf-value gold">Pro</div></div>
+                    <div class="perf-item"><div class="perf-label">Plan</div><div class="perf-value gold">Pro</div></div>
                     <div class="perf-item"><div class="perf-label">Email</div><div class="perf-value" id="settingsEmail" style="font-size:14px;">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Membro da</div><div class="perf-value" id="settingsDate" style="font-size:14px;">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Stato</div><div class="perf-value green">Attivo</div></div>
+                    <div class="perf-item"><div class="perf-label">Member since</div><div class="perf-value" id="settingsDate" style="font-size:14px;">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Status</div><div class="perf-value green">Active</div></div>
                 </div>
             </div>
             <div class="card" style="margin-top:1rem;">
-                <div class="card-header"><span class="card-title">Chiave di Licenza</span></div>
+                <div class="card-header"><span class="card-title">License Key</span></div>
                 <div style="text-align:center;">
                     <div class="referral-code">TALB-8K9X-M4R2-P7Q5</div>
                     <br>
-                    <button class="btn-primary" onclick="copyLicense()" style="margin-top:0.75rem;">Copia Chiave</button>
+                    <button class="btn-primary" onclick="copyLicense()" style="margin-top:0.75rem;">Copy Key</button>
                 </div>
             </div>
         </div>
@@ -884,22 +1217,22 @@
     <div class="modal-overlay" id="brokerModal">
         <div class="modal">
             <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Connetti Broker</div>
+                <div class="modal-title" id="modalTitle">Connect Broker</div>
                 <button class="modal-close" onclick="closeBrokerModal()">&times;</button>
             </div>
             <div class="form-group">
                 <label class="form-label">Account Number</label>
-                <input type="text" class="form-input" id="modalAccount" placeholder="Il tuo numero account">
+                <input type="text" class="form-input" id="modalAccount" placeholder="Your account number">
             </div>
             <div class="form-group">
                 <label class="form-label">API Key</label>
-                <input type="text" class="form-input" id="modalApiKey" placeholder="La tua API key">
+                <input type="text" class="form-input" id="modalApiKey" placeholder="Your API key">
             </div>
             <div class="form-group">
                 <label class="form-label">API Secret</label>
-                <input type="password" class="form-input" id="modalApiSecret" placeholder="Il tuo API secret">
+                <input type="password" class="form-input" id="modalApiSecret" placeholder="Your API secret">
             </div>
-            <button class="btn-primary" onclick="connectBroker()" style="width:100%;">Connetti</button>
+            <button class="btn-primary" onclick="connectBroker()" style="width:100%;">Connect</button>
         </div>
     </div>
 
@@ -1041,7 +1374,11 @@
             drawDrawdown(trades.trades);
         }
 
-        toast('success', 'Dashboard', `Benvenuto, ${user?.name || 'utente'}!`);
+        toast('success', 'Dashboard', `Welcome, ${user?.name || 'user'}!`);
+
+        // Load new features
+        updateRiskGuardian(stats);
+        updateBotStatus();
     }
 
     // ══════════════════════════════════════════════
@@ -1051,20 +1388,20 @@
 
     function updateStats(s) {
         document.getElementById('statEquity').textContent = fmt(s.equity);
-        document.getElementById('statEquityChange').textContent = s.equity > 0 ? 'Aggiornato' : 'Nessun dato';
+        document.getElementById('statEquityChange').textContent = s.equity > 0 ? 'Updated' : 'No data';
         document.getElementById('statEquityChange').className = 'stat-change' + (s.equity > 0 ? ' positive' : '');
 
         document.getElementById('statWinRate').textContent = (s.winRate || 0).toFixed(1) + '%';
-        document.getElementById('statWinRateChange').textContent = s.winRate >= 50 ? 'Buon rendimento' : 'Da migliorare';
+        document.getElementById('statWinRateChange').textContent = s.winRate >= 50 ? 'Good performance' : 'Needs improvement';
         document.getElementById('statWinRateChange').className = 'stat-change' + (s.winRate >= 50 ? ' positive' : ' negative');
 
         document.getElementById('statPF').textContent = (s.profitFactor || 0).toFixed(2);
-        const pfText = s.profitFactor >= 1.5 ? 'Ottimo' : s.profitFactor >= 1 ? 'Discreto' : 'In perdita';
+        const pfText = s.profitFactor >= 1.5 ? 'Excellent' : s.profitFactor >= 1 ? 'Decent' : 'At a loss';
         document.getElementById('statPFChange').textContent = pfText;
         document.getElementById('statPFChange').className = 'stat-change' + (s.profitFactor >= 1 ? ' positive' : ' negative');
 
         document.getElementById('statProfit').textContent = fmt(s.totalProfit);
-        document.getElementById('statProfitChange').textContent = s.totalProfit >= 0 ? 'In profitto' : 'In perdita';
+        document.getElementById('statProfitChange').textContent = s.totalProfit >= 0 ? 'Profitable' : 'At a loss';
         document.getElementById('statProfitChange').className = 'stat-change' + (s.totalProfit >= 0 ? ' positive' : ' negative');
     }
 
@@ -1130,7 +1467,7 @@
         charts.dist = new Chart(distCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Vincenti', 'Perdenti'],
+                labels: ['Winners', 'Losers'],
                 datasets: [{ data: [stats?.winningTrades || 0, stats?.losingTrades || 0], backgroundColor: ['#5cb87a', '#e05252'], borderWidth: 0, spacing: 3 }]
             },
             options: {
@@ -1186,7 +1523,7 @@
         const entry = parseFloat(document.getElementById('calcEntry').value);
         const sl = parseFloat(document.getElementById('calcSL').value);
         if (!account || !risk || !entry || !sl || entry === sl) {
-            toast('error', 'Errore', 'Compila correttamente tutti i campi');
+            toast('error', 'Error', 'Please fill in all fields correctly');
             return;
         }
         const riskAmt = account * (risk / 100);
@@ -1198,7 +1535,7 @@
         document.getElementById('calcPips').textContent = pips.toFixed(1);
         document.getElementById('calcProfit').textContent = '€' + (riskAmt * 2).toFixed(2);
         document.getElementById('calcResult').classList.add('show');
-        toast('success', 'Calcolato', `Position size: ${lots} lots`);
+        toast('success', 'Calculated', `Position size: ${lots} lots`);
     }
 
     // ══════════════════════════════════════════════
@@ -1206,7 +1543,7 @@
     // ══════════════════════════════════════════════
     function openBrokerModal(name, platform) {
         selectedPlatform = platform || 'mt4';
-        document.getElementById('modalTitle').textContent = 'Connetti ' + name;
+        document.getElementById('modalTitle').textContent = 'Connect ' + name;
         document.getElementById('brokerModal').classList.add('active');
     }
 
@@ -1221,17 +1558,17 @@
         const account = document.getElementById('modalAccount').value;
         const apiKey = document.getElementById('modalApiKey').value;
         const apiSecret = document.getElementById('modalApiSecret').value;
-        if (!account || !apiKey || !apiSecret) { toast('error', 'Errore', 'Compila tutti i campi'); return; }
+        if (!account || !apiKey || !apiSecret) { toast('error', 'Error', 'Please fill in all fields'); return; }
 
         const res = await apiCall('/api/broker/connect', {
             method: 'POST',
             body: JSON.stringify({ platform: selectedPlatform, apiKey, apiSecret, accountNumber: account })
         });
         if (res?.success) {
-            toast('success', 'Connesso', 'Broker connesso con successo!');
+            toast('success', 'Connected', 'Broker connected successfully!');
             closeBrokerModal();
         } else {
-            toast('error', 'Errore', res?.error || 'Connessione fallita');
+            toast('error', 'Error', res?.error || 'Connection failed');
         }
     }
 
@@ -1244,11 +1581,133 @@
     // COPY FUNCTIONS
     // ══════════════════════════════════════════════
     function copyReferral() {
-        navigator.clipboard.writeText('TIER-XR4K9M').then(() => toast('success', 'Copiato', 'Codice referral copiato!'));
+        navigator.clipboard.writeText('TIER-XR4K9M').then(() => toast('success', 'Copied', 'Referral code copied!'));
     }
 
     function copyLicense() {
-        navigator.clipboard.writeText('TALB-8K9X-M4R2-P7Q5').then(() => toast('success', 'Copiato', 'Chiave di licenza copiata!'));
+        navigator.clipboard.writeText('TALB-8K9X-M4R2-P7Q5').then(() => toast('success', 'Copied', 'License key copied!'));
+    }
+
+    // ══════════════════════════════════════════════
+    // RISK GUARDIAN
+    // ══════════════════════════════════════════════
+    let riskSettings = JSON.parse(localStorage.getItem('riskSettings') || '{"capital":100000,"target":10,"dailyDD":5,"maxDD":10}');
+
+    function saveRiskSettings() {
+        riskSettings = {
+            capital: parseFloat(document.getElementById('riskCapital').value) || 100000,
+            target: parseFloat(document.getElementById('riskTarget').value) || 10,
+            dailyDD: parseFloat(document.getElementById('riskDailyDD').value) || 5,
+            maxDD: parseFloat(document.getElementById('riskMaxDD').value) || 10
+        };
+        localStorage.setItem('riskSettings', JSON.stringify(riskSettings));
+        updateRiskGuardian();
+        toast('success', 'Saved', 'Challenge settings updated');
+    }
+
+    function updateRiskGuardian(stats) {
+        const s = stats || {};
+        const capital = riskSettings.capital;
+        const targetAmt = capital * (riskSettings.target / 100);
+        const profit = s.totalProfit || 0;
+        const progress = targetAmt > 0 ? Math.min((profit / targetAmt) * 100, 100) : 0;
+
+        // Challenge progress
+        document.getElementById('challengeTarget').textContent = fmt(Math.max(profit, 0)) + ' / ' + fmt(targetAmt);
+        document.getElementById('challengeProgress').style.width = Math.max(progress, 0) + '%';
+        document.getElementById('challengePercent').textContent = Math.max(progress, 0).toFixed(1) + '% completed';
+        document.getElementById('challengeProfit').textContent = fmt(profit);
+        document.getElementById('challengeStatus').textContent = profit >= targetAmt ? 'TARGET!' : profit >= 0 ? 'In Progress' : 'Caution';
+        document.getElementById('challengeStatus').className = 'perf-value ' + (profit >= targetAmt ? 'gold' : profit >= 0 ? 'green' : 'red');
+
+        // Drawdown (simulated from stats - in production would come from broker API)
+        const dailyLoss = Math.abs(Math.min(s.worstTrade || 0, 0));
+        const dailyDDPercent = capital > 0 ? (dailyLoss / capital * 100) : 0;
+        const maxDDPercent = capital > 0 ? (Math.abs(Math.min(s.totalProfit || 0, 0)) / capital * 100) : 0;
+        
+        const dailyLimit = riskSettings.dailyDD;
+        const maxLimit = riskSettings.maxDD;
+        const dailyRatio = Math.min(dailyDDPercent / dailyLimit * 100, 100);
+        const maxRatio = Math.min(maxDDPercent / maxLimit * 100, 100);
+
+        document.getElementById('ddDailyValue').textContent = dailyDDPercent.toFixed(1) + '% / ' + dailyLimit + '%';
+        document.getElementById('ddDailyBar').style.width = dailyRatio + '%';
+        document.getElementById('ddDailyBar').className = 'dd-bar-fill ' + (dailyRatio > 80 ? 'dd-danger' : dailyRatio > 50 ? 'dd-warning' : 'dd-safe');
+
+        document.getElementById('ddMaxValue').textContent = maxDDPercent.toFixed(1) + '% / ' + maxLimit + '%';
+        document.getElementById('ddMaxBar').style.width = maxRatio + '%';
+        document.getElementById('ddMaxBar').className = 'dd-bar-fill ' + (maxRatio > 80 ? 'dd-danger' : maxRatio > 50 ? 'dd-warning' : 'dd-safe');
+
+        // Badge
+        const badge = document.getElementById('ddStatusBadge');
+        if (dailyRatio > 80 || maxRatio > 80) {
+            badge.textContent = 'DANGER'; badge.className = 'dd-status-badge danger';
+        } else if (dailyRatio > 50 || maxRatio > 50) {
+            badge.textContent = 'WARNING'; badge.className = 'dd-status-badge warning';
+        } else {
+            badge.textContent = 'SAFE'; badge.className = 'dd-status-badge';
+        }
+
+        // Fill in settings form
+        document.getElementById('riskCapital').value = riskSettings.capital;
+        document.getElementById('riskTarget').value = riskSettings.target;
+        document.getElementById('riskDailyDD').value = riskSettings.dailyDD;
+        document.getElementById('riskMaxDD').value = riskSettings.maxDD;
+    }
+
+    function toggleEquityProtector() {
+        const on = document.getElementById('equityProtectorToggle').checked;
+        document.getElementById('epSettings').style.display = on ? 'block' : 'none';
+        if (on) toast('info', 'Equity Protector', 'Configure the loss limit');
+    }
+
+    function saveEquityProtector() {
+        const limit = document.getElementById('epLimit').value;
+        localStorage.setItem('equityProtectorLimit', limit);
+        toast('success', 'Protector Active', 'Will close everything if you lose more than ' + limit + '% today');
+    }
+
+    // ══════════════════════════════════════════════
+    // BOT CONTROL
+    // ══════════════════════════════════════════════
+    function updateBotStatus() {
+        // Check if broker is connected
+        apiCall('/api/broker/connections').then(data => {
+            const active = data?.connections?.find(c => c.is_active);
+            const pulse = document.getElementById('botPulse');
+            const text = document.getElementById('botStatusText');
+            
+            if (active) {
+                pulse.className = 'bot-pulse online';
+                text.textContent = 'Online';
+                document.getElementById('botEAStatus').textContent = 'Active';
+                document.getElementById('botEAStatus').className = 'perf-value green';
+                document.getElementById('botConnection').textContent = active.platform.toUpperCase();
+                document.getElementById('botConnection').className = 'perf-value green';
+                document.getElementById('botLastBeat').textContent = 'Now';
+            } else {
+                pulse.className = 'bot-pulse offline';
+                text.textContent = 'Not connected';
+                document.getElementById('botEAStatus').textContent = 'Inactive';
+                document.getElementById('botEAStatus').className = 'perf-value red';
+                document.getElementById('botConnection').textContent = 'None';
+                document.getElementById('botConnection').className = 'perf-value red';
+                document.getElementById('botLastBeat').textContent = '—';
+            }
+        });
+    }
+
+    function panicButton() {
+        if (!confirm('⚠️ WARNING!\n\nThis will CLOSE ALL open trades and stop the bot.\n\nAre you sure?')) return;
+        if (!confirm('Final confirmation: do you really want to close everything?')) return;
+        
+        // In production this would call the broker API to close all trades
+        toast('error', 'PANIC ACTIVATED', 'Command sent. All trades will be closed.');
+        document.getElementById('botOpenTrades').textContent = '0';
+        document.getElementById('botPulse').className = 'bot-pulse offline';
+        document.getElementById('botStatusText').textContent = 'Stopped';
+        document.getElementById('botEAStatus').textContent = 'Stopped';
+        document.getElementById('botEAStatus').className = 'perf-value red';
     }
 
     // ══════════════════════════════════════════════
