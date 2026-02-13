@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TierAlba — Accedi</title>
+    <title>TierAlba — Sign In</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <style>
@@ -352,16 +352,16 @@
             <div class="brand-logo-mark">T</div>
             <div class="brand-logo-text">TierAlba</div>
         </div>
-        <h1 class="brand-headline">Il controllo del tuo <span>trading</span>, in un unico posto.</h1>
-        <p class="brand-sub">Dashboard professionale per monitorare performance, gestire i tuoi account broker e far crescere il tuo capitale con consapevolezza.</p>
+        <h1 class="brand-headline">Take control of your <span>trading</span>, all in one place.</h1>
+        <p class="brand-sub">Professional dashboard to monitor performance, manage your broker accounts, and grow your capital with confidence.</p>
         <div class="brand-stats">
             <div>
                 <div class="brand-stat-value">2.4K+</div>
-                <div class="brand-stat-label">Trader attivi</div>
+                <div class="brand-stat-label">Active traders</div>
             </div>
             <div>
                 <div class="brand-stat-value">€14M+</div>
-                <div class="brand-stat-label">Equity gestita</div>
+                <div class="brand-stat-label">Equity managed</div>
             </div>
             <div>
                 <div class="brand-stat-value">99.9%</div>
@@ -372,11 +372,11 @@
 
     <!-- Auth Side -->
     <div class="auth-panel">
-        <h2 class="auth-title">Bentornato</h2>
-        <p class="auth-subtitle">Accedi al tuo account o creane uno nuovo</p>
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Sign in to your account or create a new one</p>
 
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchTab('login')" id="tabLogin">Accedi</button>
+            <button class="auth-tab active" onclick="switchTab('login')" id="tabLogin">Sign In</button>
             <button class="auth-tab" onclick="switchTab('register')" id="tabRegister">Registrati</button>
         </div>
 
@@ -387,31 +387,31 @@
         <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="loginEmail" placeholder="nome@email.com" required>
+                <input type="email" class="form-input" id="loginEmail" placeholder="your@email.com" required>
             </div>
             <div class="form-group">
                 <label class="form-label">Password</label>
-                <input type="password" class="form-input" id="loginPassword" placeholder="La tua password" required>
+                <input type="password" class="form-input" id="loginPassword" placeholder="Your password" required>
             </div>
-            <button type="submit" class="btn-submit" id="loginBtn">Accedi</button>
-            <a href="#" class="forgot-link">Password dimenticata?</a>
+            <button type="submit" class="btn-submit" id="loginBtn">Sign In</button>
+            <a href="#" class="forgot-link">Forgot password?</a>
         </form>
 
         <!-- Register -->
         <form id="registerForm" class="auth-form" onsubmit="handleRegister(event)">
             <div class="form-group">
-                <label class="form-label">Nome completo</label>
-                <input type="text" class="form-input" id="regName" placeholder="Mario Rossi" required>
+                <label class="form-label">Full name</label>
+                <input type="text" class="form-input" id="regName" placeholder="John Smith" required>
             </div>
             <div class="form-group">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="regEmail" placeholder="nome@email.com" required>
+                <input type="email" class="form-input" id="regEmail" placeholder="your@email.com" required>
             </div>
             <div class="form-group">
                 <label class="form-label">Password</label>
-                <input type="password" class="form-input" id="regPassword" placeholder="Minimo 8 caratteri" required minlength="8">
+                <input type="password" class="form-input" id="regPassword" placeholder="Minimum 8 characters" required minlength="8">
             </div>
-            <button type="submit" class="btn-submit" id="regBtn">Crea Account</button>
+            <button type="submit" class="btn-submit" id="regBtn">Create Account</button>
         </form>
     </div>
 
@@ -428,10 +428,10 @@
         document.getElementById('loginForm').classList.toggle('active', tab === 'login');
         document.getElementById('registerForm').classList.toggle('active', tab === 'register');
         // Update title
-        document.querySelector('.auth-title').textContent = tab === 'login' ? 'Bentornato' : 'Crea il tuo account';
+        document.querySelector('.auth-title').textContent = tab === 'login' ? 'Welcome back' : 'Create your account';
         document.querySelector('.auth-subtitle').textContent = tab === 'login' 
-            ? 'Accedi al tuo account o creane uno nuovo' 
-            : 'Inizia a monitorare il tuo trading';
+            ? 'Sign in to your account or create a new one' 
+            : 'Start monitoring your trading';
         hideMessages();
     }
 
@@ -458,7 +458,7 @@
         const btn = document.getElementById('loginBtn');
         const orig = btn.textContent;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span>Accesso...';
+        btn.innerHTML = '<span class="spinner"></span>Signing in...';
 
         try {
             const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -470,11 +470,11 @@
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Login fallito');
+            if (!res.ok) throw new Error(data.error || 'Login failed');
 
             localStorage.setItem('auth_token', data.token);
             localStorage.setItem('user_data', JSON.stringify(data.user));
-            showSuccess('Accesso effettuato! Reindirizzamento...');
+            showSuccess('Signed in! Redirecting...');
             setTimeout(() => { window.location.href = 'index.html'; }, 800);
         } catch (err) {
             showError(err.message);
@@ -490,7 +490,7 @@
         const btn = document.getElementById('regBtn');
         const orig = btn.textContent;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span>Registrazione...';
+        btn.innerHTML = '<span class="spinner"></span>Creating account...';
 
         try {
             const res = await fetch(`${API_URL}/api/auth/register`, {
@@ -503,11 +503,11 @@
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Registrazione fallita');
+            if (!res.ok) throw new Error(data.error || 'Registration failed');
 
             localStorage.setItem('auth_token', data.token);
             localStorage.setItem('user_data', JSON.stringify(data.user));
-            showSuccess('Account creato! Reindirizzamento...');
+            showSuccess('Account created! Redirecting...');
             setTimeout(() => { window.location.href = 'index.html'; }, 800);
         } catch (err) {
             showError(err.message);
