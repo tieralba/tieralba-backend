@@ -1256,9 +1256,26 @@
 
         <!-- ═══════ BROKERS ═══════ -->
         <div id="brokers" class="section">
+            <div class="card" style="margin-bottom:1.5rem;" id="connectedBrokerCard" style="display:none;">
+                <div class="card-header">
+                    <span class="card-title">Connected Account</span>
+                    <span class="dd-status-badge" id="brokerConnBadge">Not Connected</span>
+                </div>
+                <div id="connectedBrokerInfo" style="display:none;">
+                    <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1rem;">
+                        <div class="perf-item"><div class="perf-label">Account</div><div class="perf-value" id="connAccNum" style="font-size:15px;">—</div></div>
+                        <div class="perf-item"><div class="perf-label">Platform</div><div class="perf-value gold" id="connPlatform" style="font-size:15px;">—</div></div>
+                        <div class="perf-item"><div class="perf-label">Broker</div><div class="perf-value" id="connBroker" style="font-size:15px;">—</div></div>
+                    </div>
+                    <div style="text-align:center;">
+                        <button class="btn-primary" onclick="syncBrokerData()" style="margin-right:8px;">Sync Now</button>
+                        <button class="btn-logout" onclick="disconnectBroker()">Disconnect</button>
+                    </div>
+                </div>
+            </div>
             <div class="card">
-                <div class="card-header"><span class="card-title">Your Brokers</span></div>
-                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Connect your accounts to automatically sync your trades.</p>
+                <div class="card-header"><span class="card-title">Connect Trading Account</span></div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Connect your MT4/MT5 account using your investor password. Read-only — we never place trades.</p>
                 <div class="broker-grid">
                     <div class="broker-card" data-platform="mt4" onclick="openBrokerModal('MetaTrader 4','mt4')">
                         <div class="broker-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
@@ -1458,19 +1475,21 @@
                 <div class="modal-title" id="modalTitle">Connect Broker</div>
                 <button class="modal-close" onclick="closeBrokerModal()">&times;</button>
             </div>
+            <p style="color:var(--text-2);font-size:13px;margin-bottom:1.25rem;">Connect your trading account using your <strong>investor password</strong> (read-only). Your trades and equity will sync automatically.</p>
             <div class="form-group">
                 <label class="form-label">Account Number</label>
-                <input type="text" class="form-input" id="modalAccount" placeholder="Your account number">
+                <input type="text" class="form-input" id="modalAccount" placeholder="e.g. 12345678">
             </div>
             <div class="form-group">
-                <label class="form-label">API Key</label>
-                <input type="text" class="form-input" id="modalApiKey" placeholder="Your API key">
+                <label class="form-label">Investor Password (read-only)</label>
+                <input type="password" class="form-input" id="modalInvestorPwd" placeholder="Your investor/viewer password">
             </div>
             <div class="form-group">
-                <label class="form-label">API Secret</label>
-                <input type="password" class="form-input" id="modalApiSecret" placeholder="Your API secret">
+                <label class="form-label">Broker Server</label>
+                <input type="text" class="form-input" id="modalBrokerName" placeholder="e.g. ICMarketsSC-Demo, FTMODemo-Server">
+                <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Find this in MetaTrader → File → Login → Server name</div>
             </div>
-            <button class="btn-primary" onclick="connectBroker()" style="width:100%;">Connect</button>
+            <button class="btn-primary" onclick="connectBroker()" id="connectBrokerBtn" style="width:100%;">Connect Account</button>
         </div>
     </div>
 
@@ -1809,25 +1828,48 @@
     function closeBrokerModal() {
         document.getElementById('brokerModal').classList.remove('active');
         document.getElementById('modalAccount').value = '';
-        document.getElementById('modalApiKey').value = '';
-        document.getElementById('modalApiSecret').value = '';
+        document.getElementById('modalInvestorPwd').value = '';
+        document.getElementById('modalBrokerName').value = '';
     }
 
     async function connectBroker() {
-        const account = document.getElementById('modalAccount').value;
-        const apiKey = document.getElementById('modalApiKey').value;
-        const apiSecret = document.getElementById('modalApiSecret').value;
-        if (!account || !apiKey || !apiSecret) { toast('error', 'Error', 'Please fill in all fields'); return; }
+        const account = document.getElementById('modalAccount').value.trim();
+        const investorPassword = document.getElementById('modalInvestorPwd').value;
+        const brokerName = document.getElementById('modalBrokerName').value.trim();
+        if (!account || !investorPassword || !brokerName) { toast('error', 'Error', 'Please fill in all fields'); return; }
+
+        const btn = document.getElementById('connectBrokerBtn');
+        btn.disabled = true; btn.textContent = 'Connecting...';
 
         const res = await apiCall('/api/broker/connect', {
             method: 'POST',
-            body: JSON.stringify({ platform: selectedPlatform, apiKey, apiSecret, accountNumber: account })
+            body: JSON.stringify({ platform: selectedPlatform, accountNumber: account, investorPassword, brokerName })
         });
+        
         if (res?.success) {
-            toast('success', 'Connected', 'Broker connected successfully!');
+            toast('success', 'Connected!', res.message || 'Account connected successfully');
             closeBrokerModal();
+            // Auto sync after connect
+            syncBrokerData();
+            updateBotStatus();
         } else {
-            toast('error', 'Error', res?.error || 'Connection failed');
+            toast('error', 'Connection Failed', res?.error || 'Check your credentials and broker server name');
+        }
+        btn.disabled = false; btn.textContent = 'Connect Account';
+    }
+
+    async function syncBrokerData() {
+        toast('info', 'Syncing', 'Fetching data from your broker...');
+        const res = await apiCall('/api/broker/sync', { method: 'POST' });
+        if (res?.success) {
+            toast('success', 'Synced', `${res.synced} trades imported. Equity: €${(res.account?.equity || 0).toFixed(2)}`);
+            // Reload dashboard data
+            const stats = await apiCall('/api/stats');
+            if (stats) { updateStats(stats); updatePerf(stats); updateRiskGuardian(stats); }
+            const equity = await apiCall('/api/equity-history?days=30');
+            if (equity?.history) drawEquityChart(equity.history);
+        } else {
+            toast('error', 'Sync Failed', res?.error || 'Could not sync data. Account may still be deploying, try again in 1 minute.');
         }
     }
 
@@ -1930,12 +1972,12 @@
     // BOT CONTROL
     // ══════════════════════════════════════════════
     function updateBotStatus() {
-        // Check if broker is connected
         apiCall('/api/broker/connections').then(data => {
             const active = data?.connections?.find(c => c.is_active);
             const pulse = document.getElementById('botPulse');
             const text = document.getElementById('botStatusText');
             
+            // Update Experts section
             if (active) {
                 pulse.className = 'bot-pulse online';
                 text.textContent = 'Online';
@@ -1953,7 +1995,29 @@
                 document.getElementById('botConnection').className = 'perf-value red';
                 document.getElementById('botLastBeat').textContent = '—';
             }
+
+            // Update Broker section
+            const badge = document.getElementById('brokerConnBadge');
+            const info = document.getElementById('connectedBrokerInfo');
+            if (active) {
+                badge.textContent = 'CONNECTED'; badge.className = 'dd-status-badge';
+                info.style.display = 'block';
+                document.getElementById('connAccNum').textContent = '#' + active.account_number;
+                document.getElementById('connPlatform').textContent = active.platform.toUpperCase();
+                document.getElementById('connBroker').textContent = active.broker_name || '—';
+            } else {
+                badge.textContent = 'NOT CONNECTED'; badge.className = 'dd-status-badge warning';
+                info.style.display = 'none';
+            }
         });
+    }
+
+    async function disconnectBroker() {
+        if (!confirm('Disconnect your trading account?')) return;
+        // Just deactivate in our DB
+        await apiCall('/api/broker/disconnect', { method: 'POST' });
+        toast('info', 'Disconnected', 'Broker account disconnected');
+        updateBotStatus();
     }
 
     function panicButton() {
