@@ -908,6 +908,18 @@
                         <span>Calculator</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="indicators">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                        <span>Indicators</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="refund">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div>
+                        <span>Refund</span>
+                    </a>
+                </li>
                 
                 <li class="nav-item">
                     <a class="nav-link" data-section="settings">
@@ -1301,6 +1313,122 @@
             </div>
         </div>
 
+        <!-- ═══════ INDICATORS ═══════ -->
+        <div id="indicators" class="section">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">TradingView Indicators</span>
+                    <span class="dd-status-badge" id="indicatorPlanBadge">FREE</span>
+                </div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Access our proprietary TradingView indicators. Standard gets 1 indicator, Pro gets all 3.</p>
+                
+                <div class="ea-grid" id="indicatorsList">
+                    <!-- Indicator 1 - Standard + Pro -->
+                    <div class="ea-card indicator-card" data-plan="standard" id="indicator1">
+                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                        <div style="flex:1;">
+                            <div class="ea-name">TierAlba Trend Pro</div>
+                            <div class="ea-meta">Multi-timeframe trend detection · All pairs</div>
+                            <div class="indicator-invite" style="margin-top:8px;display:none;" id="invite1">
+                                <div class="form-label" style="margin-bottom:4px;">Your TradingView Username</div>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" class="form-input" id="tvUser1" placeholder="e.g. trader123" style="flex:1;padding:8px 12px;font-size:13px;">
+                                    <button class="btn-download" onclick="requestIndicatorAccess(1)">Request Access</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-download" onclick="toggleInvite(1)" id="inviteBtn1">Get Access</button>
+                    </div>
+
+                    <!-- Indicator 2 - Pro only -->
+                    <div class="ea-card indicator-card" data-plan="pro" id="indicator2">
+                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                        <div style="flex:1;">
+                            <div class="ea-name">TierAlba Scalper AI</div>
+                            <div class="ea-meta">AI-powered scalping signals · M5-M15 timeframes</div>
+                            <div class="indicator-invite" style="margin-top:8px;display:none;" id="invite2">
+                                <div class="form-label" style="margin-bottom:4px;">Your TradingView Username</div>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" class="form-input" id="tvUser2" placeholder="e.g. trader123" style="flex:1;padding:8px 12px;font-size:13px;">
+                                    <button class="btn-download" onclick="requestIndicatorAccess(2)">Request Access</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-download" onclick="toggleInvite(2)" id="inviteBtn2">Get Access</button>
+                    </div>
+
+                    <!-- Indicator 3 - Pro only -->
+                    <div class="ea-card indicator-card" data-plan="pro" id="indicator3">
+                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+                        <div style="flex:1;">
+                            <div class="ea-name">TierAlba Smart Grid</div>
+                            <div class="ea-meta">Support & resistance grid · Auto S/R levels</div>
+                            <div class="indicator-invite" style="margin-top:8px;display:none;" id="invite3">
+                                <div class="form-label" style="margin-bottom:4px;">Your TradingView Username</div>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" class="form-input" id="tvUser3" placeholder="e.g. trader123" style="flex:1;padding:8px 12px;font-size:13px;">
+                                    <button class="btn-download" onclick="requestIndicatorAccess(3)">Request Access</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-download" onclick="toggleInvite(3)" id="inviteBtn3">Get Access</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><span class="card-title">How It Works</span></div>
+                <div class="setup-steps">
+                    <div class="setup-step">
+                        <div class="step-num">1</div>
+                        <div><div class="step-title">Click "Get Access"</div><div class="step-desc">Enter your TradingView username for the indicator you want.</div></div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">2</div>
+                        <div><div class="step-title">We Invite You</div><div class="step-desc">Our team will add your username to the indicator's access list within 24 hours.</div></div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">3</div>
+                        <div><div class="step-title">Start Using</div><div class="step-desc">Open TradingView, go to Indicators → Invite-Only, and you'll find your indicators there.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ REFUND ═══════ -->
+        <div id="refund" class="section">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Request a Refund</span></div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Submit a refund request within 7 days of your purchase. Our team will review it within 48 hours.</p>
+                
+                <div id="refundForm">
+                    <div class="form-group">
+                        <label class="form-label">Reason for Refund</label>
+                        <select class="form-input" id="refundReason" style="font-family:'DM Sans',sans-serif;">
+                            <option value="">Select a reason...</option>
+                            <option value="not_as_expected">Product not as expected</option>
+                            <option value="technical_issues">Technical issues</option>
+                            <option value="no_longer_needed">No longer needed</option>
+                            <option value="duplicate_charge">Duplicate charge</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Additional Details (optional)</label>
+                        <textarea class="form-input" id="refundDetails" rows="4" placeholder="Please describe your issue..." style="font-family:'DM Sans',sans-serif;resize:vertical;"></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="submitRefund()" id="refundBtn">Submit Refund Request</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><span class="card-title">Your Refund History</span></div>
+                <div id="refundHistory" style="min-height:60px;">
+                    <p style="color:var(--text-3);font-size:13px;text-align:center;padding:1rem;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══════ SETTINGS ═══════ -->
         <div id="settings" class="section">
             <div class="card">
@@ -1500,7 +1628,10 @@
 
         // Apply plan gating
         const planData = await apiCall('/api/user/plan');
-        applyPlanGating(planData?.plan || me.user?.plan || 'free');
+        const plan = planData?.plan || me.user?.plan || 'free';
+        applyPlanGating(plan);
+        applyIndicatorGating(plan);
+        loadRefundHistory();
 
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
@@ -1842,9 +1973,9 @@
     // PLAN GATING
     // ══════════════════════════════════════════════
     const planAccess = {
-        free: ['overview', 'calculator', 'settings'],
-        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'settings'],
-        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'settings']
+        free: ['overview', 'calculator', 'refund', 'settings'],
+        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'refund', 'settings'],
+        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'refund', 'settings']
     };
 
     let userPlan = 'free';
@@ -1942,6 +2073,102 @@
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light');
         document.getElementById('themeIcon').innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+    }
+
+    // ══════════════════════════════════════════════
+    // INDICATORS
+    // ══════════════════════════════════════════════
+    function applyIndicatorGating(plan) {
+        const badge = document.getElementById('indicatorPlanBadge');
+        if (plan === 'pro') {
+            badge.textContent = 'PRO — 3 INDICATORS'; badge.className = 'dd-status-badge';
+            badge.style.background = 'var(--gold-dim)'; badge.style.color = 'var(--gold)';
+        } else if (plan === 'standard') {
+            badge.textContent = 'STANDARD — 1 INDICATOR'; badge.className = 'dd-status-badge';
+        } else {
+            badge.textContent = 'UPGRADE REQUIRED'; badge.className = 'dd-status-badge warning';
+        }
+
+        document.querySelectorAll('.indicator-card').forEach(card => {
+            const reqPlan = card.dataset.plan;
+            const locked = (reqPlan === 'pro' && plan !== 'pro') || (reqPlan === 'standard' && plan === 'free');
+            card.style.opacity = locked ? '0.4' : '1';
+            card.style.pointerEvents = locked ? 'none' : 'auto';
+            const btn = card.querySelector('.btn-download');
+            if (btn && locked) btn.textContent = reqPlan === 'pro' ? 'Pro Only' : 'Upgrade';
+        });
+    }
+
+    function toggleInvite(num) {
+        const el = document.getElementById('invite' + num);
+        const btn = document.getElementById('inviteBtn' + num);
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+            btn.style.display = 'none';
+        } else {
+            el.style.display = 'none';
+            btn.style.display = 'inline-block';
+        }
+    }
+
+    function requestIndicatorAccess(num) {
+        const username = document.getElementById('tvUser' + num).value.trim();
+        if (!username) { toast('error', 'Error', 'Please enter your TradingView username'); return; }
+        
+        // Save to localStorage for now (in production could save to DB)
+        const requests = JSON.parse(localStorage.getItem('indicatorRequests') || '{}');
+        requests[num] = { username, date: new Date().toISOString(), status: 'pending' };
+        localStorage.setItem('indicatorRequests', JSON.stringify(requests));
+        
+        toast('success', 'Request Sent', 'We will add ' + username + ' to the indicator within 24 hours.');
+        document.getElementById('invite' + num).innerHTML = '<div style="padding:8px 0;color:var(--green);font-size:13px;font-weight:600;">✓ Access requested for @' + username + '</div>';
+    }
+
+    // ══════════════════════════════════════════════
+    // REFUND
+    // ══════════════════════════════════════════════
+    async function submitRefund() {
+        const reason = document.getElementById('refundReason').value;
+        const details = document.getElementById('refundDetails').value;
+        if (!reason) { toast('error', 'Error', 'Please select a reason'); return; }
+
+        const btn = document.getElementById('refundBtn');
+        btn.disabled = true; btn.textContent = 'Submitting...';
+
+        const res = await apiCall('/api/refund/request', {
+            method: 'POST',
+            body: JSON.stringify({ reason, details })
+        });
+
+        if (res?.success) {
+            toast('success', 'Submitted', 'Your refund request has been submitted');
+            document.getElementById('refundReason').value = '';
+            document.getElementById('refundDetails').value = '';
+            loadRefundHistory();
+        } else {
+            toast('error', 'Error', res?.error || 'Failed to submit');
+        }
+        btn.disabled = false; btn.textContent = 'Submit Refund Request';
+    }
+
+    async function loadRefundHistory() {
+        const res = await apiCall('/api/refund/status');
+        const container = document.getElementById('refundHistory');
+        if (!res?.requests?.length) {
+            container.innerHTML = '<p style="color:var(--text-3);font-size:13px;text-align:center;padding:1rem;">No refund requests yet.</p>';
+            return;
+        }
+        container.innerHTML = res.requests.map(r => {
+            const statusColors = { pending: 'gold', approved: 'green', rejected: 'red' };
+            const statusLabels = { pending: 'Pending Review', approved: 'Approved', rejected: 'Rejected' };
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+                <div>
+                    <div style="font-size:14px;font-weight:500;">${r.reason.replace(/_/g, ' ')}</div>
+                    <div style="font-size:12px;color:var(--text-3);">${new Date(r.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                </div>
+                <span class="dd-status-badge ${r.status === 'approved' ? '' : r.status === 'rejected' ? 'danger' : 'warning'}">${statusLabels[r.status] || r.status}</span>
+            </div>`;
+        }).join('');
     }
 
     // ══════════════════════════════════════════════
