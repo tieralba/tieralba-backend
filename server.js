@@ -18,6 +18,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+// Stripe (optional - only if STRIPE_SECRET_KEY is set)
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+
 // ============================================
 // CONFIGURAZIONE SERVER
 // ============================================
@@ -64,6 +67,82 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Stripe webhook needs raw body - must be before express.json()
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
+  
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).json({ error: 'Invalid signature' });
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const customerEmail = session.customer_email || session.customer_details?.email;
+        const customerId = session.customer;
+        const subscriptionId = session.subscription;
+        
+        // Get subscription to determine plan
+        let plan = 'standard';
+        if (subscriptionId) {
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const priceId = sub.items.data[0]?.price?.id;
+          // Map price IDs to plans
+          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
+          if (proPriceIds.includes(priceId)) plan = 'pro';
+        }
+        
+        // Update user
+        if (customerEmail) {
+          await pool.query(
+            'UPDATE users SET plan = $1, stripe_customer_id = $2, stripe_subscription_id = $3 WHERE LOWER(email) = LOWER($4)',
+            [plan, customerId, subscriptionId, customerEmail]
+          );
+          console.log(`✅ User ${customerEmail} upgraded to ${plan}`);
+        }
+        break;
+      }
+      
+      case 'customer.subscription.updated': {
+        const sub = event.data.object;
+        const status = sub.status;
+        if (status === 'active') {
+          const priceId = sub.items.data[0]?.price?.id;
+          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
+          const plan = proPriceIds.includes(priceId) ? 'pro' : 'standard';
+          await pool.query(
+            'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
+            [plan, sub.id]
+          );
+        }
+        break;
+      }
+      
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object;
+        await pool.query(
+          'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
+          ['free', sub.id]
+        );
+        console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
+        break;
+      }
+    }
+  } catch (err) {
+    console.error('Webhook handler error:', err);
+  }
+  
+  res.json({ received: true });
+});
 
 // Body parser: permette di leggere JSON nelle richieste
 app.use(express.json());
@@ -186,7 +265,8 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        plan: 'free'
       },
       token 
     });
@@ -212,7 +292,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     // Trova utente nel database
     const result = await pool.query(
-      'SELECT id, email, name, password_hash FROM users WHERE email = $1',
+      'SELECT id, email, name, password_hash, plan FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
     
@@ -244,7 +324,8 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        plan: user.plan || 'free'
       },
       token
     });
@@ -261,7 +342,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, name, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, plan, created_at FROM users WHERE id = $1',
       [req.userId]
     );
     
@@ -601,6 +682,79 @@ app.use((req, res) => {
     error: 'Endpoint non trovato',
     path: req.path 
   });
+});
+
+// ============================================
+// AVVIO SERVER
+// ============================================
+
+// ============================================
+// ENDPOINT: STRIPE SUBSCRIPTION
+// ============================================
+
+// Create checkout session
+app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
+  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
+  
+  try {
+    const { priceId } = req.body;
+    if (!priceId) return res.status(400).json({ error: 'Price ID required' });
+    
+    // Get user email
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      customer_email: userResult.rows[0].email,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html?upgrade=success`,
+      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html?upgrade=cancelled`,
+      metadata: { userId: req.userId.toString() }
+    });
+    
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Stripe checkout error:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// Get user plan
+app.get('/api/user/plan', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT plan, stripe_customer_id, stripe_subscription_id FROM users WHERE id = $1',
+      [req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ plan: result.rows[0].plan || 'free' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Stripe billing portal (manage subscription)
+app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
+  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
+  
+  try {
+    const result = await pool.query('SELECT stripe_customer_id FROM users WHERE id = $1', [req.userId]);
+    if (!result.rows[0]?.stripe_customer_id) {
+      return res.status(400).json({ error: 'No subscription found' });
+    }
+    
+    const session = await stripe.billingPortal.sessions.create({
+      customer: result.rows[0].stripe_customer_id,
+      return_url: `${req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html`
+    });
+    
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Portal error:', error);
+    res.status(500).json({ error: 'Failed to create portal session' });
+  }
 });
 
 // ============================================
