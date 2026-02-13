@@ -154,6 +154,9 @@ app.use(express.json());
 // Serve frontend static files (login.html, index.html)
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Trust proxy (Railway runs behind a proxy)
+app.set('trust proxy', 1);
+
 // Rate limiting: previene spam/attacchi
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuti
