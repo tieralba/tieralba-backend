@@ -667,82 +667,192 @@ app.post('/api/equity-snapshot', authenticateToken, async (req, res) => {
 });
 
 // ============================================
-// ENDPOINT: CONNESSIONE BROKER
+// ENDPOINT: CONNESSIONE BROKER (MetaApi)
 // ============================================
 
 app.post('/api/broker/connect', authenticateToken, async (req, res) => {
   try {
     const userId = req.userId;
-    const { platform, apiKey, apiSecret, accountNumber } = req.body;
+    const { platform, accountNumber, investorPassword, brokerName } = req.body;
     
-    // Validazione
-    if (!platform || !apiKey || !apiSecret || !accountNumber) {
-      return res.status(400).json({ 
-        error: 'Tutti i campi sono obbligatori' 
-      });
+    if (!platform || !accountNumber || !investorPassword || !brokerName) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
     
     if (!['mt4', 'mt5'].includes(platform.toLowerCase())) {
+      return res.status(400).json({ error: 'Platform not supported. Use MT4 or MT5' });
+    }
+
+    const metaApiToken = process.env.METAAPI_TOKEN;
+    if (!metaApiToken) {
+      return res.status(500).json({ error: 'MetaApi not configured' });
+    }
+
+    // Create MetaApi account via REST API
+    const metaApiRes = await fetch('https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'auth-token': metaApiToken
+      },
+      body: JSON.stringify({
+        name: `TierAlba-${accountNumber}`,
+        type: 'cloud',
+        login: accountNumber,
+        password: investorPassword,
+        server: brokerName,
+        platform: platform.toLowerCase(),
+        magic: 0,
+        connectionStatus: 'connected',
+        accessToken: metaApiToken
+      })
+    });
+
+    const metaAccount = await metaApiRes.json();
+    
+    if (metaAccount.error || !metaAccount.id) {
+      console.error('MetaApi error:', metaAccount);
       return res.status(400).json({ 
-        error: 'Piattaforma non supportata. Usa MT4 o MT5' 
+        error: metaAccount.message || 'Failed to connect. Check your credentials and broker server name.' 
       });
     }
-    
-    // TODO: Qui dovresti validare le credenziali con l'API MetaTrader
-    // TODO: Cripta apiKey e apiSecret prima di salvare
-    
-    // Controlla se esiste già una connessione attiva
+
+    // Deploy the account
+    await fetch(`https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${metaAccount.id}/deploy`, {
+      method: 'POST',
+      headers: { 'auth-token': metaApiToken }
+    });
+
+    // Deactivate old connections
     const existing = await pool.query(
       'SELECT id FROM broker_connections WHERE user_id = $1 AND is_active = true',
       [userId]
     );
-    
     if (existing.rows.length > 0) {
-      // Disattiva la vecchia connessione
-      await pool.query(
-        'UPDATE broker_connections SET is_active = false WHERE user_id = $1',
-        [userId]
-      );
+      await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [userId]);
     }
     
-    // Salva nuova connessione
+    // Save new connection with MetaApi account ID
     const result = await pool.query(
-      `INSERT INTO broker_connections (user_id, platform, api_key_encrypted, api_secret_encrypted, account_number, is_active)
+      `INSERT INTO broker_connections (user_id, platform, account_number, broker_name, metaapi_account_id, is_active)
        VALUES ($1, $2, $3, $4, $5, true)
-       RETURNING id, platform, account_number, created_at`,
-      [userId, platform.toLowerCase(), apiKey, apiSecret, accountNumber]
+       RETURNING id, platform, account_number, broker_name, created_at`,
+      [userId, platform.toLowerCase(), accountNumber, brokerName, metaAccount.id]
     );
     
     res.status(201).json({ 
       success: true,
-      message: 'Broker connesso con successo',
+      message: 'Account connected successfully! Syncing data...',
       connection: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Errore connessione broker:', error);
-    res.status(500).json({ error: 'Errore connessione broker' });
+    console.error('Broker connect error:', error);
+    res.status(500).json({ error: 'Failed to connect broker' });
   }
 });
 
-// OTTIENI CONNESSIONI BROKER
+// SYNC ACCOUNT DATA FROM METAAPI
+app.post('/api/broker/sync', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const metaApiToken = process.env.METAAPI_TOKEN;
+    if (!metaApiToken) return res.status(500).json({ error: 'MetaApi not configured' });
+
+    // Get active connection
+    const conn = await pool.query(
+      'SELECT metaapi_account_id, account_number FROM broker_connections WHERE user_id = $1 AND is_active = true',
+      [userId]
+    );
+    if (conn.rows.length === 0) return res.status(400).json({ error: 'No active broker connection' });
+
+    const accountId = conn.rows[0].metaapi_account_id;
+
+    // Get account info (equity, balance)
+    const infoRes = await fetch(`https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${accountId}/account-information`, {
+      headers: { 'auth-token': metaApiToken }
+    });
+    const info = await infoRes.json();
+
+    if (info.equity !== undefined) {
+      // Save equity snapshot
+      await pool.query(
+        'INSERT INTO equity_snapshots (user_id, equity, balance, recorded_at) VALUES ($1, $2, $3, NOW())',
+        [userId, info.equity, info.balance]
+      );
+    }
+
+    // Get trade history (last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const tradesRes = await fetch(
+      `https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${accountId}/history-deals/time/${thirtyDaysAgo}/${new Date().toISOString()}`,
+      { headers: { 'auth-token': metaApiToken } }
+    );
+    const deals = await tradesRes.json();
+
+    let synced = 0;
+    if (Array.isArray(deals)) {
+      for (const deal of deals) {
+        if (deal.type === 'DEAL_TYPE_BUY' || deal.type === 'DEAL_TYPE_SELL') {
+          // Upsert trade
+          await pool.query(`
+            INSERT INTO trades (user_id, symbol, type, lots, profit, opened_at, closed_at, external_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $5, closed_at = $7
+          `, [
+            userId,
+            deal.symbol || 'UNKNOWN',
+            deal.type === 'DEAL_TYPE_BUY' ? 'buy' : 'sell',
+            deal.volume || 0,
+            deal.profit || 0,
+            deal.time || new Date().toISOString(),
+            deal.time || new Date().toISOString(),
+            deal.id || `metaapi-${Date.now()}`
+          ]);
+          synced++;
+        }
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      synced,
+      account: {
+        equity: info.equity || 0,
+        balance: info.balance || 0,
+        profit: info.equity - info.balance || 0
+      }
+    });
+    
+  } catch (error) {
+    console.error('Sync error:', error);
+    res.status(500).json({ error: 'Sync failed' });
+  }
+});
+
+// GET BROKER CONNECTIONS
 app.get('/api/broker/connections', authenticateToken, async (req, res) => {
   try {
     const userId = req.userId;
-    
     const result = await pool.query(
-      `SELECT id, platform, account_number, is_active, created_at 
-       FROM broker_connections 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
+      `SELECT id, platform, account_number, broker_name, is_active, created_at 
+       FROM broker_connections WHERE user_id = $1 ORDER BY created_at DESC`,
       [userId]
     );
-    
     res.json({ connections: result.rows });
-    
   } catch (error) {
-    console.error('Errore recupero connessioni:', error);
-    res.status(500).json({ error: 'Errore recupero connessioni' });
+    console.error('Connections error:', error);
+    res.status(500).json({ error: 'Failed to get connections' });
+  }
+});
+
+// DISCONNECT BROKER
+app.post('/api/broker/disconnect', authenticateToken, async (req, res) => {
+  try {
+    await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [req.userId]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to disconnect' });
   }
 });
 
