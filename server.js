@@ -703,6 +703,8 @@ app.post('/api/broker/connect', authenticateToken, async (req, res) => {
         server: brokerName,
         platform: platform.toLowerCase(),
         magic: 0,
+        connectionStatus: 'CONNECTED',
+        accessToken: metaApiToken
       })
     });
 
