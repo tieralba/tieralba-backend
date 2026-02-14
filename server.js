@@ -9,6 +9,7 @@
 // ============================================
 
 require('dotenv').config();
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Temp fix for MetaApi cert issue
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
