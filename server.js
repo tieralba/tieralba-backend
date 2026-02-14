@@ -701,7 +701,8 @@ app.post('/api/broker/connect', authenticateToken, async (req, res) => {
         login: accountNumber,
         password: investorPassword,
         server: brokerName,
-        platform: platform.toLowerCase()
+        platform: platform.toLowerCase(),
+        magic: 0
       })
     });
 
