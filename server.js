@@ -758,7 +758,6 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
     const metaApiToken = process.env.METAAPI_TOKEN;
     if (!metaApiToken) return res.status(500).json({ error: 'MetaApi not configured' });
 
-    // Get active connection
     const conn = await pool.query(
       'SELECT metaapi_account_id, account_number FROM broker_connections WHERE user_id = $1 AND is_active = true',
       [userId]
@@ -766,49 +765,90 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
     if (conn.rows.length === 0) return res.status(400).json({ error: 'No active broker connection' });
 
     const accountId = conn.rows[0].metaapi_account_id;
+    const baseUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
+    const clientUrl = 'https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai';
 
-    // Get account info (equity, balance)
-    const infoRes = await fetch(`https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${accountId}/account-information`, {
+    // Step 1: Check account state
+    const stateRes = await fetch(`${baseUrl}/users/current/accounts/${accountId}`, {
       headers: { 'auth-token': metaApiToken }
     });
-    const info = await infoRes.json();
+    const stateText = await stateRes.text();
+    let state;
+    try { state = JSON.parse(stateText); } catch { 
+      console.error('MetaApi state response not JSON:', stateText.substring(0, 200));
+      return res.status(500).json({ error: 'MetaApi returned an invalid response. Try again in a minute.' });
+    }
+
+    console.log(`MetaApi account state: ${state.state}, connectionStatus: ${state.connectionStatus}`);
+
+    // If not deployed, deploy it
+    if (state.state !== 'DEPLOYED') {
+      await fetch(`${baseUrl}/users/current/accounts/${accountId}/deploy`, {
+        method: 'POST',
+        headers: { 'auth-token': metaApiToken }
+      });
+      return res.json({ success: false, error: 'Account is being deployed. Please try syncing again in 1-2 minutes.' });
+    }
+
+    // If not connected yet
+    if (state.connectionStatus !== 'CONNECTED') {
+      return res.json({ success: false, error: `Account status: ${state.connectionStatus}. Please wait and try again.` });
+    }
+
+    // Step 2: Get account info
+    const infoRes = await fetch(`${clientUrl}/users/current/accounts/${accountId}/account-information`, {
+      headers: { 'auth-token': metaApiToken }
+    });
+    const infoText = await infoRes.text();
+    let info;
+    try { info = JSON.parse(infoText); } catch {
+      console.error('MetaApi info response not JSON:', infoText.substring(0, 200));
+      return res.status(500).json({ error: 'Could not fetch account info. Try again in a minute.' });
+    }
 
     if (info.equity !== undefined) {
-      // Save equity snapshot
       await pool.query(
         'INSERT INTO equity_snapshots (user_id, equity, balance, recorded_at) VALUES ($1, $2, $3, NOW())',
         [userId, info.equity, info.balance]
       );
     }
 
-    // Get trade history (last 30 days)
+    // Step 3: Get trade history (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
     const tradesRes = await fetch(
-      `https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${accountId}/history-deals/time/${thirtyDaysAgo}/${new Date().toISOString()}`,
+      `${clientUrl}/users/current/accounts/${accountId}/history-deals/time/${thirtyDaysAgo}/${now}`,
       { headers: { 'auth-token': metaApiToken } }
     );
-    const deals = await tradesRes.json();
+    const tradesText = await tradesRes.text();
+    let deals = [];
+    try { deals = JSON.parse(tradesText); } catch {
+      console.error('MetaApi trades response not JSON:', tradesText.substring(0, 200));
+    }
 
     let synced = 0;
     if (Array.isArray(deals)) {
       for (const deal of deals) {
         if (deal.type === 'DEAL_TYPE_BUY' || deal.type === 'DEAL_TYPE_SELL') {
-          // Upsert trade
-          await pool.query(`
-            INSERT INTO trades (user_id, symbol, type, lots, profit, opened_at, closed_at, external_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $5, closed_at = $7
-          `, [
-            userId,
-            deal.symbol || 'UNKNOWN',
-            deal.type === 'DEAL_TYPE_BUY' ? 'buy' : 'sell',
-            deal.volume || 0,
-            deal.profit || 0,
-            deal.time || new Date().toISOString(),
-            deal.time || new Date().toISOString(),
-            deal.id || `metaapi-${Date.now()}`
-          ]);
-          synced++;
+          try {
+            await pool.query(`
+              INSERT INTO trades (user_id, symbol, type, lots, profit, opened_at, closed_at, external_id)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $5, closed_at = $7
+            `, [
+              userId,
+              deal.symbol || 'UNKNOWN',
+              deal.type === 'DEAL_TYPE_BUY' ? 'buy' : 'sell',
+              deal.volume || 0,
+              deal.profit || 0,
+              deal.time || new Date().toISOString(),
+              deal.time || new Date().toISOString(),
+              deal.id || `metaapi-${Date.now()}-${synced}`
+            ]);
+            synced++;
+          } catch (dbErr) {
+            console.error('Trade insert error:', dbErr.message);
+          }
         }
       }
     }
@@ -819,13 +859,13 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
       account: {
         equity: info.equity || 0,
         balance: info.balance || 0,
-        profit: info.equity - info.balance || 0
+        profit: (info.equity || 0) - (info.balance || 0)
       }
     });
     
   } catch (error) {
     console.error('Sync error:', error);
-    res.status(500).json({ error: 'Sync failed' });
+    res.status(500).json({ error: 'Sync failed. Please try again.' });
   }
 });
 
