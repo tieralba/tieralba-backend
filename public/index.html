@@ -788,16 +788,17 @@
 
         /* ── Calendar ── */
         .cal-filter {
-            padding: 5px 12px; font-size: 11px; font-weight: 600;
+            padding: 6px 14px; font-size: 11px; font-weight: 700;
             border: 1px solid var(--border); border-radius: 20px;
             background: none; color: var(--text-3); cursor: pointer;
             transition: all var(--transition); text-transform: uppercase; letter-spacing: 0.5px;
+            font-family: 'DM Sans', sans-serif;
         }
         .cal-filter:hover { border-color: var(--gold); color: var(--gold); }
         .cal-filter.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 
         .cal-day-tab {
-            padding: 8px 16px; font-size: 12px; font-weight: 600;
+            padding: 7px 14px; font-size: 12px; font-weight: 600;
             border: 1px solid var(--border); border-radius: var(--radius);
             background: none; color: var(--text-2); cursor: pointer;
             transition: all var(--transition); font-family: 'DM Sans', sans-serif;
@@ -806,25 +807,45 @@
         .cal-day-tab.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 
         .cal-event {
-            display: flex; align-items: center; gap: 1rem;
-            padding: 12px 0; border-bottom: 1px solid var(--border);
+            padding: 14px 0; border-bottom: 1px solid var(--border);
         }
         .cal-event:last-child { border-bottom: none; }
-        .cal-time { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-2); min-width: 55px; }
-        .cal-flag { font-size: 18px; min-width: 28px; text-align: center; }
-        .cal-impact { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .cal-event-top {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+        }
+        .cal-time {
+            font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-3);
+            min-width: 44px;
+        }
+        .cal-flag { font-size: 16px; }
+        .cal-impact {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
         .cal-impact.high { background: #e05252; box-shadow: 0 0 6px rgba(224,82,82,0.4); }
-        .cal-impact.medium { background: #e8a830; box-shadow: 0 0 6px rgba(232,168,48,0.4); }
+        .cal-impact.medium { background: #e8a830; box-shadow: 0 0 6px rgba(232,168,48,0.3); }
         .cal-impact.low { background: #c8aa6e; }
-        .cal-info { flex: 1; }
-        .cal-title { font-size: 13px; font-weight: 600; }
-        .cal-currency { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .cal-values { display: flex; gap: 1rem; }
-        .cal-val { text-align: center; min-width: 65px; }
-        .cal-val-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+        .cal-title { font-size: 13px; font-weight: 600; flex: 1; }
+        .cal-currency {
+            font-size: 10px; color: var(--text-3); font-weight: 700;
+            background: var(--surface-2); padding: 2px 8px; border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+        .cal-values-row {
+            display: flex; gap: 0; margin-left: 62px;
+        }
+        .cal-val {
+            flex: 1; text-align: center;
+            padding: 6px 4px;
+            background: var(--surface-2); 
+        }
+        .cal-val:first-child { border-radius: 6px 0 0 6px; }
+        .cal-val:last-child { border-radius: 0 6px 6px 0; }
+        .cal-val-label { font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
         .cal-val-num { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
-        .cal-val-num.green { color: var(--green); }
-        .cal-val-num.red { color: var(--red); }
+
+        @media (max-width: 640px) {
+            .cal-values-row { margin-left: 0; }
+        }
 
         /* ── LIGHT MODE ── */
         body.light {
@@ -1460,35 +1481,25 @@
 
         <!-- ═══════ ECONOMIC CALENDAR ═══════ -->
         <div id="calendar" class="section">
-            <div class="card" style="margin-bottom:1.5rem;">
-                <div class="card-header">
+            <div class="card">
+                <div class="card-header" style="flex-wrap:wrap;gap:8px;">
                     <span class="card-title">Economic Calendar</span>
-                    <div style="display:flex;gap:8px;">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="cal-filter active" data-impact="all" onclick="filterCalendar('all')">All</button>
-                        <button class="cal-filter" data-impact="high" onclick="filterCalendar('high')">🔴 High</button>
-                        <button class="cal-filter" data-impact="medium" onclick="filterCalendar('medium')">🟠 Medium</button>
-                        <button class="cal-filter" data-impact="low" onclick="filterCalendar('low')">🟡 Low</button>
+                        <button class="cal-filter" data-impact="high" onclick="filterCalendar('high')">High</button>
+                        <button class="cal-filter" data-impact="medium" onclick="filterCalendar('medium')">Med</button>
+                        <button class="cal-filter" data-impact="low" onclick="filterCalendar('low')">Low</button>
                     </div>
                 </div>
-                <div style="margin-bottom:1rem;">
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="calendarDayTabs">
-                        <button class="cal-day-tab active" onclick="loadCalendarDay(0)">Today</button>
-                        <button class="cal-day-tab" onclick="loadCalendarDay(1)">Tomorrow</button>
-                        <button class="cal-day-tab" onclick="loadCalendarDay(2)" id="calDay2">—</button>
-                        <button class="cal-day-tab" onclick="loadCalendarDay(3)" id="calDay3">—</button>
-                        <button class="cal-day-tab" onclick="loadCalendarDay(4)" id="calDay4">—</button>
-                    </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;">
+                    <button class="cal-day-tab active" onclick="loadCalendarDay(0)">Today</button>
+                    <button class="cal-day-tab" onclick="loadCalendarDay(1)">Tomorrow</button>
+                    <button class="cal-day-tab" onclick="loadCalendarDay(2)" id="calDay2">—</button>
+                    <button class="cal-day-tab" onclick="loadCalendarDay(3)" id="calDay3">—</button>
+                    <button class="cal-day-tab" onclick="loadCalendarDay(4)" id="calDay4">—</button>
                 </div>
                 <div id="calendarContent" style="min-height:200px;">
-                    <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading economic events...</div>
-                </div>
-            </div>
-
-            <!-- TradingView Widget as backup/alternative -->
-            <div class="card">
-                <div class="card-header"><span class="card-title">Live Calendar Widget</span></div>
-                <div id="tradingview-calendar" style="height:500px;overflow:hidden;border-radius:var(--radius);">
-                    <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=25,32,6,37,72,22,17,39,14,10,35,43,56,36,110,11,26,12,4,5&calType=week&timeZone=15&lang=1" width="100%" height="500" frameborder="0" allowtransparency="true" style="border-radius:var(--radius);"></iframe>
+                    <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading...</div>
                 </div>
             </div>
         </div>
@@ -2383,14 +2394,14 @@
 
         container.innerHTML = filtered.map(e => `
             <div class="cal-event" data-impact="${e.impact}">
-                <div class="cal-time">${e.time}</div>
-                <div class="cal-flag">${countryFlags[e.currency] || '🌐'}</div>
-                <div class="cal-impact ${e.impact}"></div>
-                <div class="cal-info">
+                <div class="cal-event-top">
+                    <div class="cal-time">${e.time}</div>
+                    <div class="cal-flag">${countryFlags[e.currency] || '🌐'}</div>
+                    <div class="cal-impact ${e.impact}"></div>
                     <div class="cal-title">${e.title}</div>
                     <div class="cal-currency">${e.currency}</div>
                 </div>
-                <div class="cal-values">
+                <div class="cal-values-row">
                     <div class="cal-val">
                         <div class="cal-val-label">Actual</div>
                         <div class="cal-val-num">${e.actual || '—'}</div>
