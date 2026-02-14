@@ -982,6 +982,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-section="referral">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                        <span>Referral</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-section="refund">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div>
                         <span>Refund</span>
@@ -1504,6 +1510,98 @@
             </div>
         </div>
 
+        <!-- ═══════ REFERRAL ═══════ -->
+        <div id="referral" class="section">
+            <!-- Stats -->
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem;">
+                <div class="stat-card">
+                    <div class="stat-label">Available Balance</div>
+                    <div class="stat-value" style="color:var(--green);" id="refBalance">€0.00</div>
+                    <div class="stat-change" id="refBalanceNote">Min. €50 for payout</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Earned</div>
+                    <div class="stat-value" style="color:var(--gold);" id="refTotalEarned">€0.00</div>
+                    <div class="stat-change positive">Lifetime earnings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Referrals</div>
+                    <div class="stat-value" id="refTotalReferrals">0</div>
+                    <div class="stat-change">People you invited</div>
+                </div>
+            </div>
+
+            <!-- Referral Link -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Your Referral Link</span></div>
+                <p style="color:var(--text-2);font-size:13px;margin-bottom:1rem;">Share your link and earn <strong style="color:var(--gold);">15% commission</strong> on every purchase made by people you refer.</p>
+                <div style="display:flex;gap:8px;margin-bottom:1rem;">
+                    <input type="text" class="form-input" id="refLinkInput" readonly style="font-size:13px;flex:1;">
+                    <button class="btn-primary" onclick="copyRefLink()" style="white-space:nowrap;">Copy Link</button>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span style="font-size:12px;color:var(--text-3);">Your code:</span>
+                    <span class="referral-code" id="refCodeDisplay" style="padding:8px 20px;font-size:16px;margin:0;">—</span>
+                    <button class="btn-download" onclick="copyRefCode()">Copy Code</button>
+                </div>
+            </div>
+
+            <!-- How it works -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">How It Works</span></div>
+                <div class="setup-steps">
+                    <div class="setup-step">
+                        <div class="step-num">1</div>
+                        <div><div class="step-title">Share Your Link</div><div class="step-desc">Send your referral link or code to friends, on social media, or in trading communities.</div></div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">2</div>
+                        <div><div class="step-title">They Sign Up & Subscribe</div><div class="step-desc">When someone registers using your link and purchases any plan, you earn a commission.</div></div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-num">3</div>
+                        <div><div class="step-title">Get Paid in USDT</div><div class="step-desc">Request a payout when your balance reaches €50. We send USDT to your wallet within 48 hours.</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wallet & Payout -->
+            <div class="grid-2" style="margin-bottom:1.5rem;">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">USDT Wallet</span></div>
+                    <div class="form-group" style="margin-bottom:0.75rem;">
+                        <label class="form-label">Your USDT Wallet Address (TRC20)</label>
+                        <input type="text" class="form-input" id="refWallet" placeholder="e.g. TXyz...abc">
+                    </div>
+                    <button class="btn-primary" onclick="saveRefWallet()" style="width:100%;">Save Wallet</button>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Request Payout</span></div>
+                    <div style="text-align:center;padding:0.5rem 0;">
+                        <p style="font-size:13px;color:var(--text-2);margin-bottom:1rem;">Available: <strong style="color:var(--green);" id="refPayoutBalance">€0.00</strong></p>
+                        <button class="btn-primary" onclick="requestRefPayout()" id="refPayoutBtn" style="width:100%;">Request Payout</button>
+                        <p style="font-size:11px;color:var(--text-3);margin-top:8px;">Minimum €50 · Paid in USDT (TRC20) · 48h processing</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commission History -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><span class="card-title">Commission History</span></div>
+                <div id="refCommissions" style="min-height:60px;">
+                    <p style="color:var(--text-3);font-size:13px;text-align:center;padding:1rem;">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Payout History -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">Payout History</span></div>
+                <div id="refPayouts" style="min-height:60px;">
+                    <p style="color:var(--text-3);font-size:13px;text-align:center;padding:1rem;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══════ REFUND ═══════ -->
         <div id="refund" class="section">
             <div class="card" style="margin-bottom:1.5rem;">
@@ -1743,6 +1841,7 @@
         applyPlanGating(plan);
         applyIndicatorGating(plan);
         loadRefundHistory();
+        loadReferralData();
 
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
@@ -2129,9 +2228,9 @@
     // PLAN GATING
     // ══════════════════════════════════════════════
     const planAccess = {
-        free: ['overview', 'calculator', 'calendar', 'refund', 'settings'],
-        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'refund', 'settings'],
-        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'refund', 'settings']
+        free: ['overview', 'calculator', 'calendar', 'referral', 'refund', 'settings'],
+        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings'],
+        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings']
     };
 
     let userPlan = 'free';
@@ -2342,6 +2441,91 @@
     // ══════════════════════════════════════════════
     // INIT
     // ══════════════════════════════════════════════
+    // ══════════════════════════════════════════════
+    // REFERRAL SYSTEM
+    // ══════════════════════════════════════════════
+    async function loadReferralData() {
+        const res = await apiCall('/api/referral/info');
+        if (!res) return;
+
+        const baseUrl = window.location.origin;
+        document.getElementById('refBalance').textContent = '€' + (res.balance || 0).toFixed(2);
+        document.getElementById('refPayoutBalance').textContent = '€' + (res.balance || 0).toFixed(2);
+        document.getElementById('refTotalEarned').textContent = '€' + (res.total_earned || 0).toFixed(2);
+        document.getElementById('refTotalReferrals').textContent = res.total_referrals || 0;
+        document.getElementById('refCodeDisplay').textContent = res.referral_code || '—';
+        document.getElementById('refLinkInput').value = baseUrl + '/login.html?ref=' + (res.referral_code || '');
+        if (res.usdt_wallet) document.getElementById('refWallet').value = res.usdt_wallet;
+
+        document.getElementById('refBalanceNote').textContent = res.balance >= 50 ? 'Ready for payout!' : 'Min. €50 for payout';
+        document.getElementById('refBalanceNote').className = 'stat-change' + (res.balance >= 50 ? ' positive' : '');
+
+        // Commissions
+        const commDiv = document.getElementById('refCommissions');
+        if (!res.commissions?.length) {
+            commDiv.innerHTML = '<p style="color:var(--text-3);font-size:13px;text-align:center;padding:1rem;">No commissions yet. Share your link to start earning!</p>';
+        } else {
+            commDiv.innerHTML = res.commissions.map(c => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div>
+                        <div style="font-size:13px;font-weight:500;">${c.referred_email}</div>
+                        <div style="font-size:11px;color:var(--text-3);">${c.plan_purchased?.toUpperCase()} · ${new Date(c.created_at).toLocaleDateString('en-US', {day:'numeric',month:'short'})}</div>
+                    </div>
+                    <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--green);">+€${parseFloat(c.commission_amount).toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Payouts
+        const payDiv = document.getElementById('refPayouts');
+        if (!res.payouts?.length) {
+            payDiv.innerHTML = '<p style="color:var(--text-3);font-size:13px;text-align:center;padding:1rem;">No payouts yet.</p>';
+        } else {
+            payDiv.innerHTML = res.payouts.map(p => {
+                const statusLabels = { pending: 'Pending', completed: 'Completed', rejected: 'Rejected' };
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div>
+                        <div style="font-size:13px;font-weight:500;">€${parseFloat(p.amount).toFixed(2)} → USDT</div>
+                        <div style="font-size:11px;color:var(--text-3);">${new Date(p.created_at).toLocaleDateString('en-US', {day:'numeric',month:'short',year:'numeric'})}</div>
+                    </div>
+                    <span class="dd-status-badge ${p.status === 'completed' ? '' : p.status === 'rejected' ? 'danger' : 'warning'}">${statusLabels[p.status] || p.status}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    function copyRefLink() {
+        const input = document.getElementById('refLinkInput');
+        navigator.clipboard.writeText(input.value).then(() => toast('success', 'Copied!', 'Referral link copied to clipboard'));
+    }
+
+    function copyRefCode() {
+        const code = document.getElementById('refCodeDisplay').textContent;
+        navigator.clipboard.writeText(code).then(() => toast('success', 'Copied!', 'Referral code copied'));
+    }
+
+    async function saveRefWallet() {
+        const wallet = document.getElementById('refWallet').value.trim();
+        if (!wallet || wallet.length < 10) { toast('error', 'Error', 'Enter a valid USDT wallet address'); return; }
+        const res = await apiCall('/api/referral/wallet', { method: 'POST', body: JSON.stringify({ wallet }) });
+        if (res?.success) toast('success', 'Saved', 'USDT wallet saved');
+        else toast('error', 'Error', res?.error || 'Failed to save');
+    }
+
+    async function requestRefPayout() {
+        if (!confirm('Request payout of your full balance in USDT?')) return;
+        const btn = document.getElementById('refPayoutBtn');
+        btn.disabled = true; btn.textContent = 'Processing...';
+        const res = await apiCall('/api/referral/payout', { method: 'POST' });
+        if (res?.success) {
+            toast('success', 'Payout Requested', res.message);
+            loadReferralData();
+        } else {
+            toast('error', 'Error', res?.error || 'Failed to request payout');
+        }
+        btn.disabled = false; btn.textContent = 'Request Payout';
+    }
+
     // ══════════════════════════════════════════════
     // ECONOMIC CALENDAR
     // ══════════════════════════════════════════════
