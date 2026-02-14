@@ -465,6 +465,16 @@
                 <label class="form-label">Password</label>
                 <input type="password" class="form-input" id="regPassword" placeholder="Minimum 8 characters" required minlength="8">
             </div>
+            <div class="form-group" id="refCodeGroup" style="display:none;">
+                <label class="form-label">Referral Code (optional)</label>
+                <input type="text" class="form-input" id="regRefCode" placeholder="e.g. TIER-A1B2C3D4">
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--text-2);">
+                    <input type="checkbox" id="regTerms" required style="margin-top:2px;">
+                    <span>I agree to the <a href="#" style="color:var(--gold);text-decoration:none;">Terms of Service</a> and <a href="#" style="color:var(--gold);text-decoration:none;">Privacy Policy</a></span>
+                </label>
+            </div>
             <button type="submit" class="btn-submit" id="regBtn">Create Account</button>
         </form>
     </div>
@@ -566,7 +576,8 @@
                 body: JSON.stringify({
                     name: document.getElementById('regName').value,
                     email: document.getElementById('regEmail').value,
-                    password: document.getElementById('regPassword').value
+                    password: document.getElementById('regPassword').value,
+                    referralCode: document.getElementById('regRefCode').value.trim() || null
                 })
             });
             const data = await res.json();
@@ -582,6 +593,17 @@
             btn.textContent = orig;
         }
     }
+
+    // ── Capture referral code from URL ──
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref');
+        if (ref) {
+            document.getElementById('regRefCode').value = ref;
+            document.getElementById('refCodeGroup').style.display = 'block';
+            switchTab('register');
+        }
+    })();
 
     // ── Already logged in? ──
     if (localStorage.getItem('auth_token')) {
