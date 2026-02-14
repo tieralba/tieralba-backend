@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TierAlba — Admin Signals</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0b0f; --surface: #12131a; --surface-2: #1a1b25; --surface-3: #22232f;
+            --border: rgba(255,255,255,0.06); --gold: #c8aa6e; --gold-dim: rgba(200,170,110,0.15);
+            --text: #f0ede6; --text-2: #9b978f; --text-3: #5c5952;
+            --red: #e05252; --green: #5cb87a; --green-dim: rgba(92,184,122,0.12);
+            --red-dim: rgba(224,82,82,0.12); --radius: 10px;
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1rem; }
+        .container { max-width: 700px; margin: 0 auto; }
+        h1 { font-size: 22px; margin-bottom: 0.5rem; }
+        .subtitle { font-size: 13px; color: var(--text-3); margin-bottom: 1.5rem; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem; }
+        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 1rem; color: var(--gold); }
+        .form-row { display: flex; gap: 10px; margin-bottom: 0.75rem; }
+        .form-group { flex: 1; }
+        .form-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block; }
+        .form-input, .form-select { width: 100%; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
+        .form-input:focus, .form-select:focus { border-color: var(--gold); }
+        .form-select { cursor: pointer; -webkit-appearance: none; }
+        textarea.form-input { resize: vertical; min-height: 60px; }
+        .btn { padding: 12px 24px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+        .btn-gold { background: linear-gradient(135deg, var(--gold), #b89a5a); color: #0a0b0f; width: 100%; }
+        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,170,110,0.3); }
+        .btn-gold:disabled { opacity: 0.5; transform: none; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
+        .btn-green { background: var(--green-dim); color: var(--green); border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
+        .btn-red { background: var(--red-dim); color: var(--red); border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
+        .btn-outline { background: none; border: 1px solid var(--border); color: var(--text-2); cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
+
+        /* Login */
+        #loginSection { max-width: 400px; margin: 10vh auto; }
+
+        /* Signals list */
+        .sig-item { padding: 12px; background: var(--surface-2); border-radius: var(--radius); margin-bottom: 8px; border-left: 3px solid var(--border); }
+        .sig-item.buy { border-left-color: var(--green); }
+        .sig-item.sell { border-left-color: var(--red); }
+        .sig-item.closed { opacity: 0.5; }
+        .sig-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+        .sig-dir { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sig-dir.buy { background: var(--green-dim); color: var(--green); }
+        .sig-dir.sell { background: var(--red-dim); color: var(--red); }
+        .sig-symbol { font-weight: 700; font-size: 14px; }
+        .sig-source { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--gold-dim); color: var(--gold); }
+        .sig-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
+        .sig-prices { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); }
+        .sig-actions { display: flex; gap: 6px; margin-top: 8px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+        .badge.win { background: var(--green-dim); color: var(--green); }
+        .badge.loss { background: var(--red-dim); color: var(--red); }
+        .badge.be { background: var(--gold-dim); color: var(--gold); }
+
+        .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 9999; animation: fadeIn 0.3s; }
+        .toast.success { background: var(--green); color: #fff; }
+        .toast.error { background: var(--red); color: #fff; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 640px) {
+            .form-row { flex-direction: column; gap: 0.75rem; }
+            .sig-time { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginSection">
+    <div class="card">
+        <h1 style="text-align:center;">🔐 Admin Panel</h1>
+        <p class="subtitle" style="text-align:center;">Enter admin key to manage signals</p>
+        <div class="form-group" style="margin-bottom:1rem;">
+            <input type="password" class="form-input" id="adminKeyInput" placeholder="Admin Key">
+        </div>
+        <button class="btn btn-gold" onclick="adminLogin()">Enter</button>
+    </div>
+</div>
+
+<!-- Admin Panel -->
+<div id="adminPanel" class="container" style="display:none;">
+    <h1>📡 Signal Manager</h1>
+    <p class="subtitle">Create and manage trading signals for TierAlba clients</p>
+
+    <!-- New Signal Form -->
+    <div class="card">
+        <div class="card-title">New Signal</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Symbol</label>
+                <input type="text" class="form-input" id="sigSymbol" placeholder="e.g. EURUSD, XAUUSD">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Direction</label>
+                <select class="form-select" id="sigDirection">
+                    <option value="BUY">BUY</option>
+                    <option value="SELL">SELL</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Source</label>
+                <select class="form-select" id="sigSource">
+                    <option value="team">Team</option>
+                    <option value="ea">EA Bot</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Entry Price</label>
+                <input type="number" step="0.00001" class="form-input" id="sigEntry" placeholder="1.08500">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Stop Loss</label>
+                <input type="number" step="0.00001" class="form-input" id="sigSL" placeholder="1.08200">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">TP1</label>
+                <input type="number" step="0.00001" class="form-input" id="sigTP1" placeholder="1.08800">
+            </div>
+            <div class="form-group">
+                <label class="form-label">TP2</label>
+                <input type="number" step="0.00001" class="form-input" id="sigTP2" placeholder="1.09100">
+            </div>
+            <div class="form-group">
+                <label class="form-label">TP3</label>
+                <input type="number" step="0.00001" class="form-input" id="sigTP3" placeholder="1.09500">
+            </div>
+        </div>
+        <div class="form-group" style="margin-bottom:1rem;">
+            <label class="form-label">Notes (optional)</label>
+            <textarea class="form-input" id="sigNotes" placeholder="e.g. Strong bullish momentum, wait for pullback to entry..."></textarea>
+        </div>
+        <button class="btn btn-gold" id="publishBtn" onclick="publishSignal()">Publish Signal</button>
+    </div>
+
+    <!-- Existing Signals -->
+    <div class="card">
+        <div class="card-title">Recent Signals</div>
+        <div id="signalsList">Loading...</div>
+    </div>
+</div>
+
+<script>
+    const API_URL = window.location.origin;
+    let adminKey = '';
+
+    function showToast(type, msg) {
+        const t = document.createElement('div');
+        t.className = 'toast ' + type;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    function adminLogin() {
+        adminKey = document.getElementById('adminKeyInput').value.trim();
+        if (!adminKey) return;
+        // Test the key by fetching signals
+        fetch(`${API_URL}/api/admin/signals`, { headers: { 'x-admin-key': adminKey } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { showToast('error', 'Invalid admin key'); return; }
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                localStorage.setItem('admin_key', adminKey);
+                loadAdminSignals();
+            })
+            .catch(() => showToast('error', 'Connection failed'));
+    }
+
+    // Auto-login if key saved
+    (function() {
+        const saved = localStorage.getItem('admin_key');
+        if (saved) {
+            adminKey = saved;
+            document.getElementById('adminKeyInput').value = saved;
+            adminLogin();
+        }
+    })();
+
+    async function publishSignal() {
+        const btn = document.getElementById('publishBtn');
+        const symbol = document.getElementById('sigSymbol').value.trim();
+        const direction = document.getElementById('sigDirection').value;
+        if (!symbol) { showToast('error', 'Symbol required'); return; }
+
+        btn.disabled = true; btn.textContent = 'Publishing...';
+
+        try {
+            const res = await fetch(`${API_URL}/api/signals`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify({
+                    source: document.getElementById('sigSource').value,
+                    symbol,
+                    direction,
+                    entry_price: document.getElementById('sigEntry').value || null,
+                    stop_loss: document.getElementById('sigSL').value || null,
+                    tp1: document.getElementById('sigTP1').value || null,
+                    tp2: document.getElementById('sigTP2').value || null,
+                    tp3: document.getElementById('sigTP3').value || null,
+                    notes: document.getElementById('sigNotes').value || null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('success', `Signal published: ${direction} ${symbol}`);
+                // Clear form
+                ['sigSymbol','sigEntry','sigSL','sigTP1','sigTP2','sigTP3','sigNotes'].forEach(id => document.getElementById(id).value = '');
+                loadAdminSignals();
+            } else {
+                showToast('error', data.error || 'Failed');
+            }
+        } catch (e) {
+            showToast('error', 'Connection failed');
+        }
+        btn.disabled = false; btn.textContent = 'Publish Signal';
+    }
+
+    async function loadAdminSignals() {
+        const res = await fetch(`${API_URL}/api/admin/signals`, { headers: { 'x-admin-key': adminKey } });
+        const data = await res.json();
+        if (!data.signals) return;
+
+        const container = document.getElementById('signalsList');
+        if (!data.signals.length) { container.innerHTML = '<p style="color:var(--text-3);text-align:center;">No signals yet.</p>'; return; }
+
+        container.innerHTML = data.signals.map(s => {
+            const dir = s.direction?.toLowerCase();
+            const closed = s.status === 'closed';
+            const ago = timeAgo(s.created_at);
+            const resultBadge = s.result ? `<span class="badge ${s.result === 'TP' || s.result === 'WIN' ? 'win' : s.result === 'SL' || s.result === 'LOSS' ? 'loss' : 'be'}">${s.result}</span>` : '';
+
+            return `<div class="sig-item ${dir} ${closed ? 'closed' : ''}">
+                <div class="sig-header">
+                    <span class="sig-dir ${dir}">${s.direction}</span>
+                    <span class="sig-symbol">${s.symbol}</span>
+                    <span class="sig-source">${s.source === 'ea' ? 'EA' : 'Team'}</span>
+                    ${resultBadge}
+                    <span class="sig-time">${ago}</span>
+                </div>
+                <div class="sig-prices">
+                    Entry: ${s.entry_price || '—'} · SL: ${s.stop_loss || '—'} · TP1: ${s.tp1 || '—'} · TP2: ${s.tp2 || '—'} · TP3: ${s.tp3 || '—'}
+                </div>
+                ${s.notes ? `<div style="font-size:12px;color:var(--text-3);margin-top:4px;">${s.notes}</div>` : ''}
+                ${!closed ? `<div class="sig-actions">
+                    <button class="btn btn-sm btn-green" onclick="closeSignal(${s.id}, 'TP')">✅ TP Hit</button>
+                    <button class="btn btn-sm btn-red" onclick="closeSignal(${s.id}, 'SL')">❌ SL Hit</button>
+                    <button class="btn btn-sm btn-outline" onclick="closeSignal(${s.id}, 'BE')">↔ Break Even</button>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    async function closeSignal(id, result) {
+        await fetch(`${API_URL}/api/signals/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+            body: JSON.stringify({ status: 'closed', result })
+        });
+        showToast('success', `Signal closed: ${result}`);
+        loadAdminSignals();
+    }
+
+    function timeAgo(dateStr) {
+        const diff = Date.now() - new Date(dateStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + 'h ago';
+        return Math.floor(hrs / 24) + 'd ago';
+    }
+
+    // Enter key to login
+    document.getElementById('adminKeyInput').addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
+</script>
+</body>
+</html>
