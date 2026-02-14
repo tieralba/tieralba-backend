@@ -766,7 +766,6 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
 
     const accountId = conn.rows[0].metaapi_account_id;
     const baseUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
-    const clientUrl = 'https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai';
 
     // Step 1: Check account state
     const stateRes = await fetch(`${baseUrl}/users/current/accounts/${accountId}`, {
@@ -795,7 +794,12 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
       return res.json({ success: false, error: `Account status: ${state.connectionStatus}. Please wait and try again.` });
     }
 
-    // Step 2: Get account info
+    // Step 2: Get the correct client API URL from account region
+    const region = state.region || 'vint-hill';
+    const clientUrl = `https://mt-client-api-v1.${region}.agiliumtrade.ai`;
+    console.log(`MetaApi using client URL: ${clientUrl}`);
+
+    // Get account info
     const infoRes = await fetch(`${clientUrl}/users/current/accounts/${accountId}/account-information`, {
       headers: { 'auth-token': metaApiToken }
     });
