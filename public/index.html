@@ -2250,7 +2250,28 @@
     // ══════════════════════════════════════════════
     // INIT
     // ══════════════════════════════════════════════
-    window.addEventListener('load', loadDashboard);
+    // ══════════════════════════════════════════════
+    // AUTO SYNC (every 60 seconds)
+    // ══════════════════════════════════════════════
+    async function autoSync() {
+        const res = await apiCall('/api/broker/sync', { method: 'POST' });
+        if (res?.success && res?.account) {
+            // Update equity stat
+            document.getElementById('statEquity').textContent = fmt(res.account.equity);
+            document.getElementById('statProfit').textContent = fmt(res.account.profit);
+            // Reload full stats
+            const stats = await apiCall('/api/stats');
+            if (stats) { updateStats(stats); updatePerf(stats); updateRiskGuardian(stats); }
+            const equity = await apiCall('/api/equity-history?days=30');
+            if (equity?.history) drawEquityChart(equity.history);
+        }
+    }
+
+    window.addEventListener('load', () => {
+        loadDashboard();
+        // Start auto-sync every 60 seconds
+        setInterval(autoSync, 60000);
+    });
 </script>
     <!-- Upgrade Modal -->
     <div class="modal-overlay" id="upgradeModal">
