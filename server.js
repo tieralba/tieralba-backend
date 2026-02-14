@@ -1118,6 +1118,7 @@ app.put('/api/signals/:id', async (req, res) => {
 app.get('/api/admin/signals', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
+    console.log('Admin login attempt. Key received:', JSON.stringify(adminKey), 'Expected:', JSON.stringify(process.env.ADMIN_KEY));
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
 
     const result = await pool.query('SELECT * FROM signals ORDER BY created_at DESC LIMIT 100');
