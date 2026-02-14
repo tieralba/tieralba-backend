@@ -786,6 +786,65 @@
         .theme-toggle-btn:hover { border-color: var(--border-hover); color: var(--text); }
         .theme-toggle-btn svg { width: 18px; height: 18px; }
 
+        /* ── Signal Cards ── */
+        .signal-card {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;
+            transition: border-color var(--transition);
+        }
+        .signal-card:hover { border-color: var(--border-hover); }
+        .signal-card.buy { border-left: 3px solid var(--green); }
+        .signal-card.sell { border-left: 3px solid var(--red); }
+        .signal-card.closed { opacity: 0.6; }
+        .signal-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+        }
+        .signal-dir {
+            padding: 3px 10px; border-radius: 4px; font-size: 11px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .signal-dir.buy { background: var(--green-dim); color: var(--green); }
+        .signal-dir.sell { background: var(--red-dim); color: var(--red); }
+        .signal-symbol { font-size: 16px; font-weight: 700; }
+        .signal-source {
+            font-size: 10px; padding: 2px 8px; border-radius: 4px;
+            background: var(--gold-dim); color: var(--gold); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .signal-source.ea { background: rgba(92,184,122,0.1); color: var(--green); }
+        .signal-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
+        .signal-prices {
+            display: flex; gap: 0; margin-bottom: 8px;
+        }
+        .signal-price {
+            flex: 1; text-align: center; padding: 8px 4px;
+            background: var(--surface-3);
+        }
+        .signal-price:first-child { border-radius: 6px 0 0 6px; }
+        .signal-price:last-child { border-radius: 0 6px 6px 0; }
+        .signal-price-label {
+            font-size: 9px; color: var(--text-3); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 2px;
+        }
+        .signal-price-val {
+            font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+        }
+        .signal-price-val.entry { color: var(--gold); }
+        .signal-price-val.sl { color: var(--red); }
+        .signal-price-val.tp { color: var(--green); }
+        .signal-notes { font-size: 12px; color: var(--text-2); margin-top: 8px; font-style: italic; }
+        .signal-result {
+            display: inline-block; padding: 2px 10px; border-radius: 4px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+        }
+        .signal-result.win { background: var(--green-dim); color: var(--green); }
+        .signal-result.loss { background: var(--red-dim); color: var(--red); }
+        .signal-result.be { background: var(--gold-dim); color: var(--gold); }
+
+        @media (max-width: 640px) {
+            .signal-time { margin-left: 0; width: 100%; margin-top: 4px; }
+        }
+
         /* ── Calendar ── */
         .cal-filter {
             padding: 6px 14px; font-size: 11px; font-weight: 700;
@@ -934,6 +993,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-section="signals">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                        <span>Signals</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-section="riskguard">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                         <span>Risk Guardian</span>
@@ -1066,6 +1131,23 @@
                 <div class="card">
                     <div class="card-header"><span class="card-title">Monthly Performance</span></div>
                     <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ SIGNALS ═══════ -->
+        <div id="signals" class="section">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header" style="flex-wrap:wrap;gap:8px;">
+                    <span class="card-title">Live Signals</span>
+                    <div style="display:flex;gap:6px;">
+                        <button class="cal-filter active" data-sigfilter="all" onclick="filterSignals('all')">All</button>
+                        <button class="cal-filter" data-sigfilter="active" onclick="filterSignals('active')">Active</button>
+                        <button class="cal-filter" data-sigfilter="closed" onclick="filterSignals('closed')">Closed</button>
+                    </div>
+                </div>
+                <div id="signalsList" style="min-height:200px;">
+                    <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading signals...</div>
                 </div>
             </div>
         </div>
@@ -1842,6 +1924,7 @@
         applyIndicatorGating(plan);
         loadRefundHistory();
         loadReferralData();
+        loadSignals();
 
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
@@ -2229,8 +2312,8 @@
     // ══════════════════════════════════════════════
     const planAccess = {
         free: ['overview', 'calculator', 'calendar', 'referral', 'refund', 'settings'],
-        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings'],
-        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings']
+        standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings'],
+        pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings']
     };
 
     let userPlan = 'free';
@@ -2442,6 +2525,73 @@
     // INIT
     // ══════════════════════════════════════════════
     // ══════════════════════════════════════════════
+    // SIGNALS
+    // ══════════════════════════════════════════════
+    let allSignals = [];
+    let signalFilter = 'all';
+
+    async function loadSignals() {
+        const res = await apiCall('/api/signals');
+        if (!res?.signals) return;
+        allSignals = res.signals;
+        renderSignals();
+    }
+
+    function renderSignals() {
+        const filtered = signalFilter === 'all' ? allSignals : allSignals.filter(s => s.status === signalFilter);
+        const container = document.getElementById('signalsList');
+
+        if (!filtered.length) {
+            container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3);">No signals yet. Stay tuned!</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(s => {
+            const dir = s.direction?.toLowerCase();
+            const isClosed = s.status === 'closed';
+            const ago = timeAgo(s.created_at);
+            const resultBadge = s.result ? `<span class="signal-result ${s.result === 'TP' || s.result === 'WIN' ? 'win' : s.result === 'SL' || s.result === 'LOSS' ? 'loss' : 'be'}">${s.result}</span>` : '';
+            const src = s.source === 'ea' ? 'ea' : '';
+            
+            let prices = `<div class="signal-price"><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price || '—'}</div></div>`;
+            prices += `<div class="signal-price"><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss || '—'}</div></div>`;
+            if (s.tp1) prices += `<div class="signal-price"><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div></div>`;
+            if (s.tp2) prices += `<div class="signal-price"><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div></div>`;
+            if (s.tp3) prices += `<div class="signal-price"><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div></div>`;
+
+            return `<div class="signal-card ${dir} ${isClosed ? 'closed' : ''}">
+                <div class="signal-header">
+                    <span class="signal-dir ${dir}">${s.direction}</span>
+                    <span class="signal-symbol">${s.symbol}</span>
+                    <span class="signal-source ${src}">${s.source === 'ea' ? 'EA Bot' : 'Team'}</span>
+                    ${resultBadge}
+                    <span class="signal-time">${ago}</span>
+                </div>
+                <div class="signal-prices">${prices}</div>
+                ${s.notes ? `<div class="signal-notes">${s.notes}</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    function filterSignals(filter) {
+        signalFilter = filter;
+        document.querySelectorAll('[data-sigfilter]').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-sigfilter="${filter}"]`).classList.add('active');
+        renderSignals();
+    }
+
+    function timeAgo(dateStr) {
+        const diff = Date.now() - new Date(dateStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + 'h ago';
+        const days = Math.floor(hrs / 24);
+        return days + 'd ago';
+    }
+
+    // ══════════════════════════════════════════════
     // REFERRAL SYSTEM
     // ══════════════════════════════════════════════
     async function loadReferralData() {
@@ -2650,6 +2800,8 @@
         loadDashboard();
         // Start auto-sync every 60 seconds
         setInterval(autoSync, 60000);
+        // Refresh signals every 60 seconds
+        setInterval(loadSignals, 60000);
     });
 </script>
     <!-- Upgrade Modal -->
