@@ -98,9 +98,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         
         // Get subscription to determine plan
         let plan = 'standard';
+        let amount = 0;
         if (subscriptionId) {
           const sub = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = sub.items.data[0]?.price?.id;
+          amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
           // Map price IDs to plans
           const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
           if (proPriceIds.includes(priceId)) plan = 'pro';
@@ -113,6 +115,31 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             [plan, customerId, subscriptionId, customerEmail]
           );
           console.log(`✅ User ${customerEmail} upgraded to ${plan}`);
+
+          // Credit referral commission
+          try {
+            const buyer = await pool.query('SELECT id, referred_by FROM users WHERE LOWER(email) = LOWER($1)', [customerEmail]);
+            if (buyer.rows[0]?.referred_by) {
+              const referrer = await pool.query('SELECT id FROM users WHERE referral_code = $1', [buyer.rows[0].referred_by]);
+              if (referrer.rows.length > 0) {
+                const commissionRate = 15;
+                const saleAmount = amount || (plan === 'pro' ? 89.99 : 49.99);
+                const commission = parseFloat((saleAmount * commissionRate / 100).toFixed(2));
+                
+                await pool.query(
+                  'INSERT INTO referral_commissions (referrer_id, referred_id, referred_email, plan_purchased, sale_amount, commission_rate, commission_amount) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                  [referrer.rows[0].id, buyer.rows[0].id, customerEmail, plan, saleAmount, commissionRate, commission]
+                );
+                await pool.query(
+                  'UPDATE users SET referral_balance = referral_balance + $1, referral_total_earned = referral_total_earned + $1 WHERE id = $2',
+                  [commission, referrer.rows[0].id]
+                );
+                console.log(`💰 Referral commission: €${commission} credited to referrer`);
+              }
+            }
+          } catch (refErr) {
+            console.error('Referral commission error:', refErr);
+          }
         }
         break;
       }
@@ -222,8 +249,9 @@ app.get('/health', (req, res) => {
 // REGISTRAZIONE NUOVO UTENTE
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name, fullName } = req.body;
+    const { email, password, name, fullName, referralCode } = req.body;
     const userName = name || fullName || '';
+    const refCode = (referralCode || '').trim().toUpperCase() || null;
     
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -249,8 +277,8 @@ app.post('/api/auth/register', async (req, res) => {
     const verifyToken = crypto.randomBytes(32).toString('hex');
     
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, name, verify_token, email_verified) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, created_at',
-      [email.toLowerCase(), passwordHash, userName, verifyToken, false]
+      'INSERT INTO users (email, password_hash, name, verify_token, email_verified, referred_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, name, created_at',
+      [email.toLowerCase(), passwordHash, userName, verifyToken, false, refCode]
     );
     
     const user = result.rows[0];
@@ -924,6 +952,103 @@ app.use((req, res) => {
 // ============================================
 // AVVIO SERVER
 // ============================================
+
+// ============================================
+// ENDPOINT: REFERRAL SYSTEM
+// ============================================
+
+// Generate referral code on first access
+app.get('/api/referral/info', authenticateToken, async (req, res) => {
+  try {
+    const user = await pool.query('SELECT id, email, referral_code, referral_balance, referral_total_earned, usdt_wallet FROM users WHERE id = $1', [req.userId]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    let { referral_code, referral_balance, referral_total_earned, usdt_wallet } = user.rows[0];
+
+    // Auto-generate referral code if not set
+    if (!referral_code) {
+      const crypto = require('crypto');
+      referral_code = 'TIER-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+      await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [referral_code, req.userId]);
+    }
+
+    // Get referral stats
+    const referrals = await pool.query(
+      'SELECT COUNT(*) as count FROM users WHERE referred_by = $1',
+      [referral_code]
+    );
+
+    const commissions = await pool.query(
+      'SELECT * FROM referral_commissions WHERE referrer_id = $1 ORDER BY created_at DESC LIMIT 20',
+      [req.userId]
+    );
+
+    const pendingPayouts = await pool.query(
+      'SELECT * FROM referral_payouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10',
+      [req.userId]
+    );
+
+    res.json({
+      referral_code,
+      balance: parseFloat(referral_balance) || 0,
+      total_earned: parseFloat(referral_total_earned) || 0,
+      total_referrals: parseInt(referrals.rows[0].count) || 0,
+      usdt_wallet: usdt_wallet || '',
+      commissions: commissions.rows,
+      payouts: pendingPayouts.rows,
+      commission_rate: 15,
+      min_payout: 50
+    });
+  } catch (error) {
+    console.error('Referral info error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Save USDT wallet
+app.post('/api/referral/wallet', authenticateToken, async (req, res) => {
+  try {
+    const { wallet } = req.body;
+    if (!wallet || wallet.length < 10) return res.status(400).json({ error: 'Invalid wallet address' });
+    await pool.query('UPDATE users SET usdt_wallet = $1 WHERE id = $2', [wallet.trim(), req.userId]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Request payout
+app.post('/api/referral/payout', authenticateToken, async (req, res) => {
+  try {
+    const user = await pool.query('SELECT referral_balance, usdt_wallet FROM users WHERE id = $1', [req.userId]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const balance = parseFloat(user.rows[0].referral_balance) || 0;
+    const wallet = user.rows[0].usdt_wallet;
+
+    if (balance < 50) return res.status(400).json({ error: 'Minimum payout is €50. Current balance: €' + balance.toFixed(2) });
+    if (!wallet) return res.status(400).json({ error: 'Please set your USDT wallet address first' });
+
+    // Check for existing pending payout
+    const pending = await pool.query(
+      'SELECT id FROM referral_payouts WHERE user_id = $1 AND status = $2',
+      [req.userId, 'pending']
+    );
+    if (pending.rows.length > 0) return res.status(400).json({ error: 'You already have a pending payout request' });
+
+    // Create payout and deduct balance
+    await pool.query(
+      'INSERT INTO referral_payouts (user_id, amount, usdt_wallet) VALUES ($1, $2, $3)',
+      [req.userId, balance, wallet]
+    );
+    await pool.query('UPDATE users SET referral_balance = 0 WHERE id = $1', [req.userId]);
+
+    res.json({ success: true, amount: balance, message: 'Payout request submitted! We will process it within 48 hours.' });
+  } catch (error) {
+    console.error('Payout error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // ============================================
 // ENDPOINT: REFUND REQUESTS
