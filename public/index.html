@@ -786,6 +786,46 @@
         .theme-toggle-btn:hover { border-color: var(--border-hover); color: var(--text); }
         .theme-toggle-btn svg { width: 18px; height: 18px; }
 
+        /* ── Calendar ── */
+        .cal-filter {
+            padding: 5px 12px; font-size: 11px; font-weight: 600;
+            border: 1px solid var(--border); border-radius: 20px;
+            background: none; color: var(--text-3); cursor: pointer;
+            transition: all var(--transition); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .cal-filter:hover { border-color: var(--gold); color: var(--gold); }
+        .cal-filter.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+        .cal-day-tab {
+            padding: 8px 16px; font-size: 12px; font-weight: 600;
+            border: 1px solid var(--border); border-radius: var(--radius);
+            background: none; color: var(--text-2); cursor: pointer;
+            transition: all var(--transition); font-family: 'DM Sans', sans-serif;
+        }
+        .cal-day-tab:hover { border-color: var(--gold); color: var(--gold); }
+        .cal-day-tab.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+        .cal-event {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .cal-event:last-child { border-bottom: none; }
+        .cal-time { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-2); min-width: 55px; }
+        .cal-flag { font-size: 18px; min-width: 28px; text-align: center; }
+        .cal-impact { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .cal-impact.high { background: #e05252; box-shadow: 0 0 6px rgba(224,82,82,0.4); }
+        .cal-impact.medium { background: #e8a830; box-shadow: 0 0 6px rgba(232,168,48,0.4); }
+        .cal-impact.low { background: #c8aa6e; }
+        .cal-info { flex: 1; }
+        .cal-title { font-size: 13px; font-weight: 600; }
+        .cal-currency { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cal-values { display: flex; gap: 1rem; }
+        .cal-val { text-align: center; min-width: 65px; }
+        .cal-val-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+        .cal-val-num { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+        .cal-val-num.green { color: var(--green); }
+        .cal-val-num.red { color: var(--red); }
+
         /* ── LIGHT MODE ── */
         body.light {
             --bg: #f5f3ee;
@@ -912,6 +952,12 @@
                     <a class="nav-link" data-section="indicators">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
                         <span>Indicators</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="calendar">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                        <span>Calendar</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -1408,6 +1454,41 @@
                         <div class="step-num">3</div>
                         <div><div class="step-title">Start Using</div><div class="step-desc">Open TradingView, go to Indicators → Invite-Only, and you'll find your indicators there.</div></div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ ECONOMIC CALENDAR ═══════ -->
+        <div id="calendar" class="section">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Economic Calendar</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="cal-filter active" data-impact="all" onclick="filterCalendar('all')">All</button>
+                        <button class="cal-filter" data-impact="high" onclick="filterCalendar('high')">🔴 High</button>
+                        <button class="cal-filter" data-impact="medium" onclick="filterCalendar('medium')">🟠 Medium</button>
+                        <button class="cal-filter" data-impact="low" onclick="filterCalendar('low')">🟡 Low</button>
+                    </div>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="calendarDayTabs">
+                        <button class="cal-day-tab active" onclick="loadCalendarDay(0)">Today</button>
+                        <button class="cal-day-tab" onclick="loadCalendarDay(1)">Tomorrow</button>
+                        <button class="cal-day-tab" onclick="loadCalendarDay(2)" id="calDay2">—</button>
+                        <button class="cal-day-tab" onclick="loadCalendarDay(3)" id="calDay3">—</button>
+                        <button class="cal-day-tab" onclick="loadCalendarDay(4)" id="calDay4">—</button>
+                    </div>
+                </div>
+                <div id="calendarContent" style="min-height:200px;">
+                    <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading economic events...</div>
+                </div>
+            </div>
+
+            <!-- TradingView Widget as backup/alternative -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">Live Calendar Widget</span></div>
+                <div id="tradingview-calendar" style="height:500px;overflow:hidden;border-radius:var(--radius);">
+                    <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=25,32,6,37,72,22,17,39,14,10,35,43,56,36,110,11,26,12,4,5&calType=week&timeZone=15&lang=1" width="100%" height="500" frameborder="0" allowtransparency="true" style="border-radius:var(--radius);"></iframe>
                 </div>
             </div>
         </div>
@@ -2037,9 +2118,9 @@
     // PLAN GATING
     // ══════════════════════════════════════════════
     const planAccess = {
-        free: ['overview', 'calculator', 'refund', 'settings'],
-        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'refund', 'settings'],
-        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'refund', 'settings']
+        free: ['overview', 'calculator', 'calendar', 'refund', 'settings'],
+        standard: ['overview', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'refund', 'settings'],
+        pro: ['overview', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'refund', 'settings']
     };
 
     let userPlan = 'free';
@@ -2250,6 +2331,109 @@
     // ══════════════════════════════════════════════
     // INIT
     // ══════════════════════════════════════════════
+    // ══════════════════════════════════════════════
+    // ECONOMIC CALENDAR
+    // ══════════════════════════════════════════════
+    const countryFlags = {
+        'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧', 'JPY': '🇯🇵', 'AUD': '🇦🇺',
+        'CAD': '🇨🇦', 'CHF': '🇨🇭', 'NZD': '🇳🇿', 'CNY': '🇨🇳', 'INR': '🇮🇳',
+        'BRL': '🇧🇷', 'KRW': '🇰🇷', 'MXN': '🇲🇽', 'SGD': '🇸🇬', 'HKD': '🇭🇰',
+        'TRY': '🇹🇷', 'ZAR': '🇿🇦', 'SEK': '🇸🇪', 'NOK': '🇳🇴', 'DKK': '🇩🇰',
+        'PLN': '🇵🇱', 'CZK': '🇨🇿', 'HUF': '🇭🇺', 'RUB': '🇷🇺', 'ALL': '🌐'
+    };
+
+    // Sample calendar data (in production, fetch from an API like forex factory)
+    let calendarData = [];
+    let calendarFilter = 'all';
+    let calendarDayOffset = 0;
+
+    function generateCalendarData(dayOffset) {
+        const date = new Date();
+        date.setDate(date.getDate() + dayOffset);
+        const events = [
+            { time: '08:30', currency: 'EUR', title: 'ECB Interest Rate Decision', impact: 'high', actual: '', forecast: '4.50%', previous: '4.50%' },
+            { time: '09:00', currency: 'EUR', title: 'CPI (YoY)', impact: 'high', actual: '', forecast: '2.6%', previous: '2.8%' },
+            { time: '10:00', currency: 'GBP', title: 'GDP (QoQ)', impact: 'high', actual: '', forecast: '0.3%', previous: '0.1%' },
+            { time: '10:30', currency: 'CHF', title: 'SNB Monetary Policy Assessment', impact: 'high', actual: '', forecast: '', previous: '' },
+            { time: '13:30', currency: 'USD', title: 'Core CPI (MoM)', impact: 'high', actual: '', forecast: '0.3%', previous: '0.4%' },
+            { time: '13:30', currency: 'USD', title: 'Initial Jobless Claims', impact: 'medium', actual: '', forecast: '218K', previous: '211K' },
+            { time: '13:30', currency: 'USD', title: 'CPI (YoY)', impact: 'high', actual: '', forecast: '2.9%', previous: '3.1%' },
+            { time: '14:00', currency: 'CAD', title: 'BoC Rate Statement', impact: 'high', actual: '', forecast: '', previous: '' },
+            { time: '15:00', currency: 'USD', title: 'Existing Home Sales', impact: 'medium', actual: '', forecast: '3.95M', previous: '4.15M' },
+            { time: '15:30', currency: 'USD', title: 'Natural Gas Storage', impact: 'low', actual: '', forecast: '-85B', previous: '-116B' },
+            { time: '16:00', currency: 'USD', title: 'Crude Oil Inventories', impact: 'medium', actual: '', forecast: '-1.8M', previous: '-0.2M' },
+            { time: '19:00', currency: 'USD', title: '10-Year Bond Auction', impact: 'low', actual: '', forecast: '', previous: '4.68%' },
+            { time: '21:00', currency: 'NZD', title: 'RBNZ Interest Rate Decision', impact: 'high', actual: '', forecast: '4.25%', previous: '4.75%' },
+            { time: '23:50', currency: 'JPY', title: 'Tankan Manufacturing Index', impact: 'medium', actual: '', forecast: '14', previous: '13' },
+        ];
+        // Shuffle slightly based on day to vary data
+        const shift = dayOffset * 3;
+        return events.slice(shift % 4).concat(events.slice(0, shift % 4));
+    }
+
+    function renderCalendar() {
+        const events = generateCalendarData(calendarDayOffset);
+        const filtered = calendarFilter === 'all' ? events : events.filter(e => e.impact === calendarFilter);
+        const container = document.getElementById('calendarContent');
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3);">No events match this filter.</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(e => `
+            <div class="cal-event" data-impact="${e.impact}">
+                <div class="cal-time">${e.time}</div>
+                <div class="cal-flag">${countryFlags[e.currency] || '🌐'}</div>
+                <div class="cal-impact ${e.impact}"></div>
+                <div class="cal-info">
+                    <div class="cal-title">${e.title}</div>
+                    <div class="cal-currency">${e.currency}</div>
+                </div>
+                <div class="cal-values">
+                    <div class="cal-val">
+                        <div class="cal-val-label">Actual</div>
+                        <div class="cal-val-num">${e.actual || '—'}</div>
+                    </div>
+                    <div class="cal-val">
+                        <div class="cal-val-label">Forecast</div>
+                        <div class="cal-val-num">${e.forecast || '—'}</div>
+                    </div>
+                    <div class="cal-val">
+                        <div class="cal-val-label">Previous</div>
+                        <div class="cal-val-num">${e.previous || '—'}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function filterCalendar(impact) {
+        calendarFilter = impact;
+        document.querySelectorAll('.cal-filter').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.cal-filter[data-impact="${impact}"]`).classList.add('active');
+        renderCalendar();
+    }
+
+    function loadCalendarDay(offset) {
+        calendarDayOffset = offset;
+        document.querySelectorAll('.cal-day-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.cal-day-tab')[offset].classList.add('active');
+        renderCalendar();
+    }
+
+    // Set day tab labels
+    (function initCalendarTabs() {
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        for (let i = 2; i <= 4; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const el = document.getElementById('calDay' + i);
+            if (el) el.textContent = days[d.getDay()] + ' ' + d.getDate();
+        }
+        renderCalendar();
+    })();
+
     // ══════════════════════════════════════════════
     // AUTO SYNC (every 60 seconds)
     // ══════════════════════════════════════════════
