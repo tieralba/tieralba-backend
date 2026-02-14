@@ -166,22 +166,24 @@
         if (!adminKey) return;
         // Test the key by fetching signals
         fetch(`${API_URL}/api/admin/signals`, { headers: { 'x-admin-key': adminKey } })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error('Unauthorized');
+                return r.json();
+            })
             .then(data => {
-                if (data.error) { showToast('error', 'Invalid admin key'); return; }
+                if (data.error) { showToast('error', 'Invalid admin key'); localStorage.removeItem('admin_key'); return; }
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
                 localStorage.setItem('admin_key', adminKey);
                 loadAdminSignals();
             })
-            .catch(() => showToast('error', 'Connection failed'));
+            .catch(() => { showToast('error', 'Invalid admin key or connection failed'); localStorage.removeItem('admin_key'); });
     }
 
     // Auto-login if key saved
     (function() {
         const saved = localStorage.getItem('admin_key');
         if (saved) {
-            adminKey = saved;
             document.getElementById('adminKeyInput').value = saved;
             adminLogin();
         }
