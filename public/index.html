@@ -93,6 +93,7 @@
             padding: 0 1.5rem 1.75rem;
             border-bottom: 1px solid var(--border);
             margin-bottom: 1rem;
+            flex-shrink: 0;
         }
 
         .logo-mark {
@@ -111,7 +112,14 @@
             letter-spacing: -0.3px;
         }
 
-        .nav-menu { list-style: none; padding: 0.5rem 0.75rem; flex: 1; }
+        .nav-menu { list-style: none; padding: 0.5rem 0.75rem; flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+        /* Custom scrollbar for sidebar */
+        .nav-menu::-webkit-scrollbar { width: 3px; }
+        .nav-menu::-webkit-scrollbar-track { background: transparent; }
+        .nav-menu::-webkit-scrollbar-thumb { background: rgba(212,185,120,0.15); border-radius: 3px; }
+        .nav-menu::-webkit-scrollbar-thumb:hover { background: rgba(212,185,120,0.3); }
+        .nav-menu { scrollbar-width: thin; scrollbar-color: rgba(212,185,120,0.15) transparent; }
 
         .nav-item { margin-bottom: 2px; }
 
@@ -151,6 +159,7 @@
         .sidebar-footer {
             padding: 1rem 1.25rem;
             border-top: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .user-card {
