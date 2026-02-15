@@ -1217,6 +1217,146 @@ app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
 });
 
 // ============================================
+// ============================================
+// EA LICENSE VERIFICATION SYSTEM
+// ============================================
+
+// Generate a unique license key
+function generateLicenseKey() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const segments = [];
+  for (let s = 0; s < 4; s++) {
+    let segment = '';
+    for (let i = 0; i < 5; i++) {
+      segment += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    segments.push(segment);
+  }
+  return 'TA-' + segments.join('-');
+}
+
+// POST /api/ea/verify — Called by the EA from MetaTrader
+app.post('/api/ea/verify', async (req, res) => {
+  try {
+    const { license_key, product, account } = req.body;
+
+    if (!license_key) {
+      return res.json({ valid: false, error: 'No license key provided' });
+    }
+
+    const result = await pool.query(
+      `SELECT el.*, u.subscription_status, u.subscription_end, u.email
+       FROM ea_licenses el
+       JOIN users u ON u.id = el.user_id
+       WHERE el.license_key = $1 AND el.product = $2 AND el.is_active = true`,
+      [license_key, product || 'any']
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ valid: false, error: 'License not found or inactive' });
+    }
+
+    const license = result.rows[0];
+
+    // Check if subscription is active
+    const subActive = license.subscription_status === 'active' || license.subscription_status === 'trialing';
+    const subNotExpired = !license.subscription_end || new Date(license.subscription_end) > new Date();
+
+    if (!subActive || !subNotExpired) {
+      return res.json({ valid: false, expired: true, error: 'Subscription expired' });
+    }
+
+    // Update last verification time and MT account
+    await pool.query(
+      `UPDATE ea_licenses SET last_verified = NOW(), mt_account = $1, verification_count = verification_count + 1
+       WHERE id = $2`,
+      [account || null, license.id]
+    );
+
+    return res.json({ valid: true, product: license.product, email: license.email });
+
+  } catch (err) {
+    console.error('EA verify error:', err);
+    return res.json({ valid: false, error: 'Server error' });
+  }
+});
+
+// GET /api/ea/license — Get user's license keys (requires auth)
+app.get('/api/ea/license', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, license_key, product, is_active, created_at, last_verified, mt_account, verification_count
+       FROM ea_licenses WHERE user_id = $1 ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json({ licenses: result.rows });
+  } catch (err) {
+    console.error('Get licenses error:', err);
+    res.status(500).json({ error: 'Errore server' });
+  }
+});
+
+// POST /api/ea/license/generate — Generate license keys for user (requires auth + active sub)
+app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
+  try {
+    // Check subscription
+    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.user.id]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const u = user.rows[0];
+    const subActive = u.subscription_status === 'active' || u.subscription_status === 'trialing';
+    const subNotExpired = !u.subscription_end || new Date(u.subscription_end) > new Date();
+
+    if (!subActive || !subNotExpired) {
+      return res.status(403).json({ error: 'Subscription not active. Renew to generate license keys.' });
+    }
+
+    // Check if already has licenses for both products
+    const existing = await pool.query('SELECT product FROM ea_licenses WHERE user_id = $1 AND is_active = true', [req.user.id]);
+    const existingProducts = existing.rows.map(r => r.product);
+
+    const products = ['tier_algo_gold', 'tier_algo_us100'];
+    const newLicenses = [];
+
+    for (const product of products) {
+      if (!existingProducts.includes(product)) {
+        const key = generateLicenseKey();
+        const result = await pool.query(
+          `INSERT INTO ea_licenses (user_id, license_key, product, is_active)
+           VALUES ($1, $2, $3, true) RETURNING id, license_key, product, is_active, created_at`,
+          [req.user.id, key, product]
+        );
+        newLicenses.push(result.rows[0]);
+      }
+    }
+
+    if (newLicenses.length === 0) {
+      return res.json({ message: 'License keys already exist', licenses: existing.rows });
+    }
+
+    res.json({ message: 'License keys generated', licenses: newLicenses });
+
+  } catch (err) {
+    console.error('Generate license error:', err);
+    res.status(500).json({ error: 'Errore server' });
+  }
+});
+
+// POST /api/ea/license/revoke — Admin revoke a license
+app.post('/api/ea/license/revoke', async (req, res) => {
+  try {
+    const { admin_key, license_id } = req.body;
+    if (admin_key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+
+    await pool.query('UPDATE ea_licenses SET is_active = false WHERE id = $1', [license_id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Revoke license error:', err);
+    res.status(500).json({ error: 'Errore server' });
+  }
+});
+
+// ============================================
 // SERVE FRONTEND per route non-API
 // ============================================
 app.get('/', (req, res) => {
