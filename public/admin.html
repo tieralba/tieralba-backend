@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TierAlba — Admin Signals</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:wght@500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0a0b0f; --surface: #12131a; --surface-2: #1a1b25; --surface-3: #22232f;
-            --border: rgba(255,255,255,0.06); --gold: #c8aa6e; --gold-dim: rgba(200,170,110,0.15);
-            --text: #f0ede6; --text-2: #9b978f; --text-3: #5c5952;
-            --red: #e05252; --green: #5cb87a; --green-dim: rgba(92,184,122,0.12);
-            --red-dim: rgba(224,82,82,0.12); --radius: 10px;
+            --bg: #07080b; --surface: #0e0f14; --surface-2: #15161e; --surface-3: #1d1e28;
+            --border: rgba(255,255,255,0.05); --gold: #d4b978; --gold-dim: rgba(212,185,120,0.12);
+            --text: #f4f1ea; --text-2: #a09b91; --text-3: #5c5952;
+            --red: #e05252; --green: #5cb87a; --green-dim: rgba(92,184,122,0.10);
+            --red-dim: rgba(224,82,82,0.10); --radius: 12px;
         }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1rem; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1rem; position: relative; }
+        body::before { content: ''; position: fixed; width: 400px; height: 400px; background: radial-gradient(circle, rgba(212,185,120,0.04) 0%, transparent 70%); top: -100px; right: -100px; border-radius: 50%; pointer-events: none; }
         .container { max-width: 700px; margin: 0 auto; }
         h1 { font-size: 22px; margin-bottom: 0.5rem; }
         .subtitle { font-size: 13px; color: var(--text-3); margin-bottom: 1.5rem; }
@@ -28,8 +29,8 @@
         .form-select { cursor: pointer; -webkit-appearance: none; }
         textarea.form-input { resize: vertical; min-height: 60px; }
         .btn { padding: 12px 24px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
-        .btn-gold { background: linear-gradient(135deg, var(--gold), #b89a5a); color: #0a0b0f; width: 100%; }
-        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,170,110,0.3); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold) 0%, #c5a855 50%, #f0dfa8 100%); background-size: 200% 200%; color: #07080b; width: 100%; position: relative; overflow: hidden; }
+        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(212,185,120,0.3); background-position: 100% 0; }
         .btn-gold:disabled { opacity: 0.5; transform: none; }
         .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
         .btn-green { background: var(--green-dim); color: var(--green); border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
