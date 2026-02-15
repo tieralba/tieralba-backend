@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TierAlba — Sign In</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:wght@500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #0a0b0f;
-            --surface: #12131a;
-            --surface-2: #1a1b25;
-            --border: rgba(255,255,255,0.06);
-            --border-focus: rgba(200,170,110,0.4);
-            --gold: #c8aa6e;
-            --gold-light: #e8d5a8;
-            --gold-dim: rgba(200,170,110,0.15);
-            --text: #f0ede6;
-            --text-2: #9b978f;
+            --bg: #07080b;
+            --surface: #0e0f14;
+            --surface-2: #15161e;
+            --border: rgba(255,255,255,0.05);
+            --border-focus: rgba(212,185,120,0.5);
+            --gold: #d4b978;
+            --gold-light: #f0dfa8;
+            --gold-dim: rgba(212,185,120,0.12);
+            --text: #f4f1ea;
+            --text-2: #a09b91;
             --text-3: #5c5952;
             --red: #e05252;
             --green: #5cb87a;
-            --radius: 10px;
+            --radius: 12px;
         }
 
         body {
@@ -35,6 +35,32 @@
             overflow: hidden;
         }
 
+        /* Animated gradient orbs */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(212,185,120,0.06) 0%, transparent 70%);
+            top: -200px; left: -100px;
+            border-radius: 50%;
+            animation: float1 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(212,185,120,0.04) 0%, transparent 70%);
+            bottom: -150px; right: -100px;
+            border-radius: 50%;
+            animation: float2 25s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes float1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,60px) scale(1.1); } }
+        @keyframes float2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px,-40px) scale(1.15); } }
+
         /* Left panel — branding */
         .brand-panel {
             flex: 1;
@@ -44,6 +70,7 @@
             padding: 4rem;
             position: relative;
             overflow: hidden;
+            z-index: 1;
         }
 
         .brand-panel::before {
@@ -51,18 +78,19 @@
             position: absolute;
             inset: 0;
             background: 
-                radial-gradient(ellipse 80% 60% at 20% 80%, rgba(200,170,110,0.07) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,170,110,0.04) 0%, transparent 50%);
+                radial-gradient(ellipse 70% 50% at 15% 85%, rgba(212,185,120,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 40% at 85% 15%, rgba(212,185,120,0.04) 0%, transparent 50%);
             pointer-events: none;
         }
 
+        /* Noise texture overlay */
         .brand-panel::after {
             content: '';
             position: absolute;
             top: 0; right: 0;
             width: 1px;
             height: 100%;
-            background: linear-gradient(to bottom, transparent, var(--border), transparent);
+            background: linear-gradient(to bottom, transparent 10%, rgba(212,185,120,0.15) 50%, transparent 90%);
         }
 
         .brand-logo {
@@ -73,35 +101,36 @@
         }
 
         .brand-logo-mark {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Playfair Display', serif;
+            font-family: 'Cormorant Garamond', serif;
             font-weight: 700;
-            font-size: 22px;
+            font-size: 24px;
             color: var(--bg);
+            box-shadow: 0 4px 20px rgba(212,185,120,0.2);
         }
 
         .brand-logo-text {
-            font-family: 'Playfair Display', serif;
-            font-size: 26px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
             font-weight: 700;
             color: var(--text);
             letter-spacing: -0.5px;
         }
 
         .brand-headline {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2rem, 3.5vw, 3.2rem);
-            font-weight: 700;
-            line-height: 1.2;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.2rem, 3.8vw, 3.5rem);
+            font-weight: 600;
+            line-height: 1.15;
             color: var(--text);
             margin-bottom: 1.5rem;
-            max-width: 420px;
+            max-width: 440px;
         }
 
         .brand-headline span {
@@ -124,10 +153,11 @@
         }
 
         .brand-stat-value {
-            font-family: 'DM Sans', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            font-size: 30px;
+            font-weight: 500;
             color: var(--gold);
+            letter-spacing: -1px;
         }
 
         .brand-stat-label {
@@ -140,20 +170,33 @@
 
         /* Right panel — form */
         .auth-panel {
-            width: 480px;
-            min-width: 480px;
+            width: 500px;
+            min-width: 500px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: 4rem 3.5rem;
             background: var(--surface);
+            border-left: 1px solid rgba(255,255,255,0.04);
+            backdrop-filter: blur(20px);
+            z-index: 1;
+            position: relative;
+        }
+
+        .auth-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.2), transparent);
         }
 
         .auth-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 28px;
-            font-weight: 700;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 30px;
+            font-weight: 600;
             margin-bottom: 8px;
+            letter-spacing: -0.3px;
         }
 
         .auth-subtitle {
@@ -231,20 +274,21 @@
 
         .form-input {
             width: 100%;
-            padding: 13px 16px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
             border-radius: var(--radius);
             color: var(--text);
             font-family: 'DM Sans', sans-serif;
             font-size: 15px;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
         }
 
         .form-input:focus {
             border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px var(--gold-dim);
+            box-shadow: 0 0 0 3px var(--gold-dim), 0 0 20px rgba(212,185,120,0.05);
+            background: rgba(255,255,255,0.04);
         }
 
         .form-input::placeholder {
@@ -253,8 +297,9 @@
 
         .btn-submit {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--gold), #b89a5a);
+            padding: 15px;
+            background: linear-gradient(135deg, var(--gold) 0%, #c5a855 50%, var(--gold-light) 100%);
+            background-size: 200% 200%;
             border: none;
             border-radius: var(--radius);
             color: var(--bg);
@@ -262,15 +307,31 @@
             font-size: 14px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             margin-top: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .btn-submit:hover::before {
+            transform: translateX(100%);
         }
 
         .btn-submit:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(200,170,110,0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(212,185,120,0.3), 0 0 60px rgba(212,185,120,0.1);
+            background-position: 100% 0;
         }
 
         .btn-submit:active {
