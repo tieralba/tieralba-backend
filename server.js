@@ -928,32 +928,6 @@ app.post('/api/broker/disconnect', authenticateToken, async (req, res) => {
 });
 
 // ============================================
-// SERVE FRONTEND per route non-API
-// ============================================
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// ============================================
-// GESTIONE ERRORI 404 (solo per API)
-// ============================================
-
-app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint non trovato',
-    path: req.path 
-  });
-});
-
-// ============================================
-// AVVIO SERVER
-// ============================================
-
-// ============================================
 // ENDPOINT: REFERRAL SYSTEM
 // ============================================
 
@@ -1240,6 +1214,28 @@ app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
     console.error('Portal error:', error);
     res.status(500).json({ error: 'Failed to create portal session' });
   }
+});
+
+// ============================================
+// SERVE FRONTEND per route non-API
+// ============================================
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// ============================================
+// GESTIONE ERRORI 404 (solo per API)
+// ============================================
+
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Endpoint non trovato',
+    path: req.path 
+  });
 });
 
 // ============================================
