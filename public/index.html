@@ -1477,26 +1477,38 @@
                 </div>
             </div>
 
+            <!-- License Keys -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Your License Keys</span>
+                    <button class="btn-small gold" onclick="generateLicenseKeys()" id="btnGenLicense">Generate Keys</button>
+                </div>
+                <p style="color:var(--text-2);margin-bottom:1rem;font-size:14px;">Your unique license keys for EA activation. Copy and paste into the EA settings on MetaTrader 5.</p>
+                <div id="licenseKeysContainer">
+                    <div style="text-align:center;padding:2rem 0;color:var(--text-3);">Loading licenses...</div>
+                </div>
+            </div>
+
             <!-- EA Downloads -->
             <div class="card" style="margin-bottom:1.5rem;">
                 <div class="card-header"><span class="card-title">Download Expert Advisors</span></div>
-                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Download and install our proprietary EAs on your MetaTrader platform.</p>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Download and install our proprietary EAs on your MetaTrader 5 platform.</p>
                 <div class="ea-grid">
                     <div class="ea-card">
-                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg></div>
+                        <div class="ea-icon" style="color:var(--gold);"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg></div>
                         <div>
-                            <div class="ea-name">TierAlba EA v3.2</div>
-                            <div class="ea-meta">MetaTrader 4 · .ex4 · 245 KB</div>
+                            <div class="ea-name">Tier Algo Gold</div>
+                            <div class="ea-meta">MetaTrader 5 · .ex5 · XAUUSD</div>
                         </div>
-                        <button class="btn-download" onclick="downloadEA('tieralba-ea-v3.2.ex4')">Download</button>
+                        <button class="btn-download" onclick="downloadEA('Tier_Algo_Gold.ex5')">Download</button>
                     </div>
                     <div class="ea-card">
-                        <div class="ea-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg></div>
+                        <div class="ea-icon" style="color:var(--gold);"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg></div>
                         <div>
-                            <div class="ea-name">TierAlba EA v3.2</div>
-                            <div class="ea-meta">MetaTrader 5 · .ex5 · 268 KB</div>
+                            <div class="ea-name">Tier Algo US100</div>
+                            <div class="ea-meta">MetaTrader 5 · .ex5 · NAS100</div>
                         </div>
-                        <button class="btn-download" onclick="downloadEA('tieralba-ea-v3.2.ex5')">Download</button>
+                        <button class="btn-download" onclick="downloadEA('Tier_Algo_us100.ex5')">Download</button>
                     </div>
                 </div>
             </div>
@@ -1508,36 +1520,36 @@
                     <div class="setup-step">
                         <div class="step-num">1</div>
                         <div>
-                            <div class="step-title">Download the EA file</div>
-                            <div class="step-desc">Choose the correct version for your platform (MT4 or MT5) above.</div>
+                            <div class="step-title">Generate your License Keys</div>
+                            <div class="step-desc">Click "Generate Keys" above. You'll get a unique key for each EA.</div>
                         </div>
                     </div>
                     <div class="setup-step">
                         <div class="step-num">2</div>
                         <div>
-                            <div class="step-title">Open MetaTrader Data Folder</div>
-                            <div class="step-desc">In MetaTrader go to File → Open Data Folder → MQL4 (or MQL5) → Experts</div>
+                            <div class="step-title">Download the EA files</div>
+                            <div class="step-desc">Download Tier Algo Gold (.ex5) and/or Tier Algo US100 (.ex5) above.</div>
                         </div>
                     </div>
                     <div class="setup-step">
                         <div class="step-num">3</div>
                         <div>
-                            <div class="step-title">Copy the EA file</div>
-                            <div class="step-desc">Paste the downloaded .ex4/.ex5 file into the Experts folder.</div>
+                            <div class="step-title">Copy EA to MetaTrader</div>
+                            <div class="step-desc">In MT5: File → Open Data Folder → MQL5 → Experts → paste the .ex5 file.</div>
                         </div>
                     </div>
                     <div class="setup-step">
                         <div class="step-num">4</div>
                         <div>
-                            <div class="step-title">Restart & Attach</div>
-                            <div class="step-desc">Restart MetaTrader, find TierAlba EA in the Navigator panel, and drag it onto a chart. Enable AutoTrading.</div>
+                            <div class="step-title">Allow Web Requests</div>
+                            <div class="step-desc">In MT5: Tools → Options → Expert Advisors → Check "Allow WebRequest" and add your server URL.</div>
                         </div>
                     </div>
                     <div class="setup-step">
                         <div class="step-num">5</div>
                         <div>
-                            <div class="step-title">Enter your License Key</div>
-                            <div class="step-desc">When prompted, enter the license key from your Settings page to activate.</div>
+                            <div class="step-title">Attach & Enter License Key</div>
+                            <div class="step-desc">Drag the EA onto a chart. In the Inputs tab, paste your License Key. Enable AutoTrading. ✅</div>
                         </div>
                     </div>
                 </div>
@@ -2008,6 +2020,9 @@
             document.getElementById(target)?.classList.add('active');
             pageTitle.textContent = link.querySelector('span').textContent;
             document.getElementById('sidebar').classList.remove('open');
+
+            // Load license keys when entering experts section
+            if (target === 'experts') loadLicenseKeys();
         });
     });
 
@@ -2697,11 +2712,108 @@
     // ══════════════════════════════════════════════
     function downloadEA(filename) {
         toast('info', 'Download', 'Preparing ' + filename + '...');
-        // In production: fetch from your server/CDN
-        // For now: show coming soon
-        setTimeout(() => {
-            toast('info', 'Coming Soon', 'EA files will be available for download shortly. Contact support for early access.');
-        }, 1000);
+        // Trigger file download from server
+        const a = document.createElement('a');
+        a.href = '/ea-files/' + filename;
+        a.download = filename;
+        a.click();
+        setTimeout(() => toast('success', 'Download', filename + ' download started!'), 500);
+    }
+
+    // ══════════════════════════════════════════════
+    // LICENSE KEY MANAGEMENT
+    // ══════════════════════════════════════════════
+
+    async function loadLicenseKeys() {
+        const container = document.getElementById('licenseKeysContainer');
+        if (!container) return;
+
+        try {
+            const res = await apiCall('/api/ea/license');
+            if (!res || !res.licenses) {
+                container.innerHTML = '<div style="text-align:center;padding:1.5rem 0;color:var(--text-3);">Click "Generate Keys" to get your license keys.</div>';
+                return;
+            }
+
+            const licenses = res.licenses;
+            if (licenses.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:1.5rem 0;color:var(--text-3);">No license keys yet. Click "Generate Keys" to activate your EAs.</div>';
+                return;
+            }
+
+            let html = '';
+            for (const lic of licenses) {
+                const productName = lic.product === 'tier_algo_gold' ? 'Tier Algo Gold' 
+                                  : lic.product === 'tier_algo_us100' ? 'Tier Algo US100' 
+                                  : lic.product;
+                const productIcon = lic.product === 'tier_algo_gold' ? '🥇' : '📈';
+                const statusColor = lic.is_active ? 'var(--green)' : 'var(--red)';
+                const statusText = lic.is_active ? 'Active' : 'Revoked';
+                const lastVerified = lic.last_verified ? new Date(lic.last_verified).toLocaleString() : 'Never';
+                const mtAccount = lic.mt_account || '—';
+
+                html += `
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:20px;">${productIcon}</span>
+                            <span style="font-weight:600;font-size:14px;">${productName}</span>
+                        </div>
+                        <span style="color:${statusColor};font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">${statusText}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;">
+                        <code style="background:var(--surface-3);padding:10px 14px;border-radius:8px;font-family:'DM Mono',monospace;font-size:14px;letter-spacing:1.5px;color:var(--gold);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${lic.license_key}</code>
+                        <button class="btn-small" onclick="copyLicenseKey('${lic.license_key}')" style="white-space:nowrap;">Copy</button>
+                    </div>
+                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:11px;color:var(--text-3);">
+                        <span>MT Account: <strong style="color:var(--text-2);">${mtAccount}</strong></span>
+                        <span>Verifications: <strong style="color:var(--text-2);">${lic.verification_count || 0}</strong></span>
+                        <span>Last Check: <strong style="color:var(--text-2);">${lastVerified}</strong></span>
+                    </div>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+
+        } catch (err) {
+            container.innerHTML = '<div style="text-align:center;padding:1.5rem 0;color:var(--red);">Error loading licenses</div>';
+        }
+    }
+
+    async function generateLicenseKeys() {
+        const btn = document.getElementById('btnGenLicense');
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+
+        try {
+            const res = await apiCall('/api/ea/license/generate', 'POST');
+            if (res?.error) {
+                toast('error', 'License Error', res.error);
+            } else {
+                toast('success', 'License Keys', res.message || 'Keys generated successfully!');
+                await loadLicenseKeys();
+            }
+        } catch (err) {
+            toast('error', 'Error', 'Failed to generate license keys');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Generate Keys';
+    }
+
+    function copyLicenseKey(key) {
+        navigator.clipboard.writeText(key).then(() => {
+            toast('success', 'Copied!', 'License key copied to clipboard');
+        }).catch(() => {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = key;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            toast('success', 'Copied!', 'License key copied to clipboard');
+        });
     }
 
     // ══════════════════════════════════════════════
