@@ -5,31 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TierAlba — Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:wght@500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #0a0b0f;
-            --surface: #12131a;
-            --surface-2: #1a1b25;
-            --surface-3: #22232f;
-            --border: rgba(255,255,255,0.06);
-            --border-hover: rgba(255,255,255,0.12);
-            --gold: #c8aa6e;
-            --gold-light: #e8d5a8;
-            --gold-dim: rgba(200,170,110,0.12);
-            --gold-glow: rgba(200,170,110,0.06);
-            --text: #f0ede6;
-            --text-2: #9b978f;
+            --bg: #07080b;
+            --surface: #0e0f14;
+            --surface-2: #15161e;
+            --surface-3: #1d1e28;
+            --border: rgba(255,255,255,0.05);
+            --border-hover: rgba(255,255,255,0.1);
+            --gold: #d4b978;
+            --gold-light: #f0dfa8;
+            --gold-dim: rgba(212,185,120,0.10);
+            --gold-glow: rgba(212,185,120,0.05);
+            --text: #f4f1ea;
+            --text-2: #a09b91;
             --text-3: #5c5952;
             --green: #5cb87a;
-            --green-dim: rgba(92,184,122,0.12);
+            --green-dim: rgba(92,184,122,0.10);
             --red: #e05252;
-            --red-dim: rgba(224,82,82,0.12);
-            --radius: 10px;
-            --radius-lg: 14px;
+            --red-dim: rgba(224,82,82,0.10);
+            --radius: 12px;
+            --radius-lg: 16px;
             --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -39,6 +39,24 @@
             color: var(--text);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(212,185,120,0.04) 0%, transparent 70%);
+            top: -100px; right: -100px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: ambientFloat 30s ease-in-out infinite;
+        }
+
+        @keyframes ambientFloat {
+            0%,100% { transform: translate(0,0); }
+            50% { transform: translate(-30px, 40px); }
         }
 
         /* ── Sidebar ── */
@@ -56,6 +74,15 @@
             transition: transform 0.3s ease;
         }
 
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            top: 0; right: -1px;
+            width: 1px; height: 100%;
+            background: linear-gradient(180deg, transparent 5%, rgba(212,185,120,0.12) 50%, transparent 95%);
+            pointer-events: none;
+        }
+
         .sidebar-logo {
             display: flex;
             align-items: center;
@@ -66,17 +93,18 @@
         }
 
         .logo-mark {
-            width: 36px; height: 36px;
+            width: 38px; height: 38px;
             background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-family: 'Playfair Display', serif;
-            font-weight: 700; font-size: 18px; color: var(--bg);
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700; font-size: 19px; color: var(--bg);
+            box-shadow: 0 2px 12px rgba(212,185,120,0.2);
         }
 
         .logo-text {
-            font-family: 'Playfair Display', serif;
-            font-size: 20px; font-weight: 700;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 21px; font-weight: 700;
             letter-spacing: -0.3px;
         }
 
@@ -100,6 +128,7 @@
         .nav-link.active {
             color: var(--gold);
             background: var(--gold-dim);
+            box-shadow: inset 0 0 0 1px rgba(212,185,120,0.06);
         }
 
         .nav-link.nav-locked { opacity: 0.4; }
@@ -133,10 +162,11 @@
 
         .user-avatar {
             width: 34px; height: 34px;
-            background: linear-gradient(135deg, var(--gold), #b89a5a);
+            background: linear-gradient(135deg, var(--gold), #c5a855);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 700; color: var(--bg);
+            box-shadow: 0 2px 10px rgba(212,185,120,0.15);
         }
 
         .user-name { font-size: 13px; font-weight: 600; }
@@ -169,9 +199,9 @@
         }
 
         .page-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 26px; font-weight: 700;
-            letter-spacing: -0.3px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px; font-weight: 600;
+            letter-spacing: -0.5px;
         }
 
         .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
@@ -210,7 +240,16 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
-            transition: border-color var(--transition);
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.08), transparent);
         }
 
         .card:hover { border-color: var(--border-hover); }
@@ -241,12 +280,27 @@
             border-radius: var(--radius-lg);
             padding: 1.25rem 1.5rem;
             transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.15), transparent);
+            opacity: 0;
+            transition: opacity var(--transition);
         }
 
         .stat-card:hover {
-            border-color: var(--gold-dim);
-            box-shadow: 0 0 0 1px var(--gold-dim);
+            border-color: rgba(212,185,120,0.12);
+            box-shadow: 0 4px 20px rgba(212,185,120,0.04), 0 0 0 1px rgba(212,185,120,0.06);
+            transform: translateY(-2px);
         }
+
+        .stat-card:hover::before { opacity: 1; }
 
         .stat-label {
             font-size: 12px;
@@ -259,10 +313,14 @@
 
         .stat-value {
             font-family: 'DM Mono', monospace;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 500;
             letter-spacing: -0.5px;
             margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--text), rgba(244,241,234,0.8));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-change {
@@ -427,21 +485,36 @@
 
         .btn-primary {
             padding: 12px 24px;
-            background: linear-gradient(135deg, var(--gold), #b89a5a);
+            background: linear-gradient(135deg, var(--gold) 0%, #c5a855 50%, var(--gold-light) 100%);
+            background-size: 200% 200%;
             border: none;
             border-radius: var(--radius);
             color: var(--bg);
             font-family: 'DM Sans', sans-serif;
             font-size: 13px; font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: 1.5px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .btn-primary:hover::before { transform: translateX(100%); }
 
         .btn-primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(200,170,110,0.25);
+            box-shadow: 0 6px 24px rgba(212,185,120,0.25);
+            background-position: 100% 0;
         }
 
         .calc-result {
@@ -480,7 +553,7 @@
         }
 
         .referral-hero h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Cormorant Garamond', serif;
             font-size: 24px; margin-bottom: 0.75rem;
         }
 
@@ -524,7 +597,7 @@
         }
 
         .modal-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Cormorant Garamond', serif;
             font-size: 20px;
         }
 
@@ -548,15 +621,16 @@
         }
 
         .toast {
-            background: var(--surface);
+            background: rgba(14,15,20,0.95);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 12px 16px;
+            padding: 14px 18px;
             display: flex; gap: 10px;
             align-items: flex-start;
-            min-width: 280px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease;
+            min-width: 300px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
+            backdrop-filter: blur(12px);
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .toast.success { border-left: 3px solid var(--green); }
@@ -579,15 +653,15 @@
 
         /* ── Loading State ── */
         .skeleton {
-            background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 6px;
+            background: linear-gradient(90deg, var(--surface-2) 25%, rgba(212,185,120,0.04) 50%, var(--surface-2) 75%);
+            background-size: 300% 100%;
+            animation: shimmer 2s ease-in-out infinite;
+            border-radius: 8px;
         }
 
         @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+            0% { background-position: 300% 0; }
+            100% { background-position: -300% 0; }
         }
 
         /* ── Progress Bar (Challenge) ── */
@@ -908,23 +982,23 @@
 
         /* ── LIGHT MODE ── */
         body.light {
-            --bg: #f5f3ee;
+            --bg: #f7f5f0;
             --surface: #ffffff;
             --surface-2: #f0ede6;
             --surface-3: #e8e4dc;
-            --border: rgba(0,0,0,0.08);
-            --border-hover: rgba(0,0,0,0.15);
+            --border: rgba(0,0,0,0.07);
+            --border-hover: rgba(0,0,0,0.14);
             --gold: #b89a50;
             --gold-light: #c8aa6e;
-            --gold-dim: rgba(184,154,80,0.1);
-            --gold-glow: rgba(184,154,80,0.05);
+            --gold-dim: rgba(184,154,80,0.08);
+            --gold-glow: rgba(184,154,80,0.04);
             --text: #1a1815;
             --text-2: #5c5952;
             --text-3: #9b978f;
             --green: #3a8a5c;
-            --green-dim: rgba(58,138,92,0.1);
+            --green-dim: rgba(58,138,92,0.08);
             --red: #c83030;
-            --red-dim: rgba(200,48,48,0.1);
+            --red-dim: rgba(200,48,48,0.08);
         }
 
         body.light .sidebar { background: #ffffff; border-right-color: rgba(0,0,0,0.08); }
@@ -1072,7 +1146,7 @@
                 <div class="user-avatar" id="userAvatar">U</div>
                 <div>
                     <div class="user-name" id="userName">User</div>
-                    <div class="user-email" id="userEmail">email@test.com</div>
+                    <div class="user-email" id="userEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bcd9d1ddd5d0fcc8d9cfc892dfd3d1">[email&#160;protected]</a></div>
                 </div>
             </div>
         </div>
@@ -1765,7 +1839,7 @@
         </div>
     </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     // ══════════════════════════════════════════════
     // CONFIG
     // ══════════════════════════════════════════════
@@ -2821,13 +2895,3 @@
                 <button class="btn-primary" onclick="upgradePlan('pro')" style="width:100%;background:linear-gradient(135deg, #2a6b4a, #3a8a5c);">Upgrade to Pro — €89.99/mo</button>
                 <p style="font-size:11px;color:var(--text-3);margin-top:1rem;">7-day money-back guarantee · Cancel anytime</p>
             </div>
-        </div>
-    </div>
-
-<script>
-    // Stripe Price IDs (set these via environment or here)
-    // window.STRIPE_STANDARD_PRICE_ID = 'price_xxx';
-    // window.STRIPE_PRO_PRICE_ID = 'price_xxx';
-</script>
-</body>
-</html>
