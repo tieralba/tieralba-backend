@@ -40,7 +40,10 @@
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             position: relative;
+            overflow-x: hidden;
         }
+
+        html { overflow-x: hidden; }
 
         body::before {
             content: '';
@@ -178,6 +181,8 @@
             min-height: 100vh;
             padding: 2rem 2.5rem;
             transition: margin-left 0.3s;
+            overflow-x: hidden;
+            max-width: 100vw;
         }
 
         /* ── Topbar ── */
@@ -864,7 +869,7 @@
         .signal-card {
             background: var(--surface-2); border: 1px solid var(--border);
             border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;
-            transition: border-color var(--transition);
+            transition: border-color var(--transition); overflow: hidden;
         }
         .signal-card:hover { border-color: var(--border-hover); }
         .signal-card.buy { border-left: 3px solid var(--green); }
@@ -889,10 +894,12 @@
         .signal-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
         .signal-prices {
             display: flex; gap: 0; margin-bottom: 8px;
+            overflow: hidden; border-radius: 6px;
         }
         .signal-price {
             flex: 1; text-align: center; padding: 8px 4px;
             background: var(--surface-3);
+            min-width: 0;
         }
         .signal-price:first-child { border-radius: 6px 0 0 6px; }
         .signal-price:last-child { border-radius: 0 6px 6px 0; }
@@ -902,6 +909,7 @@
         }
         .signal-price-val {
             font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .signal-price-val.entry { color: var(--gold); }
         .signal-price-val.sl { color: var(--red); }
@@ -1036,15 +1044,107 @@
             .menu-toggle { display: flex; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .perf-grid { grid-template-columns: repeat(2, 1fr); }
+            .broker-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
         @media (max-width: 640px) {
-            .main { padding: 1.25rem; }
-            .stats-grid { grid-template-columns: 1fr; }
+            .main { padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
             .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr; }
             .calc-grid { grid-template-columns: 1fr; }
+            .perf-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+            .page-title { font-size: 20px; }
+            .broker-grid { grid-template-columns: 1fr 1fr; }
+
+            /* Fix card overflow */
+            .card { padding: 1rem; overflow: hidden; }
+            .stat-card { padding: 1rem 1.15rem; }
+            .stat-value { font-size: 22px; }
+            .stat-label { font-size: 11px; letter-spacing: 0.5px; }
+
+            /* Fix signal prices overflow */
+            .signal-prices { 
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                gap: 0;
+            }
+            .signal-price { padding: 6px 2px; }
+            .signal-price-val { font-size: 11px; word-break: break-all; }
+            .signal-price-label { font-size: 8px; }
+            .signal-symbol { font-size: 14px; }
+            .signal-card { padding: 0.75rem; }
+            .signal-header { gap: 6px; }
+            .signal-time { margin-left: 0; width: 100%; margin-top: 4px; }
+
+            /* Fix Expert Advisor perf grid (4 cols → 2 cols) */
+            .perf-item { padding: 0.75rem; }
+            .perf-value { font-size: 15px; }
+            .perf-label { font-size: 10px; letter-spacing: 0.5px; }
+
+            /* Fix calendar values overflow */
+            .cal-values-row { margin-left: 0; }
+            .cal-val-num { font-size: 11px; }
+            .cal-event-top { flex-wrap: wrap; gap: 6px; }
+            .cal-title { font-size: 12px; min-width: 0; }
+            .cal-time { min-width: 38px; font-size: 11px; }
+
+            /* Fix referral hero */
+            .referral-hero { padding: 1.5rem 1rem; }
+            .referral-hero h2 { font-size: 20px; }
+            .referral-code { font-size: 16px; padding: 10px 20px; letter-spacing: 1px; }
+
+            /* Fix modal overflow */
+            .modal { padding: 1.25rem; width: 95vw; }
+            .modal-title { font-size: 18px; }
+
+            /* Fix EA cards */
+            .ea-card { flex-wrap: wrap; gap: 0.75rem; }
+            .ea-card .btn-download { margin-left: 0; width: 100%; text-align: center; }
+
+            /* Fix topbar */
+            .topbar { flex-wrap: wrap; gap: 0.75rem; }
+            .topbar-right { gap: 0.5rem; }
+
+            /* Fix toast */
+            .toast-container { left: 0.75rem; right: 0.75rem; top: 0.75rem; }
+            .toast { min-width: auto; }
+
+            /* Fix drawdown bars */
+            .dd-bar-bg { height: 10px; }
+
+            /* Fix setup steps */
+            .setup-step { gap: 0.75rem; }
+            .step-num { width: 26px; height: 26px; font-size: 12px; }
+
+            /* Fix upgrade modal buttons */
+            .btn-primary { padding: 11px 18px; font-size: 12px; letter-spacing: 1px; }
+
+            /* Fix equity protector */
+            .equity-protector { padding: 0.75rem 1rem; }
+
+            /* Fix filter buttons wrapping */
+            .cal-filter { padding: 5px 10px; font-size: 10px; }
+            .cal-day-tab { padding: 6px 10px; font-size: 11px; }
+
+            /* Panic button mobile */
+            .panic-btn { padding: 14px 28px; font-size: 13px; letter-spacing: 1.5px; }
+
+            /* Progress bar label */
+            .progress-bar-bg { height: 8px; }
+        }
+
+        @media (max-width: 380px) {
+            .main { padding: 0.75rem; }
+            .stats-grid { grid-template-columns: 1fr; }
             .perf-grid { grid-template-columns: 1fr 1fr; }
-            .page-title { font-size: 22px; }
+            .stat-value { font-size: 20px; }
+            .signal-prices { 
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .signal-price-val { font-size: 10px; }
+            .page-title { font-size: 18px; }
+            .card-title { font-size: 13px; }
         }
     </style>
 </head>
