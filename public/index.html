@@ -1353,34 +1353,34 @@
 
         <!-- ═══════ RISK GUARDIAN ═══════ -->
         <div id="riskguard" class="section">
-            <!-- Challenge Progress -->
+            <!-- Account Overview -->
             <div class="card" style="margin-bottom:1.5rem;">
                 <div class="card-header">
-                    <span class="card-title">Road to Funded</span>
-                    <span style="font-size:12px;color:var(--gold);font-weight:600;" id="challengePhase">PHASE 1 — CHALLENGE</span>
+                    <span class="card-title">Account Overview</span>
+                    <span class="dd-status-badge" id="rgAccountBadge">NO ACCOUNT</span>
                 </div>
-                <div style="margin-bottom:1.25rem;">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                        <span style="font-size:13px;color:var(--text-2);">Profit Target</span>
-                        <span style="font-size:13px;font-weight:600;" id="challengeTarget">€0 / €1,000</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="challengeProgress" style="width:0%"></div>
-                    </div>
-                    <div style="text-align:right;margin-top:4px;font-size:12px;color:var(--text-3);" id="challengePercent">0% completed</div>
+                <div id="rgNoAccount" style="text-align:center;padding:2rem 0;color:var(--text-3);">
+                    <p style="margin-bottom:1rem;">Connect a broker account to use Risk Guardian</p>
+                    <button class="btn-primary" onclick="document.querySelector('[data-section=brokers]').click()">Connect Broker</button>
                 </div>
-                <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
-                    <div class="perf-item">
-                        <div class="perf-label">Days Left</div>
-                        <div class="perf-value gold" id="challengeDays">30</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">Current Profit</div>
-                        <div class="perf-value green" id="challengeProfit">€0</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">Status</div>
-                        <div class="perf-value green" id="challengeStatus">In Progress</div>
+                <div id="rgAccountInfo" style="display:none;">
+                    <div class="perf-grid" style="grid-template-columns:repeat(4,1fr);">
+                        <div class="perf-item">
+                            <div class="perf-label">Balance</div>
+                            <div class="perf-value gold" id="rgBalance">—</div>
+                        </div>
+                        <div class="perf-item">
+                            <div class="perf-label">Equity</div>
+                            <div class="perf-value" id="rgEquity">—</div>
+                        </div>
+                        <div class="perf-item">
+                            <div class="perf-label">Today P&L</div>
+                            <div class="perf-value" id="rgTodayPL">—</div>
+                        </div>
+                        <div class="perf-item">
+                            <div class="perf-label">Open Trades</div>
+                            <div class="perf-value" id="rgOpenTrades">0</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1416,7 +1416,7 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
                             <div style="font-size:14px;font-weight:600;">Equity Protector</div>
-                            <div style="font-size:12px;color:var(--text-3);">Close everything if I exceed the daily loss limit</div>
+                            <div style="font-size:12px;color:var(--text-3);">Alert when you approach the daily drawdown limit</div>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="equityProtectorToggle" onchange="toggleEquityProtector()">
@@ -1426,7 +1426,7 @@
                     <div id="epSettings" style="display:none;margin-top:1rem;">
                         <div style="display:flex;gap:1rem;align-items:end;">
                             <div style="flex:1;">
-                                <label class="form-label">Daily loss limit (%)</label>
+                                <label class="form-label">Alert at daily loss (%)</label>
                                 <input type="number" class="form-input" id="epLimit" value="4" step="0.5" min="1" max="10">
                             </div>
                             <button class="btn-primary" onclick="saveEquityProtector()">Save</button>
@@ -1435,12 +1435,45 @@
                 </div>
             </div>
 
+            <!-- Challenge Progress (optional) -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Challenge Tracker</span>
+                    <span style="font-size:12px;color:var(--gold);font-weight:600;" id="challengePhase">PHASE 1</span>
+                </div>
+                <div style="margin-bottom:1.25rem;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="font-size:13px;color:var(--text-2);">Profit Target</span>
+                        <span style="font-size:13px;font-weight:600;" id="challengeTarget">$0 / $0</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="challengeProgress" style="width:0%"></div>
+                    </div>
+                    <div style="text-align:right;margin-top:4px;font-size:12px;color:var(--text-3);" id="challengePercent">0% completed</div>
+                </div>
+                <div class="perf-grid" style="grid-template-columns:repeat(3,1fr);">
+                    <div class="perf-item">
+                        <div class="perf-label">Total Profit</div>
+                        <div class="perf-value green" id="challengeProfit">$0</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Win Rate</div>
+                        <div class="perf-value gold" id="challengeWR">0%</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Status</div>
+                        <div class="perf-value green" id="challengeStatus">—</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Risk Settings -->
             <div class="card">
-                <div class="card-header"><span class="card-title">Challenge Settings</span></div>
+                <div class="card-header"><span class="card-title">Risk Settings</span></div>
+                <p style="color:var(--text-2);font-size:13px;margin-bottom:1rem;">Set your risk limits. These are used to calculate drawdown bars and alerts.</p>
                 <div class="calc-grid">
                     <div class="form-group">
-                        <label class="form-label">Challenge Capital (€)</label>
+                        <label class="form-label">Starting Capital ($)</label>
                         <input type="number" class="form-input" id="riskCapital" value="100000" step="1000">
                     </div>
                     <div class="form-group">
@@ -2379,43 +2412,88 @@
         };
         localStorage.setItem('riskSettings', JSON.stringify(riskSettings));
         updateRiskGuardian();
-        toast('success', 'Saved', 'Challenge settings updated');
+        toast('success', 'Saved', 'Risk settings updated');
     }
 
     function updateRiskGuardian(stats) {
         const s = stats || {};
         const capital = riskSettings.capital;
         const targetAmt = capital * (riskSettings.target / 100);
-        const profit = s.totalProfit || 0;
-        const progress = targetAmt > 0 ? Math.min((profit / targetAmt) * 100, 100) : 0;
+        const totalProfit = s.totalProfit || 0;
+        const equity = s.equity || 0;
+
+        // Account Overview — show/hide based on broker connection
+        apiCall('/api/broker/connections').then(data => {
+            const active = data?.connections?.find(c => c.is_active);
+            const noAccEl = document.getElementById('rgNoAccount');
+            const accInfoEl = document.getElementById('rgAccountInfo');
+            const accBadge = document.getElementById('rgAccountBadge');
+
+            if (active) {
+                noAccEl.style.display = 'none';
+                accInfoEl.style.display = 'block';
+                accBadge.textContent = 'CONNECTED';
+                accBadge.className = 'dd-status-badge';
+
+                // Use real equity from stats
+                document.getElementById('rgBalance').textContent = fmt(capital);
+                document.getElementById('rgEquity').textContent = equity > 0 ? fmt(equity) : fmt(capital + totalProfit);
+
+                // Today P&L from today's trades
+                const todayPL = s.todayProfit || 0;
+                const todayEl = document.getElementById('rgTodayPL');
+                todayEl.textContent = (todayPL >= 0 ? '+' : '') + fmt(todayPL);
+                todayEl.className = 'perf-value ' + (todayPL >= 0 ? 'green' : 'red');
+
+                document.getElementById('rgOpenTrades').textContent = s.openTrades || '0';
+            } else {
+                noAccEl.style.display = 'block';
+                accInfoEl.style.display = 'none';
+                accBadge.textContent = 'NO ACCOUNT';
+                accBadge.className = 'dd-status-badge warning';
+            }
+        });
 
         // Challenge progress
-        document.getElementById('challengeTarget').textContent = fmt(Math.max(profit, 0)) + ' / ' + fmt(targetAmt);
+        const progress = targetAmt > 0 ? Math.min((totalProfit / targetAmt) * 100, 100) : 0;
+        document.getElementById('challengeTarget').textContent = fmt(Math.max(totalProfit, 0)) + ' / ' + fmt(targetAmt);
         document.getElementById('challengeProgress').style.width = Math.max(progress, 0) + '%';
         document.getElementById('challengePercent').textContent = Math.max(progress, 0).toFixed(1) + '% completed';
-        document.getElementById('challengeProfit').textContent = fmt(profit);
-        document.getElementById('challengeStatus').textContent = profit >= targetAmt ? 'TARGET!' : profit >= 0 ? 'In Progress' : 'Caution';
-        document.getElementById('challengeStatus').className = 'perf-value ' + (profit >= targetAmt ? 'gold' : profit >= 0 ? 'green' : 'red');
+        document.getElementById('challengeProfit').textContent = fmt(totalProfit);
+        document.getElementById('challengeWR').textContent = (s.winRate || 0) + '%';
 
-        // Drawdown (simulated from stats - in production would come from broker API)
-        const dailyLoss = Math.abs(Math.min(s.worstTrade || 0, 0));
-        const dailyDDPercent = capital > 0 ? (dailyLoss / capital * 100) : 0;
-        const maxDDPercent = capital > 0 ? (Math.abs(Math.min(s.totalProfit || 0, 0)) / capital * 100) : 0;
+        const statusEl = document.getElementById('challengeStatus');
+        if (totalProfit >= targetAmt && targetAmt > 0) {
+            statusEl.textContent = 'TARGET HIT!'; statusEl.className = 'perf-value gold';
+        } else if (totalProfit >= 0) {
+            statusEl.textContent = 'In Progress'; statusEl.className = 'perf-value green';
+        } else {
+            statusEl.textContent = 'Losing'; statusEl.className = 'perf-value red';
+        }
+
+        // Drawdown calculations using real trade data
+        // Daily loss: sum of today's closed losing trades
+        const todayLoss = Math.abs(Math.min(s.todayProfit || 0, 0));
+        const dailyDDPercent = capital > 0 ? (todayLoss / capital * 100) : 0;
+
+        // Max drawdown: peak to trough from total P&L
+        const maxDDAmount = Math.abs(Math.min(totalProfit, 0));
+        const maxDDPercent = capital > 0 ? (maxDDAmount / capital * 100) : 0;
         
         const dailyLimit = riskSettings.dailyDD;
         const maxLimit = riskSettings.maxDD;
         const dailyRatio = Math.min(dailyDDPercent / dailyLimit * 100, 100);
         const maxRatio = Math.min(maxDDPercent / maxLimit * 100, 100);
 
-        document.getElementById('ddDailyValue').textContent = dailyDDPercent.toFixed(1) + '% / ' + dailyLimit + '%';
+        document.getElementById('ddDailyValue').textContent = dailyDDPercent.toFixed(2) + '% / ' + dailyLimit + '%';
         document.getElementById('ddDailyBar').style.width = dailyRatio + '%';
         document.getElementById('ddDailyBar').className = 'dd-bar-fill ' + (dailyRatio > 80 ? 'dd-danger' : dailyRatio > 50 ? 'dd-warning' : 'dd-safe');
 
-        document.getElementById('ddMaxValue').textContent = maxDDPercent.toFixed(1) + '% / ' + maxLimit + '%';
+        document.getElementById('ddMaxValue').textContent = maxDDPercent.toFixed(2) + '% / ' + maxLimit + '%';
         document.getElementById('ddMaxBar').style.width = maxRatio + '%';
         document.getElementById('ddMaxBar').className = 'dd-bar-fill ' + (maxRatio > 80 ? 'dd-danger' : maxRatio > 50 ? 'dd-warning' : 'dd-safe');
 
-        // Badge
+        // Status badge
         const badge = document.getElementById('ddStatusBadge');
         if (dailyRatio > 80 || maxRatio > 80) {
             badge.textContent = 'DANGER'; badge.className = 'dd-status-badge danger';
@@ -2435,13 +2513,13 @@
     function toggleEquityProtector() {
         const on = document.getElementById('equityProtectorToggle').checked;
         document.getElementById('epSettings').style.display = on ? 'block' : 'none';
-        if (on) toast('info', 'Equity Protector', 'Configure the loss limit');
+        if (on) toast('info', 'Equity Protector', 'Set your alert threshold');
     }
 
     function saveEquityProtector() {
         const limit = document.getElementById('epLimit').value;
         localStorage.setItem('equityProtectorLimit', limit);
-        toast('success', 'Protector Active', 'Will close everything if you lose more than ' + limit + '% today');
+        toast('success', 'Alert Set', 'You will be alerted if daily loss exceeds ' + limit + '%');
     }
 
     // ══════════════════════════════════════════════
@@ -2496,17 +2574,27 @@
         updateBotStatus();
     }
 
-    function panicButton() {
-        if (!confirm('⚠️ WARNING!\n\nThis will CLOSE ALL open trades and stop the bot.\n\nAre you sure?')) return;
+    async function panicButton() {
+        if (!confirm('⚠️ WARNING!\n\nThis will attempt to CLOSE ALL open trades.\n\nAre you sure?')) return;
         if (!confirm('Final confirmation: do you really want to close everything?')) return;
         
-        // In production this would call the broker API to close all trades
-        toast('error', 'PANIC ACTIVATED', 'Command sent. All trades will be closed.');
+        toast('error', 'PANIC ACTIVATED', 'Sending close-all command to broker...');
+        
+        try {
+            const res = await apiCall('/api/broker/close-all', { method: 'POST' });
+            if (res?.success) {
+                toast('success', 'Done', 'Close-all command sent. ' + (res.closed || 0) + ' trade(s) closing.');
+            } else {
+                toast('error', 'Error', res?.error || 'Failed to close trades. Check your broker connection.');
+            }
+        } catch (err) {
+            toast('error', 'Error', 'Could not reach the server. Try closing trades directly in MetaTrader.');
+        }
+        
+        // Update UI
         document.getElementById('botOpenTrades').textContent = '0';
-        document.getElementById('botPulse').className = 'bot-pulse offline';
-        document.getElementById('botStatusText').textContent = 'Stopped';
-        document.getElementById('botEAStatus').textContent = 'Stopped';
-        document.getElementById('botEAStatus').className = 'perf-value red';
+        document.getElementById('rgOpenTrades').textContent = '0';
+        updateBotStatus();
     }
 
     // ══════════════════════════════════════════════
