@@ -2714,14 +2714,32 @@
     // ══════════════════════════════════════════════
     // EA DOWNLOADS
     // ══════════════════════════════════════════════
-    function downloadEA(filename) {
+    async function downloadEA(filename) {
         toast('info', 'Download', 'Preparing ' + filename + '...');
-        // Trigger file download from server
-        const a = document.createElement('a');
-        a.href = '/ea-files/' + filename;
-        a.download = filename;
-        a.click();
-        setTimeout(() => toast('success', 'Download', filename + ' download started!'), 500);
+        try {
+            const token = getToken();
+            const res = await fetch('/ea-files/' + filename, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.status === 403) {
+                toast('error', 'Access Denied', 'Active subscription required to download EA files.');
+                return;
+            }
+            if (!res.ok) {
+                toast('error', 'Error', 'Download failed. Please try again.');
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast('success', 'Download', filename + ' downloaded!');
+        } catch (err) {
+            toast('error', 'Error', 'Download failed.');
+        }
     }
 
     // ══════════════════════════════════════════════
