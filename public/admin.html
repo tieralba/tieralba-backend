@@ -3,105 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TierAlba — Admin Signals</title>
+    <title>TierAlba — Admin Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:wght@500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg: #07080b; --surface: #0e0f14; --surface-2: #15161e; --surface-3: #1d1e28;
-            --border: rgba(255,255,255,0.05); --gold: #d4b978; --gold-dim: rgba(212,185,120,0.12);
+            --border: rgba(255,255,255,0.05); --border-hover: rgba(255,255,255,0.1);
+            --gold: #d4b978; --gold-dim: rgba(212,185,120,0.12); --gold-light: #f0dfa8;
             --text: #f4f1ea; --text-2: #a09b91; --text-3: #5c5952;
             --red: #e05252; --green: #5cb87a; --green-dim: rgba(92,184,122,0.10);
-            --red-dim: rgba(224,82,82,0.10); --radius: 12px;
+            --red-dim: rgba(224,82,82,0.10); --radius: 12px; --transition: 0.2s ease;
         }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1rem; position: relative; }
-        body::before { content: ''; position: fixed; width: 400px; height: 400px; background: radial-gradient(circle, rgba(212,185,120,0.04) 0%, transparent 70%); top: -100px; right: -100px; border-radius: 50%; pointer-events: none; }
-        .container { max-width: 700px; margin: 0 auto; }
-        h1 { font-size: 22px; margin-bottom: 0.5rem; }
-        .subtitle { font-size: 13px; color: var(--text-3); margin-bottom: 1.5rem; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem; }
-        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 1rem; color: var(--gold); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1rem; }
+        body::before { content: ''; position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(212,185,120,0.04) 0%, transparent 70%); top: -150px; right: -150px; border-radius: 50%; pointer-events: none; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .admin-header .subtitle { font-size: 13px; color: var(--text-3); }
+        .logout-btn { padding: 6px 16px; background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-3); font-size: 12px; font-weight: 600; cursor: pointer; transition: all var(--transition); }
+        .logout-btn:hover { border-color: var(--red); color: var(--red); }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px; }
+        .card-title { font-size: 15px; font-weight: 700; color: var(--gold); letter-spacing: 0.5px; text-transform: uppercase; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+        .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+        .stat-val { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+        .stat-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
         .form-row { display: flex; gap: 10px; margin-bottom: 0.75rem; }
         .form-group { flex: 1; }
-        .form-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block; }
-        .form-input, .form-select { width: 100%; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
+        .form-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; display: block; }
+        .form-input, .form-select { width: 100%; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color var(--transition); }
         .form-input:focus, .form-select:focus { border-color: var(--gold); }
         .form-select { cursor: pointer; -webkit-appearance: none; }
         textarea.form-input { resize: vertical; min-height: 60px; }
-        .btn { padding: 12px 24px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
-        .btn-gold { background: linear-gradient(135deg, var(--gold) 0%, #c5a855 50%, #f0dfa8 100%); background-size: 200% 200%; color: #07080b; width: 100%; position: relative; overflow: hidden; }
+        .btn { padding: 12px 24px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all var(--transition); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold) 0%, #c5a855 50%, var(--gold-light) 100%); background-size: 200% 200%; color: #07080b; width: 100%; }
         .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(212,185,120,0.3); background-position: 100% 0; }
-        .btn-gold:disabled { opacity: 0.5; transform: none; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
-        .btn-green { background: var(--green-dim); color: var(--green); border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
-        .btn-red { background: var(--red-dim); color: var(--red); border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
+        .btn-gold:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+        .btn-sm { padding: 6px 14px; font-size: 11px; border-radius: 6px; }
+        .btn-green { background: var(--green-dim); color: var(--green); border: none; cursor: pointer; font-weight: 700; font-family: 'DM Sans', sans-serif; }
+        .btn-green:hover { background: rgba(92,184,122,0.2); }
+        .btn-red { background: var(--red-dim); color: var(--red); border: none; cursor: pointer; font-weight: 700; font-family: 'DM Sans', sans-serif; }
+        .btn-red:hover { background: rgba(224,82,82,0.2); }
         .btn-outline { background: none; border: 1px solid var(--border); color: var(--text-2); cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; }
-
-        /* Login */
-        #loginSection { max-width: 400px; margin: 10vh auto; }
-
-        /* Signals list */
-        .sig-item { padding: 12px; background: var(--surface-2); border-radius: var(--radius); margin-bottom: 8px; border-left: 3px solid var(--border); }
+        .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+        .btn-delete { background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; transition: all var(--transition); line-height: 1; }
+        .btn-delete:hover { background: var(--red-dim); color: var(--red); }
+        .sig-item { padding: 14px; background: var(--surface-2); border-radius: var(--radius); margin-bottom: 10px; border-left: 3px solid var(--border); transition: all var(--transition); }
+        .sig-item:hover { border-color: var(--border-hover); }
         .sig-item.buy { border-left-color: var(--green); }
         .sig-item.sell { border-left-color: var(--red); }
         .sig-item.closed { opacity: 0.5; }
-        .sig-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-        .sig-dir { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sig-item.closed:hover { opacity: 0.7; }
+        .sig-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .sig-dir { padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         .sig-dir.buy { background: var(--green-dim); color: var(--green); }
         .sig-dir.sell { background: var(--red-dim); color: var(--red); }
-        .sig-symbol { font-weight: 700; font-size: 14px; }
-        .sig-source { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--gold-dim); color: var(--gold); }
+        .sig-symbol { font-weight: 700; font-size: 15px; }
+        .sig-source { font-size: 9px; padding: 2px 8px; border-radius: 4px; background: var(--gold-dim); color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sig-source.ea { background: rgba(92,184,122,0.1); color: var(--green); }
         .sig-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
-        .sig-prices { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); }
-        .sig-actions { display: flex; gap: 6px; margin-top: 8px; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+        .sig-prices { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
+        .sig-prices .lbl { color: var(--text-3); font-size: 10px; text-transform: uppercase; }
+        .sig-actions { display: flex; gap: 6px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+        .sig-actions .spacer { flex: 1; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
         .badge.win { background: var(--green-dim); color: var(--green); }
         .badge.loss { background: var(--red-dim); color: var(--red); }
         .badge.be { background: var(--gold-dim); color: var(--gold); }
-
-        .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 9999; animation: fadeIn 0.3s; }
+        .filter-tabs { display: flex; gap: 6px; }
+        .filter-tab { padding: 5px 14px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); border-radius: 20px; background: none; color: var(--text-3); cursor: pointer; transition: all var(--transition); text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-tab.active { background: var(--gold-dim); color: var(--gold); border-color: rgba(212,185,120,0.3); }
+        #loginSection { max-width: 420px; margin: 12vh auto; }
+        .login-logo { text-align: center; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 14px 22px; border-radius: var(--radius); font-size: 13px; font-weight: 600; z-index: 9999; animation: slideIn 0.3s; max-width: 350px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
         .toast.success { background: var(--green); color: #fff; }
         .toast.error { background: var(--red); color: #fff; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
+        .toast.info { background: var(--surface-3); color: var(--gold); border: 1px solid rgba(212,185,120,0.2); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9998; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; max-width: 380px; width: 90%; text-align: center; }
+        .modal-box h3 { font-size: 16px; margin-bottom: 8px; }
+        .modal-box p { font-size: 13px; color: var(--text-2); margin-bottom: 1.25rem; }
+        .modal-btns { display: flex; gap: 10px; justify-content: center; }
+        .modal-btns .btn { flex: 1; }
+        .wr-bar { height: 6px; border-radius: 3px; background: var(--surface-3); margin-top: 6px; overflow: hidden; }
+        .wr-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width 0.5s; }
         @media (max-width: 640px) {
             .form-row { flex-direction: column; gap: 0.75rem; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
             .sig-time { margin-left: 0; }
         }
     </style>
 </head>
 <body>
 
-<!-- Login -->
 <div id="loginSection">
-    <div class="card">
-        <h1 style="text-align:center;">🔐 Admin Panel</h1>
-        <p class="subtitle" style="text-align:center;">Enter admin key to manage signals</p>
+    <div class="card" style="border-color: rgba(212,185,120,0.1);">
+        <div class="login-logo">TierAlba</div>
+        <p style="text-align:center;color:var(--text-3);font-size:13px;margin-bottom:1.5rem;">Admin Signal Manager</p>
         <div class="form-group" style="margin-bottom:1rem;">
-            <input type="password" class="form-input" id="adminKeyInput" placeholder="Admin Key">
+            <label class="form-label">Admin Key</label>
+            <input type="password" class="form-input" id="adminKeyInput" placeholder="Enter your admin key">
         </div>
-        <button class="btn btn-gold" onclick="adminLogin()">Enter</button>
+        <button class="btn btn-gold" onclick="adminLogin()">Access Panel</button>
     </div>
 </div>
 
-<!-- Admin Panel -->
-<div id="adminPanel" class="container" style="display:none;">
-    <h1>📡 Signal Manager</h1>
-    <p class="subtitle">Create and manage trading signals for TierAlba clients</p>
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <h3 id="confirmTitle">Confirm</h3>
+        <p id="confirmMsg">Are you sure?</p>
+        <div class="modal-btns">
+            <button class="btn btn-sm btn-outline" onclick="closeConfirm()">Cancel</button>
+            <button class="btn btn-sm btn-red" id="confirmBtn">Confirm</button>
+        </div>
+    </div>
+</div>
 
-    <!-- New Signal Form -->
+<div id="adminPanel" class="container" style="display:none;">
+    <div class="admin-header">
+        <div>
+            <h1>Signal Command</h1>
+            <div class="subtitle">Create, manage and close trading signals</div>
+        </div>
+        <button class="logout-btn" onclick="adminLogout()">Logout</button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-box">
+            <div class="stat-val" style="color:var(--gold);" id="statTotal">0</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-val" style="color:var(--text);" id="statActive">0</div>
+            <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-val" style="color:var(--green);" id="statWins">0</div>
+            <div class="stat-label">Wins</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-val" style="color:var(--red);" id="statLosses">0</div>
+            <div class="stat-label">Losses</div>
+        </div>
+    </div>
+
+    <!-- Win Rate -->
+    <div class="card" style="padding:1rem 1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-2);">Win Rate</span>
+            <span style="font-size:14px;font-weight:700;color:var(--green);" id="statWR">0%</span>
+        </div>
+        <div class="wr-bar"><div class="wr-fill" id="wrFill" style="width:0%"></div></div>
+    </div>
+
     <div class="card">
-        <div class="card-title">New Signal</div>
+        <div class="card-header"><span class="card-title">New Signal</span></div>
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Symbol</label>
-                <input type="text" class="form-input" id="sigSymbol" placeholder="e.g. EURUSD, XAUUSD">
+                <select class="form-select" id="sigSymbol">
+                    <option value="">Select...</option>
+                    <option value="XAUUSD">XAUUSD (Gold)</option>
+                    <option value="NAS100">NAS100 (US100)</option>
+                    <option value="EURUSD">EURUSD</option>
+                    <option value="GBPUSD">GBPUSD</option>
+                    <option value="USDJPY">USDJPY</option>
+                    <option value="BTCUSD">BTCUSD</option>
+                    <option value="US30">US30</option>
+                    <option value="SPX500">SPX500</option>
+                    <option value="GBPJPY">GBPJPY</option>
+                    <option value="EURJPY">EURJPY</option>
+                </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Direction</label>
                 <select class="form-select" id="sigDirection">
-                    <option value="BUY">BUY</option>
-                    <option value="SELL">SELL</option>
+                    <option value="BUY">BUY (Long)</option>
+                    <option value="SELL">SELL (Short)</option>
                 </select>
             </div>
             <div class="form-group">
@@ -115,177 +197,251 @@
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Entry Price</label>
-                <input type="number" step="0.00001" class="form-input" id="sigEntry" placeholder="1.08500">
+                <input type="number" step="any" class="form-input" id="sigEntry" placeholder="0.00000">
             </div>
             <div class="form-group">
                 <label class="form-label">Stop Loss</label>
-                <input type="number" step="0.00001" class="form-input" id="sigSL" placeholder="1.08200">
+                <input type="number" step="any" class="form-input" id="sigSL" placeholder="0.00000">
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">TP1</label>
-                <input type="number" step="0.00001" class="form-input" id="sigTP1" placeholder="1.08800">
+                <label class="form-label">TP 1</label>
+                <input type="number" step="any" class="form-input" id="sigTP1" placeholder="0.00000">
             </div>
             <div class="form-group">
-                <label class="form-label">TP2</label>
-                <input type="number" step="0.00001" class="form-input" id="sigTP2" placeholder="1.09100">
+                <label class="form-label">TP 2</label>
+                <input type="number" step="any" class="form-input" id="sigTP2" placeholder="optional">
             </div>
             <div class="form-group">
-                <label class="form-label">TP3</label>
-                <input type="number" step="0.00001" class="form-input" id="sigTP3" placeholder="1.09500">
+                <label class="form-label">TP 3</label>
+                <input type="number" step="any" class="form-input" id="sigTP3" placeholder="optional">
             </div>
         </div>
-        <div class="form-group" style="margin-bottom:1rem;">
-            <label class="form-label">Notes (optional)</label>
-            <textarea class="form-input" id="sigNotes" placeholder="e.g. Strong bullish momentum, wait for pullback to entry..."></textarea>
+        <div class="form-group" style="margin-bottom:1.25rem;">
+            <label class="form-label">Notes</label>
+            <textarea class="form-input" id="sigNotes" placeholder="Analysis context, key levels..."></textarea>
         </div>
         <button class="btn btn-gold" id="publishBtn" onclick="publishSignal()">Publish Signal</button>
     </div>
 
-    <!-- Existing Signals -->
     <div class="card">
-        <div class="card-title">Recent Signals</div>
+        <div class="card-header">
+            <span class="card-title">Signals</span>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
+                <button class="filter-tab" onclick="setFilter('active',this)">Active</button>
+                <button class="filter-tab" onclick="setFilter('closed',this)">Closed</button>
+            </div>
+        </div>
         <div id="signalsList">Loading...</div>
     </div>
 </div>
 
 <script>
-    const API_URL = window.location.origin;
-    let adminKey = '';
+const API_URL = window.location.origin;
+let adminKey = '', allSignals = [], currentFilter = 'all', pendingAction = null;
 
-    function showToast(type, msg) {
-        const t = document.createElement('div');
-        t.className = 'toast ' + type;
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-    }
+function showToast(type, msg) {
+    const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+}
 
-    function adminLogin() {
-        adminKey = document.getElementById('adminKeyInput').value.trim();
-        if (!adminKey) return;
-        // Test the key by fetching signals
-        fetch(`${API_URL}/api/admin/signals`, { headers: { 'x-admin-key': adminKey } })
-            .then(r => {
-                if (!r.ok) throw new Error('Unauthorized');
-                return r.json();
+function showConfirm(title, msg, btnText, btnClass, cb) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    const btn = document.getElementById('confirmBtn');
+    btn.textContent = btnText; btn.className = 'btn btn-sm ' + btnClass;
+    pendingAction = cb; btn.onclick = () => { closeConfirm(); if (pendingAction) pendingAction(); };
+    document.getElementById('confirmModal').classList.add('show');
+}
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); pendingAction = null; }
+
+function adminLogin() {
+    adminKey = document.getElementById('adminKeyInput').value.trim();
+    if (!adminKey) return;
+    fetch(`${API_URL}/api/admin/signals`, { headers: { 'x-admin-key': adminKey } })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+        .then(data => {
+            if (data.error) { showToast('error', 'Invalid admin key'); return; }
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            localStorage.setItem('admin_key', adminKey);
+            loadAdminSignals();
+        })
+        .catch(() => { showToast('error', 'Invalid key or connection failed'); });
+}
+
+function adminLogout() {
+    localStorage.removeItem('admin_key'); adminKey = '';
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginSection').style.display = 'block';
+    document.getElementById('adminKeyInput').value = '';
+}
+
+(function() { const s = localStorage.getItem('admin_key'); if (s) { document.getElementById('adminKeyInput').value = s; adminLogin(); } })();
+
+async function publishSignal() {
+    const btn = document.getElementById('publishBtn');
+    const symbol = document.getElementById('sigSymbol').value;
+    const direction = document.getElementById('sigDirection').value;
+    const entry = document.getElementById('sigEntry').value;
+    const sl = document.getElementById('sigSL').value;
+    const tp1 = document.getElementById('sigTP1').value;
+    if (!symbol) { showToast('error', 'Select a symbol'); return; }
+    if (!entry) { showToast('error', 'Entry price required'); return; }
+    if (!sl) { showToast('error', 'Stop loss required'); return; }
+    if (!tp1) { showToast('error', 'At least TP1 required'); return; }
+    btn.disabled = true; btn.textContent = 'Publishing...';
+    try {
+        const res = await fetch(`${API_URL}/api/signals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+            body: JSON.stringify({
+                source: document.getElementById('sigSource').value, symbol, direction,
+                entry_price: entry, stop_loss: sl, tp1,
+                tp2: document.getElementById('sigTP2').value || null,
+                tp3: document.getElementById('sigTP3').value || null,
+                notes: document.getElementById('sigNotes').value || null
             })
-            .then(data => {
-                if (data.error) { showToast('error', 'Invalid admin key'); localStorage.removeItem('admin_key'); return; }
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                localStorage.setItem('admin_key', adminKey);
-                loadAdminSignals();
-            })
-            .catch(() => { showToast('error', 'Invalid admin key or connection failed'); localStorage.removeItem('admin_key'); });
-    }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('success', `${direction} ${symbol} published!`);
+            ['sigEntry','sigSL','sigTP1','sigTP2','sigTP3','sigNotes'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('sigSymbol').value = '';
+            loadAdminSignals();
+        } else { showToast('error', data.error || 'Failed'); }
+    } catch (e) { showToast('error', 'Connection failed'); }
+    btn.disabled = false; btn.textContent = 'Publish Signal';
+}
 
-    // Auto-login if key saved
-    (function() {
-        const saved = localStorage.getItem('admin_key');
-        if (saved) {
-            document.getElementById('adminKeyInput').value = saved;
-            adminLogin();
-        }
-    })();
-
-    async function publishSignal() {
-        const btn = document.getElementById('publishBtn');
-        const symbol = document.getElementById('sigSymbol').value.trim();
-        const direction = document.getElementById('sigDirection').value;
-        if (!symbol) { showToast('error', 'Symbol required'); return; }
-
-        btn.disabled = true; btn.textContent = 'Publishing...';
-
-        try {
-            const res = await fetch(`${API_URL}/api/signals`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                body: JSON.stringify({
-                    source: document.getElementById('sigSource').value,
-                    symbol,
-                    direction,
-                    entry_price: document.getElementById('sigEntry').value || null,
-                    stop_loss: document.getElementById('sigSL').value || null,
-                    tp1: document.getElementById('sigTP1').value || null,
-                    tp2: document.getElementById('sigTP2').value || null,
-                    tp3: document.getElementById('sigTP3').value || null,
-                    notes: document.getElementById('sigNotes').value || null
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('success', `Signal published: ${direction} ${symbol}`);
-                // Clear form
-                ['sigSymbol','sigEntry','sigSL','sigTP1','sigTP2','sigTP3','sigNotes'].forEach(id => document.getElementById(id).value = '');
-                loadAdminSignals();
-            } else {
-                showToast('error', data.error || 'Failed');
-            }
-        } catch (e) {
-            showToast('error', 'Connection failed');
-        }
-        btn.disabled = false; btn.textContent = 'Publish Signal';
-    }
-
-    async function loadAdminSignals() {
+async function loadAdminSignals() {
+    try {
         const res = await fetch(`${API_URL}/api/admin/signals`, { headers: { 'x-admin-key': adminKey } });
         const data = await res.json();
         if (!data.signals) return;
+        allSignals = data.signals;
+        updateStats(); renderSignals();
+    } catch (e) {}
+}
 
-        const container = document.getElementById('signalsList');
-        if (!data.signals.length) { container.innerHTML = '<p style="color:var(--text-3);text-align:center;">No signals yet.</p>'; return; }
+function updateStats() {
+    const total = allSignals.length;
+    const active = allSignals.filter(s => s.status !== 'closed').length;
+    const wins = allSignals.filter(s => s.result === 'TP' || s.result === 'WIN').length;
+    const losses = allSignals.filter(s => s.result === 'SL' || s.result === 'LOSS').length;
+    const closed = wins + losses;
+    const wr = closed > 0 ? ((wins / closed) * 100).toFixed(1) : '0';
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statWins').textContent = wins;
+    document.getElementById('statLosses').textContent = losses;
+    document.getElementById('statWR').textContent = wr + '%';
+    document.getElementById('wrFill').style.width = wr + '%';
+}
 
-        container.innerHTML = data.signals.map(s => {
-            const dir = s.direction?.toLowerCase();
-            const closed = s.status === 'closed';
-            const ago = timeAgo(s.created_at);
-            const resultBadge = s.result ? `<span class="badge ${s.result === 'TP' || s.result === 'WIN' ? 'win' : s.result === 'SL' || s.result === 'LOSS' ? 'loss' : 'be'}">${s.result}</span>` : '';
-
-            return `<div class="sig-item ${dir} ${closed ? 'closed' : ''}">
-                <div class="sig-header">
-                    <span class="sig-dir ${dir}">${s.direction}</span>
-                    <span class="sig-symbol">${s.symbol}</span>
-                    <span class="sig-source">${s.source === 'ea' ? 'EA' : 'Team'}</span>
-                    ${resultBadge}
-                    <span class="sig-time">${ago}</span>
-                </div>
-                <div class="sig-prices">
-                    Entry: ${s.entry_price || '—'} · SL: ${s.stop_loss || '—'} · TP1: ${s.tp1 || '—'} · TP2: ${s.tp2 || '—'} · TP3: ${s.tp3 || '—'}
-                </div>
-                ${s.notes ? `<div style="font-size:12px;color:var(--text-3);margin-top:4px;">${s.notes}</div>` : ''}
-                ${!closed ? `<div class="sig-actions">
-                    <button class="btn btn-sm btn-green" onclick="closeSignal(${s.id}, 'TP')">✅ TP Hit</button>
-                    <button class="btn btn-sm btn-red" onclick="closeSignal(${s.id}, 'SL')">❌ SL Hit</button>
-                    <button class="btn btn-sm btn-outline" onclick="closeSignal(${s.id}, 'BE')">↔ Break Even</button>
-                </div>` : ''}
+function renderSignals() {
+    let filtered = allSignals;
+    if (currentFilter === 'active') filtered = allSignals.filter(s => s.status !== 'closed');
+    if (currentFilter === 'closed') filtered = allSignals.filter(s => s.status === 'closed');
+    const c = document.getElementById('signalsList');
+    if (!filtered.length) { c.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:2rem 0;">No signals found.</p>'; return; }
+    c.innerHTML = filtered.map(s => {
+        const dir = s.direction?.toLowerCase();
+        const closed = s.status === 'closed';
+        const ago = timeAgo(s.created_at);
+        const src = s.source === 'ea' ? 'ea' : '';
+        const rb = s.result ? `<span class="badge ${s.result==='TP'||s.result==='WIN'?'win':s.result==='SL'||s.result==='LOSS'?'loss':'be'}">${s.result==='TP'?'TP HIT':s.result==='SL'?'SL HIT':s.result}</span>` : '';
+        const p = [
+            `<span><span class="lbl">Entry </span>${s.entry_price||'-'}</span>`,
+            `<span><span class="lbl">SL </span>${s.stop_loss||'-'}</span>`,
+            s.tp1?`<span><span class="lbl">TP1 </span>${s.tp1}</span>`:'',
+            s.tp2?`<span><span class="lbl">TP2 </span>${s.tp2}</span>`:'',
+            s.tp3?`<span><span class="lbl">TP3 </span>${s.tp3}</span>`:''
+        ].filter(Boolean).join('');
+        const ct = s.closed_at ? `<span style="font-size:10px;color:var(--text-3);">Closed ${timeAgo(s.closed_at)}</span>` : '';
+        const sym = s.symbol.replace(/'/g, "\\'");
+        const dr = s.direction.replace(/'/g, "\\'");
+        const actions = !closed ? `
+            <div class="sig-actions">
+                <button class="btn btn-sm btn-green" onclick="closeSignal(${s.id},'TP','${sym}','${dr}')">TP Hit</button>
+                <button class="btn btn-sm btn-red" onclick="closeSignal(${s.id},'SL','${sym}','${dr}')">SL Hit</button>
+                <button class="btn btn-sm btn-outline" onclick="closeSignal(${s.id},'BE','${sym}','${dr}')">Break Even</button>
+                <span class="spacer"></span>
+                <button class="btn-delete" title="Delete" onclick="deleteSignal(${s.id},'${sym}')">&#128465;</button>
+            </div>` : `
+            <div class="sig-actions">
+                ${ct}<span class="spacer"></span>
+                <button class="btn-delete" title="Delete" onclick="deleteSignal(${s.id},'${sym}')">&#128465;</button>
             </div>`;
-        }).join('');
-    }
+        return `<div class="sig-item ${dir} ${closed?'closed':''}">
+            <div class="sig-header">
+                <span class="sig-dir ${dir}">${s.direction}</span>
+                <span class="sig-symbol">${s.symbol}</span>
+                <span class="sig-source ${src}">${s.source==='ea'?'EA BOT':'TEAM'}</span>
+                ${rb}
+                <span class="sig-time">${ago}</span>
+            </div>
+            <div class="sig-prices">${p}</div>
+            ${s.notes?`<div style="font-size:12px;color:var(--text-3);margin-top:4px;font-style:italic;">${s.notes}</div>`:''}
+            ${actions}
+        </div>`;
+    }).join('');
+}
 
-    async function closeSignal(id, result) {
-        await fetch(`${API_URL}/api/signals/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-            body: JSON.stringify({ status: 'closed', result })
-        });
-        showToast('success', `Signal closed: ${result}`);
-        loadAdminSignals();
-    }
+function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSignals();
+}
 
-    function timeAgo(dateStr) {
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return 'Just now';
-        if (mins < 60) return mins + 'm ago';
-        const hrs = Math.floor(mins / 60);
-        if (hrs < 24) return hrs + 'h ago';
-        return Math.floor(hrs / 24) + 'd ago';
-    }
+async function closeSignal(id, result, symbol, direction) {
+    const labels = { TP: 'TP Hit (Win)', SL: 'SL Hit (Loss)', BE: 'Break Even' };
+    showConfirm(`Close ${symbol} ${direction}`, `Mark as "${labels[result]}"? Users will see this update.`,
+        labels[result], result==='TP'?'btn-green':result==='SL'?'btn-red':'btn-outline',
+        async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/signals/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                    body: JSON.stringify({ status: 'closed', result })
+                });
+                const data = await res.json();
+                if (data.success) { showToast('success', `${symbol}: ${labels[result]}`); loadAdminSignals(); }
+                else showToast('error', data.error || 'Failed');
+            } catch (e) { showToast('error', 'Connection failed'); }
+        }
+    );
+}
 
-    // Enter key to login
-    document.getElementById('adminKeyInput').addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
+async function deleteSignal(id, symbol) {
+    showConfirm('Delete Signal', `Permanently delete ${symbol} signal?`, 'Delete', 'btn-red',
+        async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/signals/${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } });
+                const data = await res.json();
+                if (data.success) { showToast('info', `${symbol} deleted`); loadAdminSignals(); }
+                else showToast('error', data.error || 'Failed');
+            } catch (e) { showToast('error', 'Connection failed'); }
+        }
+    );
+}
+
+function timeAgo(d) {
+    if (!d) return '';
+    const diff = Date.now() - new Date(d).getTime();
+    const m = Math.floor(diff/60000);
+    if (m<1) return 'Just now'; if (m<60) return m+'m ago';
+    const h = Math.floor(m/60);
+    if (h<24) return h+'h ago';
+    const dy = Math.floor(h/24);
+    if (dy<7) return dy+'d ago';
+    return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+}
+
+setInterval(() => { if (adminKey) loadAdminSignals(); }, 30000);
+document.getElementById('adminKeyInput').addEventListener('keydown', e => { if (e.key==='Enter') adminLogin(); });
 </script>
 </body>
 </html>
