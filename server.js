@@ -1173,6 +1173,23 @@ app.put('/api/signals/:id', async (req, res) => {
   }
 });
 
+// Delete signal (admin only)
+app.delete('/api/signals/:id', async (req, res) => {
+  try {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+
+    const result = await pool.query('DELETE FROM signals WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Signal not found' });
+
+    console.log(`Signal ${req.params.id} deleted by admin`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete signal error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get all signals for admin
 app.get('/api/admin/signals', async (req, res) => {
   try {
