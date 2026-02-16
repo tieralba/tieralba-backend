@@ -549,6 +549,22 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     const profitFactor = losingSum.rows[0].sum > 0 
       ? (winningSum.rows[0].sum / losingSum.rows[0].sum) 
       : 0;
+
+    // Today's profit (trades closed today)
+    const todayResult = await pool.query(
+      `SELECT COALESCE(SUM(profit), 0) as today_profit
+       FROM trades WHERE user_id = $1 AND closed_at IS NOT NULL 
+       AND closed_at >= CURRENT_DATE`,
+      [userId]
+    );
+    const todayProfit = parseFloat(todayResult.rows[0]?.today_profit) || 0;
+
+    // Open trades count
+    const openResult = await pool.query(
+      'SELECT COUNT(*) as open_count FROM trades WHERE user_id = $1 AND closed_at IS NULL',
+      [userId]
+    );
+    const openTrades = parseInt(openResult.rows[0]?.open_count) || 0;
     
     res.json({
       equity: parseFloat(equityResult.rows[0]?.equity) || 0,
@@ -560,7 +576,9 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
       totalProfit: parseFloat(stats.total_profit) || 0,
       avgProfit: parseFloat(stats.avg_profit) || 0,
       bestTrade: parseFloat(stats.best_trade) || 0,
-      worstTrade: parseFloat(stats.worst_trade) || 0
+      worstTrade: parseFloat(stats.worst_trade) || 0,
+      todayProfit,
+      openTrades
     });
     
   } catch (error) {
@@ -955,6 +973,42 @@ app.post('/api/broker/disconnect', authenticateToken, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to disconnect' });
+  }
+});
+
+// PANIC: Close all open trades
+app.post('/api/broker/close-all', authenticateToken, async (req, res) => {
+  try {
+    // Get active broker connection
+    const conn = await pool.query(
+      'SELECT * FROM broker_connections WHERE user_id = $1 AND is_active = true LIMIT 1',
+      [req.userId]
+    );
+
+    if (conn.rows.length === 0) {
+      return res.status(400).json({ error: 'No active broker connection' });
+    }
+
+    // Close all open trades in database (mark as closed at current time)
+    const result = await pool.query(
+      `UPDATE trades SET closed_at = NOW(), exit_price = entry_price, profit = 0 
+       WHERE user_id = $1 AND closed_at IS NULL 
+       RETURNING id`,
+      [req.userId]
+    );
+
+    const closedCount = result.rowCount || 0;
+
+    // Note: In production with MetaApi, you would also call:
+    // metaApi.closeAllPositions(accountId)
+    // For now we just update the database
+
+    console.log(`PANIC: User ${req.userId} closed ${closedCount} trades`);
+    res.json({ success: true, closed: closedCount, message: 'All trades marked as closed' });
+
+  } catch (error) {
+    console.error('Close-all error:', error);
+    res.status(500).json({ error: 'Failed to close trades' });
   }
 });
 
