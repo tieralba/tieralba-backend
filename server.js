@@ -236,12 +236,12 @@ const authenticateToken = (req, res, next) => {
 
 app.get('/ea-files/:filename', authenticateToken, async (req, res) => {
   try {
-    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.userId]);
+    const user = await pool.query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId]);
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const u = user.rows[0];
-    const subActive = u.subscription_status === 'active' || u.subscription_status === 'trialing';
-    const subNotExpired = !u.subscription_end || new Date(u.subscription_end) > new Date();
+    const subActive = u.plan === 'standard' || u.plan === 'pro';
+    const subNotExpired = !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
 
     if (!subActive || !subNotExpired) {
       return res.status(403).json({ error: 'Active subscription required to download EA files.' });
@@ -1276,7 +1276,7 @@ app.post('/api/ea/verify', async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT el.*, u.subscription_status, u.subscription_end, u.email
+      `SELECT el.*, u.plan, u.plan_expires_at, u.email
        FROM ea_licenses el
        JOIN users u ON u.id = el.user_id
        WHERE el.license_key = $1 AND el.product = $2 AND el.is_active = true`,
@@ -1290,8 +1290,8 @@ app.post('/api/ea/verify', async (req, res) => {
     const license = result.rows[0];
 
     // Check if subscription is active
-    const subActive = license.subscription_status === 'active' || license.subscription_status === 'trialing';
-    const subNotExpired = !license.subscription_end || new Date(license.subscription_end) > new Date();
+    const subActive = license.plan === 'standard' || license.plan === 'pro';
+    const subNotExpired = !license.plan_expires_at || new Date(license.plan_expires_at) > new Date();
 
     if (!subActive || !subNotExpired) {
       return res.json({ valid: false, expired: true, error: 'Subscription expired' });
@@ -1331,12 +1331,12 @@ app.get('/api/ea/license', authenticateToken, async (req, res) => {
 app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
   try {
     // Check subscription
-    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.userId]);
+    const user = await pool.query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId]);
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const u = user.rows[0];
-    const subActive = u.subscription_status === 'active' || u.subscription_status === 'trialing';
-    const subNotExpired = !u.subscription_end || new Date(u.subscription_end) > new Date();
+    const subActive = u.plan === 'standard' || u.plan === 'pro';
+    const subNotExpired = !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
 
     if (!subActive || !subNotExpired) {
       return res.status(403).json({ error: 'Subscription not active. Renew to generate license keys.' });
