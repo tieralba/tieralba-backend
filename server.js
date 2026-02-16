@@ -236,7 +236,7 @@ const authenticateToken = (req, res, next) => {
 
 app.get('/ea-files/:filename', authenticateToken, async (req, res) => {
   try {
-    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.user.id]);
+    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.userId]);
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const u = user.rows[0];
@@ -1318,7 +1318,7 @@ app.get('/api/ea/license', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `SELECT id, license_key, product, is_active, created_at, last_verified, mt_account, verification_count
        FROM ea_licenses WHERE user_id = $1 ORDER BY created_at DESC`,
-      [req.user.id]
+      [req.userId]
     );
     res.json({ licenses: result.rows });
   } catch (err) {
@@ -1331,7 +1331,7 @@ app.get('/api/ea/license', authenticateToken, async (req, res) => {
 app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
   try {
     // Check subscription
-    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.user.id]);
+    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.userId]);
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const u = user.rows[0];
@@ -1343,7 +1343,7 @@ app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
     }
 
     // Check if already has licenses for both products
-    const existing = await pool.query('SELECT product FROM ea_licenses WHERE user_id = $1 AND is_active = true', [req.user.id]);
+    const existing = await pool.query('SELECT product FROM ea_licenses WHERE user_id = $1 AND is_active = true', [req.userId]);
     const existingProducts = existing.rows.map(r => r.product);
 
     const products = ['tier_algo_gold', 'tier_algo_us100'];
@@ -1355,7 +1355,7 @@ app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
         const result = await pool.query(
           `INSERT INTO ea_licenses (user_id, license_key, product, is_active)
            VALUES ($1, $2, $3, true) RETURNING id, license_key, product, is_active, created_at`,
-          [req.user.id, key, product]
+          [req.userId, key, product]
         );
         newLicenses.push(result.rows[0]);
       }
