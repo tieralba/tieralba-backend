@@ -1336,7 +1336,28 @@
 
         <!-- ═══════ SIGNALS ═══════ -->
         <div id="signals" class="section">
-            <div class="card" style="margin-bottom:1.5rem;">
+            <!-- Signal Stats -->
+            <div class="perf-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.25rem;">
+                <div class="perf-item">
+                    <div class="perf-label">Total Signals</div>
+                    <div class="perf-value gold" id="sigStatTotal">0</div>
+                </div>
+                <div class="perf-item">
+                    <div class="perf-label">Active</div>
+                    <div class="perf-value" id="sigStatActive">0</div>
+                </div>
+                <div class="perf-item">
+                    <div class="perf-label">Win Rate</div>
+                    <div class="perf-value green" id="sigStatWR">0%</div>
+                </div>
+                <div class="perf-item">
+                    <div class="perf-label">Record</div>
+                    <div class="perf-value" id="sigStatRecord" style="font-size:14px;">0W — 0L</div>
+                </div>
+            </div>
+
+            <!-- Signal List -->
+            <div class="card">
                 <div class="card-header" style="flex-wrap:wrap;gap:8px;">
                     <span class="card-title">Live Signals</span>
                     <div style="display:flex;gap:6px;">
@@ -2939,11 +2960,26 @@
         const res = await apiCall('/api/signals');
         if (!res?.signals) return;
         allSignals = res.signals;
+        updateSignalStats();
         renderSignals();
     }
 
+    function updateSignalStats() {
+        const total = allSignals.length;
+        const active = allSignals.filter(s => s.status !== 'closed').length;
+        const wins = allSignals.filter(s => s.result === 'TP' || s.result === 'WIN').length;
+        const losses = allSignals.filter(s => s.result === 'SL' || s.result === 'LOSS').length;
+        const closed = wins + losses;
+        const wr = closed > 0 ? ((wins / closed) * 100).toFixed(0) : '0';
+
+        document.getElementById('sigStatTotal').textContent = total;
+        document.getElementById('sigStatActive').textContent = active;
+        document.getElementById('sigStatWR').textContent = wr + '%';
+        document.getElementById('sigStatRecord').textContent = wins + 'W — ' + losses + 'L';
+    }
+
     function renderSignals() {
-        const filtered = signalFilter === 'all' ? allSignals : allSignals.filter(s => s.status === signalFilter);
+        const filtered = signalFilter === 'all' ? allSignals : allSignals.filter(s => signalFilter === 'active' ? s.status !== 'closed' : s.status === 'closed');
         const container = document.getElementById('signalsList');
 
         if (!filtered.length) {
@@ -2955,14 +2991,25 @@
             const dir = s.direction?.toLowerCase();
             const isClosed = s.status === 'closed';
             const ago = timeAgo(s.created_at);
-            const resultBadge = s.result ? `<span class="signal-result ${s.result === 'TP' || s.result === 'WIN' ? 'win' : s.result === 'SL' || s.result === 'LOSS' ? 'loss' : 'be'}">${s.result}</span>` : '';
             const src = s.source === 'ea' ? 'ea' : '';
+
+            // Result badge with clear labels
+            let resultBadge = '';
+            if (s.result === 'TP' || s.result === 'WIN') {
+                resultBadge = '<span class="signal-result win">TP HIT</span>';
+            } else if (s.result === 'SL' || s.result === 'LOSS') {
+                resultBadge = '<span class="signal-result loss">SL HIT</span>';
+            } else if (s.result === 'BE') {
+                resultBadge = '<span class="signal-result be">BREAK EVEN</span>';
+            }
             
             let prices = `<div class="signal-price"><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price || '—'}</div></div>`;
             prices += `<div class="signal-price"><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss || '—'}</div></div>`;
             if (s.tp1) prices += `<div class="signal-price"><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div></div>`;
             if (s.tp2) prices += `<div class="signal-price"><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div></div>`;
             if (s.tp3) prices += `<div class="signal-price"><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div></div>`;
+
+            const closedInfo = s.closed_at ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px;">Closed ${timeAgo(s.closed_at)}</div>` : '';
 
             return `<div class="signal-card ${dir} ${isClosed ? 'closed' : ''}">
                 <div class="signal-header">
@@ -2974,6 +3021,7 @@
                 </div>
                 <div class="signal-prices">${prices}</div>
                 ${s.notes ? `<div class="signal-notes">${s.notes}</div>` : ''}
+                ${closedInfo}
             </div>`;
         }).join('');
     }
@@ -2986,6 +3034,7 @@
     }
 
     function timeAgo(dateStr) {
+        if (!dateStr) return '';
         const diff = Date.now() - new Date(dateStr).getTime();
         const mins = Math.floor(diff / 60000);
         if (mins < 1) return 'Just now';
@@ -2993,7 +3042,8 @@
         const hrs = Math.floor(mins / 60);
         if (hrs < 24) return hrs + 'h ago';
         const days = Math.floor(hrs / 24);
-        return days + 'd ago';
+        if (days < 7) return days + 'd ago';
+        return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
     }
 
     // ══════════════════════════════════════════════
