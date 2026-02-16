@@ -836,6 +836,22 @@
         .ea-icon { color: var(--gold); flex-shrink: 0; }
         .ea-name { font-size: 14px; font-weight: 600; }
         .ea-meta { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+        .btn-small {
+            padding: 7px 16px;
+            background: var(--surface-3); border: 1px solid var(--border);
+            border-radius: var(--radius); color: var(--text);
+            font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-small:hover { background: var(--surface-2); border-color: rgba(212,185,120,0.3); color: var(--gold); }
+        .btn-small.gold {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--bg); border: none; font-weight: 700; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(212,185,120,0.25);
+        }
+        .btn-small.gold:hover { box-shadow: 0 6px 20px rgba(212,185,120,0.4); transform: translateY(-1px); }
+
         .btn-download {
             margin-left: auto;
             padding: 8px 18px;
@@ -2786,7 +2802,7 @@
         btn.textContent = 'Generating...';
 
         try {
-            const res = await apiCall('/api/ea/license/generate', 'POST');
+            const res = await apiCall('/api/ea/license/generate', { method: 'POST' });
             if (res?.error) {
                 toast('error', 'License Error', res.error);
             } else {
