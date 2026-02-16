@@ -182,35 +182,6 @@ app.use(express.json());
 // Serve frontend static files (login.html, index.html)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Protected EA file downloads (requires auth + active subscription)
-app.get('/ea-files/:filename', authenticateToken, async (req, res) => {
-  try {
-    // Check subscription
-    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.user.id]);
-    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    const u = user.rows[0];
-    const subActive = u.subscription_status === 'active' || u.subscription_status === 'trialing';
-    const subNotExpired = !u.subscription_end || new Date(u.subscription_end) > new Date();
-
-    if (!subActive || !subNotExpired) {
-      return res.status(403).json({ error: 'Active subscription required to download EA files.' });
-    }
-
-    const filename = path.basename(req.params.filename); // prevent path traversal
-    const filePath = path.join(__dirname, 'ea-files', filename);
-    
-    if (!require('fs').existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    res.download(filePath, filename);
-  } catch (err) {
-    console.error('EA download error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // Trust proxy (Railway runs behind a proxy)
 app.set('trust proxy', 1);
 
@@ -258,6 +229,37 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// ============================================
+// PROTECTED EA FILE DOWNLOADS
+// ============================================
+
+app.get('/ea-files/:filename', authenticateToken, async (req, res) => {
+  try {
+    const user = await pool.query('SELECT subscription_status, subscription_end FROM users WHERE id = $1', [req.user.id]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const u = user.rows[0];
+    const subActive = u.subscription_status === 'active' || u.subscription_status === 'trialing';
+    const subNotExpired = !u.subscription_end || new Date(u.subscription_end) > new Date();
+
+    if (!subActive || !subNotExpired) {
+      return res.status(403).json({ error: 'Active subscription required to download EA files.' });
+    }
+
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(__dirname, 'ea-files', filename);
+    
+    if (!require('fs').existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    res.download(filePath, filename);
+  } catch (err) {
+    console.error('EA download error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // ============================================
 // ENDPOINT: SALUTE DEL SERVER
