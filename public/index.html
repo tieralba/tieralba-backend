@@ -1940,14 +1940,6 @@
                     <div class="perf-item"><div class="perf-label">Status</div><div class="perf-value green">Active</div></div>
                 </div>
             </div>
-            <div class="card" style="margin-top:1rem;">
-                <div class="card-header"><span class="card-title">License Key</span></div>
-                <div style="text-align:center;">
-                    <div class="referral-code">TALB-8K9X-M4R2-P7Q5</div>
-                    <br>
-                    <button class="btn-primary" onclick="copyLicense()" style="margin-top:0.75rem;">Copy Key</button>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -2371,10 +2363,6 @@
     // ══════════════════════════════════════════════
     function copyReferral() {
         navigator.clipboard.writeText('TIER-XR4K9M').then(() => toast('success', 'Copied', 'Referral code copied!'));
-    }
-
-    function copyLicense() {
-        navigator.clipboard.writeText('TALB-8K9X-M4R2-P7Q5').then(() => toast('success', 'Copied', 'License key copied!'));
     }
 
     // ══════════════════════════════════════════════
