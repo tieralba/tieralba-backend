@@ -1,3 +1,4 @@
+[Uploading GUIDA-DEPLOY (1).md…]()
 # 🚀 TierAlba - Guida Deploy Completa
 
 ## Cosa hai ora (tutto pronto e corretto):
