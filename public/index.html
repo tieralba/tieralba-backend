@@ -924,8 +924,16 @@
         .signal-price {
             flex: 1; text-align: center; padding: 8px 4px;
             background: var(--surface-3);
-            min-width: 0;
+            min-width: 0; position: relative; cursor: pointer;
+            transition: background var(--transition);
         }
+        .signal-price:hover { background: var(--surface-2); }
+        .signal-price .copy-hint {
+            display: none; position: absolute; top: -2px; right: 2px;
+            font-size: 9px; color: var(--gold); font-weight: 600;
+        }
+        .signal-price:hover .copy-hint { display: block; }
+        .signal-price.copied { background: rgba(212,185,120,0.15); }
         .signal-price:first-child { border-radius: 6px 0 0 6px; }
         .signal-price:last-child { border-radius: 0 6px 6px 0; }
         .signal-price-label {
@@ -3003,11 +3011,12 @@
                 resultBadge = '<span class="signal-result be">BREAK EVEN</span>';
             }
             
-            let prices = `<div class="signal-price"><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price || '—'}</div></div>`;
-            prices += `<div class="signal-price"><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss || '—'}</div></div>`;
-            if (s.tp1) prices += `<div class="signal-price"><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div></div>`;
-            if (s.tp2) prices += `<div class="signal-price"><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div></div>`;
-            if (s.tp3) prices += `<div class="signal-price"><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div></div>`;
+            let prices = '';
+            if (s.entry_price) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.entry_price}')"><span class="copy-hint">COPY</span><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price}</div></div>`;
+            if (s.stop_loss) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.stop_loss}')"><span class="copy-hint">COPY</span><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss}</div></div>`;
+            if (s.tp1) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp1}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div></div>`;
+            if (s.tp2) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp2}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div></div>`;
+            if (s.tp3) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp3}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div></div>`;
 
             const closedInfo = s.closed_at ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px;">Closed ${timeAgo(s.closed_at)}</div>` : '';
 
@@ -3031,6 +3040,22 @@
         document.querySelectorAll('[data-sigfilter]').forEach(b => b.classList.remove('active'));
         document.querySelector(`[data-sigfilter="${filter}"]`).classList.add('active');
         renderSignals();
+    }
+
+    function copyPrice(el, value) {
+        navigator.clipboard.writeText(value).then(() => {
+            el.classList.add('copied');
+            toast('success', 'Copied', value + ' copied to clipboard');
+            setTimeout(() => el.classList.remove('copied'), 800);
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = value; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            el.classList.add('copied');
+            toast('success', 'Copied', value + ' copied');
+            setTimeout(() => el.classList.remove('copied'), 800);
+        });
     }
 
     function timeAgo(dateStr) {
