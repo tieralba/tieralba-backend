@@ -130,9 +130,8 @@
             text-decoration: none;
             font-size: 14px; font-weight: 500;
             border-radius: 8px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all var(--transition);
             cursor: pointer;
-            position: relative;
         }
 
         .nav-link:hover { color: var(--text); background: var(--surface-2); }
@@ -140,16 +139,7 @@
         .nav-link.active {
             color: var(--gold);
             background: var(--gold-dim);
-            box-shadow: inset 0 0 0 1px rgba(212,185,120,0.08), 0 2px 8px rgba(212,185,120,0.04);
-        }
-
-        .nav-link.active::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 25%; bottom: 25%;
-            width: 3px;
-            background: var(--gold);
-            border-radius: 0 3px 3px 0;
+            box-shadow: inset 0 0 0 1px rgba(212,185,120,0.06);
         }
 
         .nav-link.nav-locked { opacity: 0.4; }
@@ -226,10 +216,6 @@
             font-family: 'Cormorant Garamond', serif;
             font-size: 28px; font-weight: 600;
             letter-spacing: -0.5px;
-            background: linear-gradient(135deg, var(--text), var(--gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
@@ -268,22 +254,19 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all var(--transition);
             position: relative;
         }
 
         .card::before {
             content: '';
             position: absolute;
-            top: 0; left: 20%; right: 20%;
+            top: 0; left: 0; right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.12), transparent);
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.08), transparent);
         }
 
-        .card:hover {
-            border-color: var(--border-hover);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-        }
+        .card:hover { border-color: var(--border-hover); }
 
         .card-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -310,7 +293,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 1.25rem 1.5rem;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all var(--transition);
             position: relative;
             overflow: hidden;
         }
@@ -319,39 +302,27 @@
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent 10%, rgba(212,185,120,0.4) 50%, transparent 90%);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.15), transparent);
             opacity: 0;
-            transition: opacity 0.35s ease;
-        }
-
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            bottom: -40px; right: -40px;
-            width: 100px; height: 100px;
-            background: radial-gradient(circle, rgba(212,185,120,0.06) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            pointer-events: none;
+            transition: opacity var(--transition);
         }
 
         .stat-card:hover {
-            border-color: rgba(212,185,120,0.18);
-            box-shadow: 0 8px 32px rgba(212,185,120,0.06), 0 0 0 1px rgba(212,185,120,0.08);
-            transform: translateY(-3px);
+            border-color: rgba(212,185,120,0.12);
+            box-shadow: 0 4px 20px rgba(212,185,120,0.04), 0 0 0 1px rgba(212,185,120,0.06);
+            transform: translateY(-2px);
         }
 
         .stat-card:hover::before { opacity: 1; }
-        .stat-card:hover::after { opacity: 1; }
 
         .stat-label {
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 12px;
+            font-weight: 600;
             color: var(--text-3);
             text-transform: uppercase;
-            letter-spacing: 1.2px;
-            margin-bottom: 10px;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
         }
 
         .stat-value {
@@ -360,7 +331,7 @@
             font-weight: 500;
             letter-spacing: -0.5px;
             margin-bottom: 4px;
-            background: linear-gradient(135deg, var(--text) 0%, rgba(212,185,120,0.8) 100%);
+            background: linear-gradient(135deg, var(--text), rgba(244,241,234,0.8));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -403,7 +374,7 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -416,16 +387,9 @@
 
         .perf-item {
             background: var(--surface-2);
-            border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 1rem 1.25rem;
             text-align: center;
-            transition: all 0.25s ease;
-        }
-
-        .perf-item:hover {
-            border-color: var(--border-hover);
-            transform: translateY(-1px);
         }
 
         .perf-label {
@@ -535,7 +499,7 @@
 
         .btn-primary {
             padding: 12px 24px;
-            background: linear-gradient(135deg, var(--gold) 0%, #c5a855 40%, var(--gold-light) 100%);
+            background: linear-gradient(135deg, var(--gold) 0%, #c5a855 50%, var(--gold-light) 100%);
             background-size: 200% 200%;
             border: none;
             border-radius: var(--radius);
@@ -545,7 +509,7 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
             position: relative;
             overflow: hidden;
         }
@@ -554,22 +518,17 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+            background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
             transform: translateX(-100%);
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.6s;
         }
 
         .btn-primary:hover::before { transform: translateX(100%); }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(212,185,120,0.3), 0 2px 8px rgba(212,185,120,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(212,185,120,0.25);
             background-position: 100% 0;
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(212,185,120,0.2);
         }
 
         .calc-result {
@@ -934,18 +893,13 @@
         /* ── Signal Cards ── */
         .signal-card {
             background: var(--surface-2); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 1.15rem; margin-bottom: 0.75rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
+            border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;
+            transition: border-color var(--transition); overflow: hidden;
         }
-        .signal-card:hover {
-            border-color: var(--border-hover);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            transform: translateY(-1px);
-        }
+        .signal-card:hover { border-color: var(--border-hover); }
         .signal-card.buy { border-left: 3px solid var(--green); }
         .signal-card.sell { border-left: 3px solid var(--red); }
-        .signal-card.closed { opacity: 0.5; }
-        .signal-card.closed:hover { opacity: 0.7; }
+        .signal-card.closed { opacity: 0.6; }
         .signal-header {
             display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
         }
@@ -970,9 +924,18 @@
         .signal-price {
             flex: 1; text-align: center; padding: 8px 4px;
             background: var(--surface-3);
-            min-width: 0; position: relative;
+            min-width: 0; position: relative; cursor: pointer;
             transition: background var(--transition);
         }
+        .signal-price:hover { background: var(--surface-2); }
+        .signal-price .copy-hint {
+            display: none; position: absolute; top: -2px; right: 2px;
+            font-size: 9px; color: var(--gold); font-weight: 600;
+        }
+        .signal-price:hover .copy-hint { display: block; }
+        .signal-price.copied { background: rgba(212,185,120,0.15); }
+        .signal-price:first-child { border-radius: 6px 0 0 6px; }
+        .signal-price:last-child { border-radius: 0 6px 6px 0; }
         .signal-price-label {
             font-size: 9px; color: var(--text-3); text-transform: uppercase;
             letter-spacing: 0.5px; margin-bottom: 2px;
@@ -984,30 +947,6 @@
         .signal-price-val.entry { color: var(--gold); }
         .signal-price-val.sl { color: var(--red); }
         .signal-price-val.tp { color: var(--green); }
-
-        .signal-copy-btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 3px;
-            margin-top: 4px; padding: 3px 8px;
-            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 4px; cursor: pointer;
-            font-size: 9px; font-weight: 700; color: var(--text-3);
-            text-transform: uppercase; letter-spacing: 0.5px;
-            transition: all 0.2s ease;
-            line-height: 1;
-        }
-        .signal-copy-btn:hover {
-            background: var(--gold-dim); border-color: rgba(212,185,120,0.3);
-            color: var(--gold);
-        }
-        .signal-copy-btn.copied {
-            background: rgba(92,184,122,0.15); border-color: rgba(92,184,122,0.3);
-            color: var(--green);
-        }
-        .signal-copy-btn svg { width: 10px; height: 10px; }
-
-        .signal-price:first-child { border-radius: 6px 0 0 6px; }
-        .signal-price:last-child { border-radius: 0 6px 6px 0; }
-
         .signal-notes { font-size: 12px; color: var(--text-2); margin-top: 8px; font-style: italic; }
         .signal-result {
             display: inline-block; padding: 2px 10px; border-radius: 4px;
@@ -1108,8 +1047,6 @@
         body.light .stat-card { background: #ffffff; }
         body.light .nav-link.active { background: rgba(184,154,80,0.1); }
         body.light .perf-item { background: #f0ede6; }
-        body.light .signal-copy-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); }
-        body.light .signal-copy-btn:hover { background: rgba(184,154,80,0.1); border-color: rgba(184,154,80,0.3); color: #b89a50; }
         body.light .equity-protector { background: #f0ede6; }
         body.light .broker-card { background: #f0ede6; }
         body.light .form-input { background: #f0ede6; color: #1a1815; }
@@ -3075,12 +3012,11 @@
             }
             
             let prices = '';
-            const copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-            if (s.entry_price) prices += `<div class="signal-price"><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price}</div><button class="signal-copy-btn" onclick="copyPrice(this,'${s.entry_price}')">${copyIcon} Copy</button></div>`;
-            if (s.stop_loss) prices += `<div class="signal-price"><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss}</div><button class="signal-copy-btn" onclick="copyPrice(this,'${s.stop_loss}')">${copyIcon} Copy</button></div>`;
-            if (s.tp1) prices += `<div class="signal-price"><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div><button class="signal-copy-btn" onclick="copyPrice(this,'${s.tp1}')">${copyIcon} Copy</button></div>`;
-            if (s.tp2) prices += `<div class="signal-price"><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div><button class="signal-copy-btn" onclick="copyPrice(this,'${s.tp2}')">${copyIcon} Copy</button></div>`;
-            if (s.tp3) prices += `<div class="signal-price"><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div><button class="signal-copy-btn" onclick="copyPrice(this,'${s.tp3}')">${copyIcon} Copy</button></div>`;
+            if (s.entry_price) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.entry_price}')"><span class="copy-hint">COPY</span><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price}</div></div>`;
+            if (s.stop_loss) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.stop_loss}')"><span class="copy-hint">COPY</span><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss}</div></div>`;
+            if (s.tp1) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp1}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div></div>`;
+            if (s.tp2) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp2}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div></div>`;
+            if (s.tp3) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp3}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div></div>`;
 
             const closedInfo = s.closed_at ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px;">Closed ${timeAgo(s.closed_at)}</div>` : '';
 
@@ -3106,27 +3042,19 @@
         renderSignals();
     }
 
-    function copyPrice(btn, value) {
+    function copyPrice(el, value) {
         navigator.clipboard.writeText(value).then(() => {
-            btn.classList.add('copied');
-            btn.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> OK!';
+            el.classList.add('copied');
             toast('success', 'Copied', value + ' copied to clipboard');
-            setTimeout(() => {
-                btn.classList.remove('copied');
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
-            }, 1200);
+            setTimeout(() => el.classList.remove('copied'), 800);
         }).catch(() => {
             const ta = document.createElement('textarea');
             ta.value = value; document.body.appendChild(ta);
             ta.select(); document.execCommand('copy');
             document.body.removeChild(ta);
-            btn.classList.add('copied');
-            btn.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> OK!';
+            el.classList.add('copied');
             toast('success', 'Copied', value + ' copied');
-            setTimeout(() => {
-                btn.classList.remove('copied');
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
-            }, 1200);
+            setTimeout(() => el.classList.remove('copied'), 800);
         });
     }
 
