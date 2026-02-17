@@ -426,13 +426,27 @@ async function deleteSignal(id, symbol) {
             try {
                 const res = await fetch(API_URL + '/api/signals/' + id, {
                     method: 'DELETE',
-                    headers: { 'x-admin-key': adminKey, 'Content-Type': 'application/json' }
+                    headers: { 'x-admin-key': adminKey }
                 });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    showToast('error', errData.error || 'HTTP ' + res.status + ' — Failed to delete');
+                    return;
+                }
                 const data = await res.json();
                 console.log('Delete response:', data);
-                if (data.success) { showToast('info', symbol + ' deleted'); loadAdminSignals(); }
-                else showToast('error', data.error || 'Failed to delete');
-            } catch (e) { console.error('Delete error:', e); showToast('error', 'Connection failed'); }
+                if (data.success) {
+                    // Immediately remove from local array for instant UI update
+                    allSignals = allSignals.filter(s => s.id !== id && String(s.id) !== String(id));
+                    updateStats();
+                    renderSignals();
+                    showToast('info', symbol + ' deleted');
+                    // Also reload from server to confirm
+                    setTimeout(() => loadAdminSignals(), 500);
+                } else {
+                    showToast('error', data.error || 'Failed to delete');
+                }
+            } catch (e) { console.error('Delete error:', e); showToast('error', 'Connection failed: ' + e.message); }
         }
     );
 }
