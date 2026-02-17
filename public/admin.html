@@ -252,7 +252,12 @@ function showConfirm(title, msg, btnText, btnClass, cb) {
     document.getElementById('confirmMsg').textContent = msg;
     const btn = document.getElementById('confirmBtn');
     btn.textContent = btnText; btn.className = 'btn btn-sm ' + btnClass;
-    pendingAction = cb; btn.onclick = () => { closeConfirm(); if (pendingAction) pendingAction(); };
+    pendingAction = cb;
+    btn.onclick = () => {
+        const action = pendingAction;
+        closeConfirm();
+        if (action) action();
+    };
     document.getElementById('confirmModal').classList.add('show');
 }
 function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); pendingAction = null; }
@@ -416,14 +421,18 @@ async function closeSignal(id, result, symbol, direction) {
 }
 
 async function deleteSignal(id, symbol) {
-    showConfirm('Delete Signal', `Permanently delete ${symbol} signal?`, 'Delete', 'btn-red',
+    showConfirm('Delete Signal', 'Permanently delete ' + symbol + ' signal?', 'Delete', 'btn-red',
         async () => {
             try {
-                const res = await fetch(`${API_URL}/api/signals/${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } });
+                const res = await fetch(API_URL + '/api/signals/' + id, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-key': adminKey, 'Content-Type': 'application/json' }
+                });
                 const data = await res.json();
-                if (data.success) { showToast('info', `${symbol} deleted`); loadAdminSignals(); }
-                else showToast('error', data.error || 'Failed');
-            } catch (e) { showToast('error', 'Connection failed'); }
+                console.log('Delete response:', data);
+                if (data.success) { showToast('info', symbol + ' deleted'); loadAdminSignals(); }
+                else showToast('error', data.error || 'Failed to delete');
+            } catch (e) { console.error('Delete error:', e); showToast('error', 'Connection failed'); }
         }
     );
 }
