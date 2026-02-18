@@ -1205,6 +1205,36 @@ app.get('/api/admin/signals', async (req, res) => {
 });
 
 // ============================================
+// EA auto-close signal by symbol
+app.post('/api/ea/close-signal', async (req, res) => {
+  try {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { symbol, result } = req.body;
+    if (!symbol || !result) return res.status(400).json({ error: 'Symbol and result required' });
+
+    // Close the most recent active signal for this symbol
+    const updated = await pool.query(
+      `UPDATE signals SET status = 'closed', result = $1, closed_at = NOW() 
+       WHERE symbol = $2 AND status = 'active' 
+       AND id = (SELECT id FROM signals WHERE symbol = $2 AND status = 'active' ORDER BY created_at DESC LIMIT 1)
+       RETURNING id`,
+      [result, symbol.toUpperCase()]
+    );
+
+    if (updated.rows.length > 0) {
+      console.log(`📡 EA closed signal: ${symbol} → ${result}`);
+      res.json({ success: true, closed_id: updated.rows[0].id });
+    } else {
+      res.json({ success: false, message: 'No active signal found for ' + symbol });
+    }
+  } catch (error) {
+    console.error('EA close signal error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ENDPOINT: REFUND REQUESTS
 // ============================================
 
