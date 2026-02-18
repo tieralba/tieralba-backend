@@ -1489,6 +1489,91 @@ app.post('/api/ea/license/revoke', async (req, res) => {
 });
 
 // ============================================
+// ENDPOINT: USER PROFILE & SECURITY
+// ============================================
+
+// Update profile name
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
+
+    await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name.trim(), req.userId]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Change password
+app.put('/api/user/password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+
+    const user = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.userId]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const valid = await bcrypt.compare(currentPassword, user.rows[0].password_hash);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.userId]);
+
+    console.log(`🔒 User ${req.userId} changed password`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Password change error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// ============================================
+// ENDPOINT: SUPPORT MESSAGES
+// ============================================
+
+app.post('/api/support/message', authenticateToken, async (req, res) => {
+  try {
+    const { subject, message } = req.body;
+    if (!subject || !message) return res.status(400).json({ error: 'Subject and message required' });
+
+    const userResult = await pool.query('SELECT email, name FROM users WHERE id = $1', [req.userId]);
+    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const user = userResult.rows[0];
+    console.log(`📩 Support from ${user.email}: [${subject}] ${message.substring(0, 100)}`);
+
+    // Send email notification if Resend is configured
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          to: ['info@tieralba.com'],
+          subject: '[TierAlba Support] ' + subject + ' — ' + user.email,
+          html: '<div style="font-family:sans-serif;max-width:600px;padding:20px;">' +
+            '<h2 style="color:#c8aa6e;">New Support Message</h2>' +
+            '<p><strong>From:</strong> ' + (user.name || 'N/A') + ' (' + user.email + ')</p>' +
+            '<p><strong>User ID:</strong> ' + req.userId + '</p>' +
+            '<p><strong>Subject:</strong> ' + subject + '</p>' +
+            '<hr style="border:1px solid #eee;">' +
+            '<p style="white-space:pre-wrap;">' + message + '</p>' +
+            '</div>'
+        });
+      } catch (emailErr) {
+        console.error('Support email error:', emailErr);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Support message error:', error);
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// ============================================
 // SERVE FRONTEND per route non-API
 // ============================================
 app.get('/', (req, res) => {
