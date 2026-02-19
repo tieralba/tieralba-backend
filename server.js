@@ -280,8 +280,8 @@ app.get('/health', (req, res) => {
 // REGISTRAZIONE NUOVO UTENTE
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name, fullName, referralCode } = req.body;
-    const userName = name || fullName || '';
+    const { email, password, name, fullName, first_name, last_name, title, date_of_birth, country, phone, referralCode, marketing_consent } = req.body;
+    const userName = name || ((first_name || '') + ' ' + (last_name || '')).trim() || fullName || '';
     const refCode = (referralCode || '').trim().toUpperCase() || null;
     
     if (!email || !password) {
@@ -308,8 +308,9 @@ app.post('/api/auth/register', async (req, res) => {
     const verifyToken = crypto.randomBytes(32).toString('hex');
     
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, name, verify_token, email_verified, referred_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, name, created_at',
-      [email.toLowerCase(), passwordHash, userName, verifyToken, false, refCode]
+      `INSERT INTO users (email, password_hash, name, first_name, last_name, title, date_of_birth, country, phone, verify_token, email_verified, referred_by, marketing_consent)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id, email, name, created_at`,
+      [email.toLowerCase(), passwordHash, userName, first_name||null, last_name||null, title||null, date_of_birth||null, country||null, phone||null, verifyToken, false, refCode, marketing_consent||false]
     );
     
     const user = result.rows[0];
