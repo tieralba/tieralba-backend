@@ -1478,6 +1478,12 @@
                 <div class="chart-wrap" style="height:340px;"><canvas id="equityChart"></canvas></div>
             </div>
 
+            <!-- Daily P/L (Full Width) -->
+            <div class="card" style="margin-bottom:1rem;">
+                <div class="card-header"><span class="card-title">Daily P/L</span></div>
+                <div class="chart-wrap" style="height:200px;"><canvas id="dailyPLChart"></canvas></div>
+            </div>
+
             <!-- Monthly + W/L Row -->
             <div class="grid-2">
                 <div class="card">
@@ -2505,6 +2511,7 @@
             drawAnalytics(trades.trades, stats);
             drawDrawdown(trades.trades);
             renderTradeList(trades.trades);
+            drawDailyPL(trades.trades);
         }
 
         toast('success', 'Dashboard', `Welcome, ${user?.name || 'user'}!`);
@@ -2597,36 +2604,61 @@
     function drawEquityChart(history) {
         const ctx = document.getElementById('equityChart');
         if (charts.equity) charts.equity.destroy();
-        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 340);
-        gradient.addColorStop(0, 'rgba(200,170,110,0.2)');
-        gradient.addColorStop(0.5, 'rgba(200,170,110,0.05)');
-        gradient.addColorStop(1, 'rgba(200,170,110,0)');
+        const c = ctx.getContext('2d');
+        const gradient = c.createLinearGradient(0, 0, 0, 340);
+        gradient.addColorStop(0, 'rgba(212,185,120,0.25)');
+        gradient.addColorStop(0.4, 'rgba(212,185,120,0.08)');
+        gradient.addColorStop(1, 'rgba(212,185,120,0)');
+
+        // Determine if trending up or down
+        const firstVal = history[0]?.equity || 0;
+        const lastVal = history[history.length - 1]?.equity || 0;
+        const isUp = lastVal >= firstVal;
+        const lineColor = isUp ? '#5cb87a' : '#e05252';
+        const gradUp = c.createLinearGradient(0, 0, 0, 340);
+        gradUp.addColorStop(0, isUp ? 'rgba(92,184,122,0.2)' : 'rgba(224,82,82,0.15)');
+        gradUp.addColorStop(0.5, isUp ? 'rgba(92,184,122,0.05)' : 'rgba(224,82,82,0.03)');
+        gradUp.addColorStop(1, 'transparent');
+
         charts.equity = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: history.map(h => new Date(h.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })),
                 datasets: [{
                     data: history.map(h => h.equity),
-                    borderColor: '#d4b978',
-                    backgroundColor: gradient,
-                    borderWidth: 2.5, tension: 0.35, fill: true,
+                    borderColor: lineColor,
+                    backgroundColor: gradUp,
+                    borderWidth: 2.5, tension: 0.3, fill: true,
                     pointRadius: 0, pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#d4b978', pointHoverBorderColor: '#0a0b0f', pointHoverBorderWidth: 3
+                    pointHoverBackgroundColor: lineColor, pointHoverBorderColor: '#0a0b0f', pointHoverBorderWidth: 3
                 }]
             },
             options: {
-                ...chartDefaults,
+                responsive: true, maintainAspectRatio: false,
                 interaction: { intersect: false, mode: 'index' },
                 plugins: {
-                    ...chartDefaults.plugins,
+                    legend: { display: false },
                     tooltip: {
-                        ...chartDefaults.plugins.tooltip,
+                        backgroundColor: '#1a1b25', titleColor: '#d4b978', bodyColor: '#f0ede6',
+                        borderColor: 'rgba(255,255,255,0.06)', borderWidth: 1,
+                        padding: 12, cornerRadius: 8, displayColors: false,
                         callbacks: {
-                            label: (ctx) => '  €' + Math.round(ctx.parsed.y).toLocaleString('it-IT')
+                            title: (items) => items[0]?.label || '',
+                            label: (ctx) => 'Equity: €' + Math.round(ctx.parsed.y).toLocaleString('it-IT')
                         }
                     }
                 },
-                animations: { tension: { duration: 800, easing: 'easeInOutQuad' } }
+                scales: {
+                    y: { 
+                        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+                        ticks: { 
+                            color: '#5c5952', font: { size: 11 },
+                            callback: v => '€' + (v >= 1000 ? (v/1000).toFixed(1) + 'k' : v)
+                        }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#5c5952', font: { size: 10 }, maxTicksLimit: 8 } }
+                },
+                animation: { duration: 800, easing: 'easeOutQuart' }
             }
         });
     }
@@ -2637,6 +2669,56 @@
         btn.classList.add('active');
         const equity = await apiCall('/api/equity-history?days=' + days);
         if (equity?.history) drawEquityChart(equity.history);
+    }
+
+    function drawDailyPL(trades) {
+        const ctx = document.getElementById('dailyPLChart');
+        if (charts.dailyPL) charts.dailyPL.destroy();
+
+        // Group closed trades by day
+        const daily = {};
+        trades.filter(t => t.closed_at).forEach(t => {
+            const day = new Date(t.closed_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+            daily[day] = (daily[day] || 0) + (parseFloat(t.profit) || 0);
+        });
+
+        const labels = Object.keys(daily).slice(-14); // last 14 days with trades
+        const data = labels.map(l => parseFloat(daily[l].toFixed(2)));
+
+        charts.dailyPL = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: data.map(d => d >= 0 ? 'rgba(92,184,122,0.7)' : 'rgba(224,82,82,0.7)'),
+                    hoverBackgroundColor: data.map(d => d >= 0 ? 'rgba(92,184,122,0.9)' : 'rgba(224,82,82,0.9)'),
+                    borderRadius: 4, barPercentage: 0.55
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a1b25', titleColor: '#d4b978', bodyColor: '#f0ede6',
+                        borderColor: 'rgba(255,255,255,0.06)', borderWidth: 1,
+                        padding: 10, cornerRadius: 8, displayColors: false,
+                        callbacks: {
+                            label: (ctx) => (ctx.parsed.y >= 0 ? '+' : '') + '€' + ctx.parsed.y.toLocaleString('it-IT')
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+                        ticks: { color: '#5c5952', font: { size: 11 }, callback: v => '€' + v }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#5c5952', font: { size: 10 } } }
+                },
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            }
+        });
     }
 
     // ══════════════════════════════════════════════
@@ -2651,7 +2733,12 @@
 
     function renderTradeList(trades) {
         const open = trades.filter(t => !t.closed_at);
-        const closed = trades.filter(t => t.closed_at).slice(0, 30);
+        const closed = trades.filter(t => t.closed_at).sort((a,b) => new Date(b.closed_at) - new Date(a.closed_at)).slice(0, 30);
+
+        // Update tab labels with counts
+        const tabs = document.querySelectorAll('.trade-tab');
+        if (tabs[0]) tabs[0].textContent = `Open (${open.length})`;
+        if (tabs[1]) tabs[1].textContent = `History (${closed.length})`;
 
         // Open trades
         const openEl = document.getElementById('openTradesList');
@@ -2660,12 +2747,14 @@
         } else {
             openEl.innerHTML = '<div class="trade-list-header"><span>Symbol</span><span>Lots</span><span>Entry</span><span>P/L</span><span>Time</span></div>' +
                 open.map(t => {
-                    const dir = (t.type || '').toLowerCase();
+                    const dir = (t.type || '').toUpperCase();
+                    const dirClass = dir === 'BUY' ? 'buy' : 'sell';
                     const pnl = parseFloat(t.profit) || 0;
+                    const price = t.entry_price ? parseFloat(t.entry_price).toFixed(t.symbol?.includes('JPY') ? 3 : 5) : '—';
                     return `<div class="trade-row">
-                        <div class="trade-row-symbol"><span class="trade-row-dir ${dir}">${dir}</span>${t.symbol}</div>
+                        <div class="trade-row-symbol"><span class="trade-row-dir ${dirClass}">${dir}</span>${t.symbol || '—'}</div>
                         <div class="trade-row-lots">${parseFloat(t.lots || 0).toFixed(2)}</div>
-                        <div class="trade-row-price">${t.entry_price || '—'}</div>
+                        <div class="trade-row-price">${price}</div>
                         <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('it-IT')}</div>
                         <div class="trade-row-time">${tradeTimeAgo(t.opened_at)}</div>
                     </div>`;
@@ -2679,12 +2768,14 @@
         } else {
             histEl.innerHTML = '<div class="trade-list-header"><span>Symbol</span><span>Lots</span><span>Exit</span><span>P/L</span><span>Closed</span></div>' +
                 closed.map(t => {
-                    const dir = (t.type || '').toLowerCase();
+                    const dir = (t.type || '').toUpperCase();
+                    const dirClass = dir === 'BUY' ? 'buy' : 'sell';
                     const pnl = parseFloat(t.profit) || 0;
+                    const price = t.exit_price ? parseFloat(t.exit_price).toFixed(t.symbol?.includes('JPY') ? 3 : 5) : '—';
                     return `<div class="trade-row">
-                        <div class="trade-row-symbol"><span class="trade-row-dir ${dir}">${dir}</span>${t.symbol}</div>
+                        <div class="trade-row-symbol"><span class="trade-row-dir ${dirClass}">${dir}</span>${t.symbol || '—'}</div>
                         <div class="trade-row-lots">${parseFloat(t.lots || 0).toFixed(2)}</div>
-                        <div class="trade-row-price">${t.exit_price || '—'}</div>
+                        <div class="trade-row-price">${price}</div>
                         <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('it-IT')}</div>
                         <div class="trade-row-time">${tradeTimeAgo(t.closed_at)}</div>
                     </div>`;
