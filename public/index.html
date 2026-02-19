@@ -298,6 +298,12 @@
             overflow: hidden;
         }
 
+        .stat-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 12px;
+        }
+
         .stat-card::before {
             content: '';
             position: absolute;
@@ -345,6 +351,31 @@
 
         .stat-change.positive { color: var(--green); }
         .stat-change.negative { color: var(--red); }
+
+        .stats-row-mini {
+            display: flex; gap: 0; margin-bottom: 1rem;
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .stat-mini {
+            flex: 1; padding: 12px 16px; display: flex; align-items: center; gap: 8px;
+            border-right: 1px solid var(--border);
+        }
+        .stat-mini:last-child { border-right: none; }
+        .stat-mini-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .stat-mini-dot.green { background: var(--green); }
+        .stat-mini-dot.gold { background: var(--gold); }
+        .stat-mini-label { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+        .stat-mini-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); margin-left: auto; }
+
+        .chart-range-btns { display: flex; gap: 4px; }
+        .chart-range-btn {
+            padding: 4px 12px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            background: transparent; border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-3); cursor: pointer; transition: all 0.2s;
+        }
+        .chart-range-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
+        .chart-range-btn.active { background: var(--gold-dim); color: var(--gold); border-color: rgba(212,185,120,0.2); }
 
         /* ── Chart Container ── */
         .chart-wrap {
@@ -1095,6 +1126,14 @@
             .stat-card { padding: 1rem 1.15rem; }
             .stat-value { font-size: 22px; }
             .stat-label { font-size: 11px; letter-spacing: 0.5px; }
+            .stat-icon { width: 32px; height: 32px; margin-bottom: 8px; }
+            .stat-icon svg { width: 16px; height: 16px; }
+            .stats-row-mini { flex-wrap: wrap; }
+            .stat-mini { flex: 1 1 45%; border-bottom: 1px solid var(--border); padding: 10px 12px; }
+            .stat-mini:nth-child(odd) { border-right: 1px solid var(--border); }
+            .stat-mini:nth-last-child(-n+2) { border-bottom: none; }
+            .chart-range-btns { gap: 2px; }
+            .chart-range-btn { padding: 3px 8px; font-size: 10px; }
 
             /* Fix signal prices overflow */
             .signal-prices { 
@@ -1313,37 +1352,117 @@
 
         <!-- ═══════ OVERVIEW ═══════ -->
         <div id="overview" class="section active">
+            <!-- Hero Stats -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card stat-hero">
+                    <div class="stat-icon" style="background:var(--gold-dim);color:var(--gold);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
                     <div class="stat-label">Total Equity</div>
                     <div class="stat-value" id="statEquity">—</div>
                     <div class="stat-change" id="statEquityChange">Loading...</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--green-dim);color:var(--green);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                    </div>
                     <div class="stat-label">Win Rate</div>
                     <div class="stat-value" id="statWinRate">—</div>
                     <div class="stat-change" id="statWinRateChange">Loading...</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(129,140,248,0.1);color:#818cf8;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                    </div>
                     <div class="stat-label">Profit Factor</div>
                     <div class="stat-value" id="statPF">—</div>
                     <div class="stat-change" id="statPFChange">Loading...</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--green-dim);color:var(--green);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    </div>
                     <div class="stat-label">Total Profit</div>
                     <div class="stat-value" id="statProfit">—</div>
                     <div class="stat-change" id="statProfitChange">Loading...</div>
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header"><span class="card-title">Equity Curve</span></div>
-                    <div class="chart-wrap"><canvas id="equityChart"></canvas></div>
+            <!-- Secondary Stats Row -->
+            <div class="stats-row-mini">
+                <div class="stat-mini">
+                    <span class="stat-mini-dot green"></span>
+                    <span class="stat-mini-label">Today's P/L</span>
+                    <span class="stat-mini-val" id="statTodayPL">€0</span>
                 </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-dot gold"></span>
+                    <span class="stat-mini-label">Open Trades</span>
+                    <span class="stat-mini-val" id="statOpenTrades">0</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-dot" style="background:var(--text-3);"></span>
+                    <span class="stat-mini-label">Total Trades</span>
+                    <span class="stat-mini-val" id="statTotalTrades">0</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-dot green"></span>
+                    <span class="stat-mini-label">Best Trade</span>
+                    <span class="stat-mini-val" id="statBestTrade">—</span>
+                </div>
+            </div>
+
+            <!-- Equity Curve (Full Width) -->
+            <div class="card" style="margin-bottom:1rem;">
+                <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span class="card-title">Equity Curve</span>
+                    <div class="chart-range-btns">
+                        <button class="chart-range-btn active" onclick="changeEquityRange(7, this)">7D</button>
+                        <button class="chart-range-btn" onclick="changeEquityRange(30, this)">30D</button>
+                        <button class="chart-range-btn" onclick="changeEquityRange(90, this)">90D</button>
+                        <button class="chart-range-btn" onclick="changeEquityRange(365, this)">1Y</button>
+                    </div>
+                </div>
+                <div class="chart-wrap" style="height:340px;"><canvas id="equityChart"></canvas></div>
+            </div>
+
+            <!-- Monthly + W/L Row -->
+            <div class="grid-2">
                 <div class="card">
                     <div class="card-header"><span class="card-title">Monthly Performance</span></div>
                     <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Win / Loss</span></div>
+                    <div style="display:flex;flex-direction:column;justify-content:center;height:280px;padding:0 1rem;">
+                        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+                            <div style="flex:1;">
+                                <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Wins</div>
+                                <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--green);" id="overviewWins">0</div>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Losses</div>
+                                <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--red);" id="overviewLosses">0</div>
+                            </div>
+                        </div>
+                        <div style="height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;margin-bottom:12px;">
+                            <div id="overviewWLBar" style="height:100%;background:var(--green);border-radius:4px;transition:width 0.6s ease;width:50%;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <span style="font-size:12px;color:var(--green);" id="overviewWRPct">0%</span>
+                            <span style="font-size:12px;color:var(--red);" id="overviewLRPct">0%</span>
+                        </div>
+                        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                                <span style="font-size:12px;color:var(--text-3);">Avg Win</span>
+                                <span style="font-size:12px;color:var(--green);font-family:'DM Mono',monospace;" id="overviewAvgWin">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="font-size:12px;color:var(--text-3);">Avg Loss</span>
+                                <span style="font-size:12px;color:var(--red);font-family:'DM Mono',monospace;" id="overviewAvgLoss">—</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2339,21 +2458,48 @@
 
     function updateStats(s) {
         document.getElementById('statEquity').textContent = fmt(s.equity);
-        document.getElementById('statEquityChange').textContent = s.equity > 0 ? 'Updated' : 'No data';
-        document.getElementById('statEquityChange').className = 'stat-change' + (s.equity > 0 ? ' positive' : '');
+        const eqPct = s.equity > 0 && s.totalProfit ? ((s.totalProfit / (s.equity - s.totalProfit)) * 100).toFixed(1) : 0;
+        document.getElementById('statEquityChange').textContent = s.equity > 0 ? (eqPct >= 0 ? '+' : '') + eqPct + '% all time' : 'No data';
+        document.getElementById('statEquityChange').className = 'stat-change' + (eqPct >= 0 ? ' positive' : ' negative');
 
         document.getElementById('statWinRate').textContent = (s.winRate || 0).toFixed(1) + '%';
-        document.getElementById('statWinRateChange').textContent = s.winRate >= 50 ? 'Good performance' : 'Needs improvement';
-        document.getElementById('statWinRateChange').className = 'stat-change' + (s.winRate >= 50 ? ' positive' : ' negative');
+        document.getElementById('statWinRateChange').textContent = s.totalTrades + ' trades';
+        document.getElementById('statWinRateChange').className = 'stat-change' + (s.winRate >= 50 ? ' positive' : s.totalTrades > 0 ? ' negative' : '');
 
         document.getElementById('statPF').textContent = (s.profitFactor || 0).toFixed(2);
-        const pfText = s.profitFactor >= 1.5 ? 'Excellent' : s.profitFactor >= 1 ? 'Decent' : 'At a loss';
+        const pfText = s.profitFactor >= 2 ? 'Excellent' : s.profitFactor >= 1.5 ? 'Strong' : s.profitFactor >= 1 ? 'Decent' : 'Needs work';
         document.getElementById('statPFChange').textContent = pfText;
         document.getElementById('statPFChange').className = 'stat-change' + (s.profitFactor >= 1 ? ' positive' : ' negative');
 
         document.getElementById('statProfit').textContent = fmt(s.totalProfit);
-        document.getElementById('statProfitChange').textContent = s.totalProfit >= 0 ? 'Profitable' : 'At a loss';
+        document.getElementById('statProfitChange').textContent = s.totalProfit >= 0 ? '↑ Profitable' : '↓ At a loss';
         document.getElementById('statProfitChange').className = 'stat-change' + (s.totalProfit >= 0 ? ' positive' : ' negative');
+
+        // Mini stats row
+        const todayPL = s.todayProfit || 0;
+        const todayEl = document.getElementById('statTodayPL');
+        todayEl.textContent = (todayPL >= 0 ? '+' : '') + fmt(todayPL);
+        todayEl.style.color = todayPL >= 0 ? 'var(--green)' : 'var(--red)';
+        document.getElementById('statOpenTrades').textContent = s.openTrades || 0;
+        document.getElementById('statTotalTrades').textContent = s.totalTrades || 0;
+        document.getElementById('statBestTrade').textContent = fmt(s.bestTrade);
+        document.getElementById('statBestTrade').style.color = 'var(--green)';
+
+        // Win/Loss card
+        const wins = s.winningTrades || 0;
+        const losses = s.losingTrades || 0;
+        const total = wins + losses;
+        document.getElementById('overviewWins').textContent = wins;
+        document.getElementById('overviewLosses').textContent = losses;
+        const wrPct = total > 0 ? (wins / total * 100) : 50;
+        document.getElementById('overviewWLBar').style.width = wrPct + '%';
+        document.getElementById('overviewWRPct').textContent = total > 0 ? wrPct.toFixed(0) + '% wins' : '—';
+        document.getElementById('overviewLRPct').textContent = total > 0 ? (100 - wrPct).toFixed(0) + '% losses' : '—';
+
+        // Avg win/loss
+        const avgWin = wins > 0 && s.totalProfit !== undefined ? '—' : '—';
+        document.getElementById('overviewAvgWin').textContent = fmt(s.bestTrade || 0);
+        document.getElementById('overviewAvgLoss').textContent = fmt(s.worstTrade || 0);
     }
 
     function updatePerf(s) {
@@ -2373,20 +2519,46 @@
     function drawEquityChart(history) {
         const ctx = document.getElementById('equityChart');
         if (charts.equity) charts.equity.destroy();
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 340);
+        gradient.addColorStop(0, 'rgba(200,170,110,0.2)');
+        gradient.addColorStop(0.5, 'rgba(200,170,110,0.05)');
+        gradient.addColorStop(1, 'rgba(200,170,110,0)');
         charts.equity = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: history.map(h => new Date(h.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })),
                 datasets: [{
                     data: history.map(h => h.equity),
-                    borderColor: '#c8aa6e',
-                    backgroundColor: 'rgba(200,170,110,0.08)',
-                    borderWidth: 2, tension: 0.4, fill: true,
-                    pointRadius: 3, pointBackgroundColor: '#c8aa6e', pointBorderWidth: 0
+                    borderColor: '#d4b978',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5, tension: 0.35, fill: true,
+                    pointRadius: 0, pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#d4b978', pointHoverBorderColor: '#0a0b0f', pointHoverBorderWidth: 3
                 }]
             },
-            options: chartDefaults
+            options: {
+                ...chartDefaults,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    ...chartDefaults.plugins,
+                    tooltip: {
+                        ...chartDefaults.plugins.tooltip,
+                        callbacks: {
+                            label: (ctx) => '  €' + Math.round(ctx.parsed.y).toLocaleString('it-IT')
+                        }
+                    }
+                },
+                animations: { tension: { duration: 800, easing: 'easeInOutQuad' } }
+            }
         });
+    }
+
+    let equityHistoryCache = [];
+    async function changeEquityRange(days, btn) {
+        document.querySelectorAll('.chart-range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const equity = await apiCall('/api/equity-history?days=' + days);
+        if (equity?.history) drawEquityChart(equity.history);
     }
 
     function drawMonthlyChart(trades) {
