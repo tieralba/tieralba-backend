@@ -876,21 +876,21 @@
             animation: shimmer 1.8s ease-in-out infinite;
             border-radius: 6px;
         }
-        .skeleton-line { height: 14px; margin-bottom: 8px; }
-        .skeleton-line.w60 { width: 60%; }
-        .skeleton-line.w40 { width: 40%; }
-        .skeleton-line.w80 { width: 80%; }
-        .skeleton-title { height: 28px; width: 50%; margin-bottom: 10px; }
-        .skeleton-value { height: 32px; width: 70%; margin-bottom: 6px; }
-        .skeleton-sub { height: 12px; width: 45%; }
-        .skeleton-chart { height: 200px; border-radius: var(--radius); }
-        .skeleton-card { padding: 1.25rem; border-radius: var(--radius-lg); border: 1px solid var(--border); margin-bottom: 10px; }
-        .skeleton-row { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .skeleton-circle { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
 
         @keyframes shimmer {
             0% { background-position: 300% 0; }
             100% { background-position: -300% 0; }
+        }
+
+        /* Loading pulse for stat values */
+        .loading-pulse {
+            color: transparent !important;
+            background: linear-gradient(90deg, var(--surface-2) 25%, rgba(255,255,255,0.04) 50%, var(--surface-2) 75%);
+            background-size: 300% 100%;
+            animation: shimmer 1.8s ease-in-out infinite;
+            border-radius: 4px;
+            min-width: 60px;
+            display: inline-block;
         }
 
         /* Empty State */
@@ -1324,7 +1324,7 @@
 
             /* Fix card overflow */
             .card { padding: 1rem; overflow: hidden; }
-            .stat-card { padding: 1rem 1.15rem; display: flex; flex-direction: column; }
+            .stat-card { padding: 1rem 1.15rem; }
             .stat-value { font-size: 22px; white-space: nowrap; }
             .stat-label { font-size: 11px; letter-spacing: 0.5px; }
             .stat-icon { width: 32px; height: 32px; margin-bottom: 8px; }
@@ -2361,9 +2361,9 @@
 
             <!-- Journal Entries -->
             <div id="journalEntries" style="display:flex;flex-direction:column;gap:10px;">
-                <div class="skeleton-card skeleton" style="height:80px;"></div>
-                <div class="skeleton-card skeleton" style="height:80px;"></div>
-                <div class="skeleton-card skeleton" style="height:80px;"></div>
+                <div class="skeleton" style="height:70px;border-radius:12px;margin-bottom:8px;"></div>
+                <div class="skeleton" style="height:70px;border-radius:12px;margin-bottom:8px;"></div>
+                <div class="skeleton" style="height:70px;border-radius:12px;"></div>
             </div>
         </div>
 
@@ -2868,36 +2868,17 @@
     // SKELETON LOADERS & EMPTY STATES
     // ══════════════════════════════════════════════
     function showSkeletons() {
-        // Stat cards: replace "—" with skeleton pulse
-        document.querySelectorAll('.stat-value').forEach(el => {
-            if (el.textContent === '—' || el.textContent === 'Loading...') {
-                el.innerHTML = '<div class="skeleton skeleton-value" style="height:28px;width:80%;"></div>';
+        // Add pulse class to all stat values showing "—"
+        document.querySelectorAll('.stat-value, .stat-change, .stat-mini-value').forEach(el => {
+            if (el.textContent === '—' || el.textContent === '' || el.textContent === '€0') {
+                el.classList.add('loading-pulse');
             }
         });
-        document.querySelectorAll('.stat-change').forEach(el => {
-            if (el.textContent === 'Loading...' || el.textContent === '—') {
-                el.innerHTML = '<div class="skeleton skeleton-sub" style="height:12px;width:60%;"></div>';
-            }
-        });
-        // Mini stats
-        document.querySelectorAll('.stat-mini-value').forEach(el => {
-            if (el.textContent === '—' || el.textContent === '€0') {
-                el.innerHTML = '<div class="skeleton" style="height:14px;width:50px;display:inline-block;"></div>';
-            }
-        });
-        // Trade list
-        const tradeList = document.getElementById('tradeListContent');
-        if (tradeList) {
-            tradeList.innerHTML = Array(4).fill('').map(() =>
-                `<div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w40"></div></div><div class="skeleton" style="width:60px;height:14px;"></div></div>`
-            ).join('');
-        }
     }
 
     function hideSkeletons() {
-        // Remove any remaining skeleton placeholders inside stat-values
-        document.querySelectorAll('.stat-value .skeleton, .stat-change .skeleton, .stat-mini-value .skeleton').forEach(el => {
-            el.remove();
+        document.querySelectorAll('.loading-pulse').forEach(el => {
+            el.classList.remove('loading-pulse');
         });
     }
 
