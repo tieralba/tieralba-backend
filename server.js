@@ -637,11 +637,11 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     
     // Calcola profit factor
     const winningSum = await pool.query(
-      'SELECT SUM(profit) as sum FROM trades WHERE user_id = $1 AND profit > 0',
+      'SELECT SUM(profit) as sum FROM trades WHERE user_id = $1 AND profit > 0 AND closed_at IS NOT NULL',
       [userId]
     );
     const losingSum = await pool.query(
-      'SELECT SUM(ABS(profit)) as sum FROM trades WHERE user_id = $1 AND profit < 0',
+      'SELECT SUM(ABS(profit)) as sum FROM trades WHERE user_id = $1 AND profit < 0 AND closed_at IS NOT NULL',
       [userId]
     );
     
@@ -1061,10 +1061,16 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
 
       console.log(`📊 MetaApi returned ${deals.length} deals`);
 
-      // Filter only actual trade deals (not balance/credit/etc) that have profit
+      // Filter only actual CLOSING trade deals
+      // - Must be BUY or SELL type
+      // - Must be DEAL_ENTRY_OUT (closing a position) — DEAL_ENTRY_IN is opening
+      // - Must have a symbol (balance/credit operations don't)
+      // - Exclude deals with 0 volume (not real trades)
       const tradingDeals = deals.filter(d => 
         (d.type === 'DEAL_TYPE_BUY' || d.type === 'DEAL_TYPE_SELL') &&
-        d.entryType !== 'DEAL_ENTRY_IN' // Only closing deals have real P/L
+        d.entryType === 'DEAL_ENTRY_OUT' &&
+        d.symbol &&
+        d.volume > 0
       );
 
       console.log(`📊 Filtered to ${tradingDeals.length} closing deals`);
