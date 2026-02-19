@@ -501,6 +501,105 @@ app.get('/api/auth/verify', async (req, res) => {
   }
 });
 
+// FORGOT PASSWORD — Send reset email
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await pool.query('SELECT id, name FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    
+    // Always return success to prevent email enumeration
+    if (user.rows.length === 0) {
+      return res.json({ success: true });
+    }
+
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
+      [resetToken, expires, user.rows[0].id]
+    );
+
+    const baseUrl = process.env.APP_URL || `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'tieralba-backend-production-f18f.up.railway.app'}`;
+    const resetUrl = `${baseUrl}/reset-password.html?token=${resetToken}`;
+    const userName = user.rows[0].name || '';
+
+    if (resend) {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+        to: [email.toLowerCase()],
+        subject: 'TierAlba — Reset Your Password',
+        html: `
+          <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
+            <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <h1 style="margin:0;font-size:24px;color:#c8aa6e;letter-spacing:-0.3px;">TierAlba</h1>
+            </div>
+            <div style="padding:40px;">
+              <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Reset your password</h2>
+              <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                Hi${userName ? ' ' + userName : ''}, we received a request to reset your password. Click the button below to set a new one.
+              </p>
+              <div style="text-align:center;margin:0 0 32px;">
+                <a href="${resetUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;text-transform:uppercase;letter-spacing:1.2px;">
+                  Reset Password
+                </a>
+              </div>
+              <p style="color:#5c5952;font-size:12px;margin:0 0 8px;">This link expires in 1 hour.</p>
+              <p style="color:#5c5952;font-size:12px;margin:0;">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+            <div style="background:#12131a;padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="color:#5c5952;font-size:12px;margin:0;text-align:center;">
+                © ${new Date().getFullYear()} TierAlba · Trading involves risk
+              </p>
+            </div>
+          </div>
+        `
+      });
+      console.log(`📧 Password reset email sent to ${email}`);
+    } else {
+      console.log(`⚠️ Resend not configured. Reset URL: ${resetUrl}`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// RESET PASSWORD — Set new password with token
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+    const user = await pool.query(
+      'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
+      [token]
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
+      [passwordHash, user.rows[0].id]
+    );
+
+    console.log(`🔒 Password reset completed for user ${user.rows[0].id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 // ============================================
 // ENDPOINT: STATISTICHE DASHBOARD
 // ============================================
