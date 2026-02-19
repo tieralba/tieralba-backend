@@ -1712,8 +1712,8 @@ app.get('/api/journal', authenticateToken, async (req, res) => {
       FROM journal_entries j
       LEFT JOIN trades t ON j.trade_id = t.id
       WHERE j.user_id = $1
-      ORDER BY j.created_at DESC
-      LIMIT 100
+      ORDER BY j.trade_date DESC NULLS LAST, j.created_at DESC
+      LIMIT 200
     `, [req.userId]);
     res.json({ entries: result.rows });
   } catch (error) {
@@ -1725,22 +1725,20 @@ app.get('/api/journal', authenticateToken, async (req, res) => {
 // Create journal entry
 app.post('/api/journal', authenticateToken, async (req, res) => {
   try {
-    const { symbol, direction, notes, tags, mood, trade_id, image } = req.body;
-    if (!notes && !symbol) return res.status(400).json({ error: 'Add at least a symbol or notes' });
+    const { symbol, direction, lots, risk_pct, entry_price, sl, tp, pnl, rr_planned,
+            trade_date, setup, timeframe, mood, followed_rules, notes, trade_id, image } = req.body;
+    if (!symbol) return res.status(400).json({ error: 'Pair is required' });
 
     const result = await pool.query(`
-      INSERT INTO journal_entries (user_id, symbol, direction, notes, tags, mood, trade_id, image_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO journal_entries (user_id, symbol, direction, lots, risk_pct, entry_price, sl, tp, pnl, rr_planned,
+        trade_date, setup, timeframe, mood, followed_rules, notes, trade_id, image_url)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
       RETURNING id
     `, [
-      req.userId,
-      symbol || null,
-      direction || null,
-      notes || null,
-      JSON.stringify(tags || []),
-      mood || null,
-      trade_id || null,
-      image || null
+      req.userId, symbol||null, direction||null, lots||null, risk_pct||null,
+      entry_price||null, sl||null, tp||null, pnl||null, rr_planned||null,
+      trade_date||null, setup||null, timeframe||null, mood||null, followed_rules,
+      notes||null, trade_id||null, image||null
     ]);
 
     res.json({ success: true, id: result.rows[0].id });
@@ -1753,17 +1751,20 @@ app.post('/api/journal', authenticateToken, async (req, res) => {
 // Update journal entry
 app.put('/api/journal/:id', authenticateToken, async (req, res) => {
   try {
-    const { symbol, direction, notes, tags, mood, trade_id, image } = req.body;
+    const { symbol, direction, lots, risk_pct, entry_price, sl, tp, pnl, rr_planned,
+            trade_date, setup, timeframe, mood, followed_rules, notes, trade_id, image } = req.body;
 
     const result = await pool.query(`
-      UPDATE journal_entries 
-      SET symbol = $1, direction = $2, notes = $3, tags = $4, mood = $5, trade_id = $6, image_url = $7, updated_at = NOW()
-      WHERE id = $8 AND user_id = $9
-      RETURNING id
+      UPDATE journal_entries SET
+        symbol=$1, direction=$2, lots=$3, risk_pct=$4, entry_price=$5, sl=$6, tp=$7, pnl=$8,
+        rr_planned=$9, trade_date=$10, setup=$11, timeframe=$12, mood=$13, followed_rules=$14,
+        notes=$15, trade_id=$16, image_url=$17, updated_at=NOW()
+      WHERE id=$18 AND user_id=$19 RETURNING id
     `, [
-      symbol || null, direction || null, notes || null,
-      JSON.stringify(tags || []), mood || null, trade_id || null, image || null,
-      req.params.id, req.userId
+      symbol||null, direction||null, lots||null, risk_pct||null, entry_price||null,
+      sl||null, tp||null, pnl||null, rr_planned||null, trade_date||null,
+      setup||null, timeframe||null, mood||null, followed_rules, notes||null,
+      trade_id||null, image||null, req.params.id, req.userId
     ]);
 
     if (result.rowCount === 0) return res.status(404).json({ error: 'Entry not found' });
