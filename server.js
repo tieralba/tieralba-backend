@@ -1543,26 +1543,32 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
     if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const user = userResult.rows[0];
+
+    // Save to database
+    await pool.query(
+      `INSERT INTO support_messages (user_id, email, name, subject, message)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [req.userId, user.email, user.name || '', subject, message]
+    );
+
     console.log(`📩 Support from ${user.email}: [${subject}] ${message.substring(0, 100)}`);
 
-    // Send email notification if Resend is configured
+    // Send notification email (not the message itself, just a heads-up)
     if (resend) {
       try {
         await resend.emails.send({
           from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
           to: ['info@tieralba.com'],
-          subject: '[TierAlba Support] ' + subject + ' — ' + user.email,
-          html: '<div style="font-family:sans-serif;max-width:600px;padding:20px;">' +
-            '<h2 style="color:#c8aa6e;">New Support Message</h2>' +
+          subject: '[TierAlba] New support request from ' + user.email,
+          html: '<div style="font-family:sans-serif;padding:20px;">' +
+            '<h3 style="color:#c8aa6e;">New Support Request</h3>' +
             '<p><strong>From:</strong> ' + (user.name || 'N/A') + ' (' + user.email + ')</p>' +
-            '<p><strong>User ID:</strong> ' + req.userId + '</p>' +
             '<p><strong>Subject:</strong> ' + subject + '</p>' +
-            '<hr style="border:1px solid #eee;">' +
-            '<p style="white-space:pre-wrap;">' + message + '</p>' +
+            '<p style="color:#888;">View full message in Supabase → support_messages table</p>' +
             '</div>'
         });
       } catch (emailErr) {
-        console.error('Support email error:', emailErr);
+        console.error('Support notification email error:', emailErr);
       }
     }
 
