@@ -956,7 +956,6 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
 
     console.log(`MetaApi account state: ${state.state}, connectionStatus: ${state.connectionStatus}`);
 
-    // If not deployed, deploy it
     if (state.state !== 'DEPLOYED') {
       await fetch(`${baseUrl}/users/current/accounts/${accountId}/deploy`, {
         method: 'POST',
@@ -965,17 +964,16 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
       return res.json({ success: false, error: 'Account is being deployed. Please try syncing again in 1-2 minutes.' });
     }
 
-    // If not connected yet
     if (state.connectionStatus !== 'CONNECTED') {
       return res.json({ success: false, error: `Account status: ${state.connectionStatus}. Please wait and try again.` });
     }
 
-    // Step 2: Get the correct client API URL from account region
+    // Step 2: Get client API URL
     const region = state.region || 'vint-hill';
     const clientUrl = `https://mt-client-api-v1.${region}.agiliumtrade.ai`;
     console.log(`MetaApi using client URL: ${clientUrl}`);
 
-    // Get account info
+    // Step 3: Get account info (equity, balance)
     const infoRes = await fetch(`${clientUrl}/users/current/accounts/${accountId}/account-information`, {
       headers: { 'auth-token': metaApiToken }
     });
@@ -993,45 +991,112 @@ app.post('/api/broker/sync', authenticateToken, async (req, res) => {
       );
     }
 
-    // Step 3: Get trade history (last 30 days)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const now = new Date().toISOString();
-    const tradesRes = await fetch(
-      `${clientUrl}/users/current/accounts/${accountId}/history-deals/time/${thirtyDaysAgo}/${now}`,
-      { headers: { 'auth-token': metaApiToken } }
-    );
-    const tradesText = await tradesRes.text();
-    let deals = [];
-    try { deals = JSON.parse(tradesText); } catch {
-      console.error('MetaApi trades response not JSON:', tradesText.substring(0, 200));
-    }
-
     let synced = 0;
-    if (Array.isArray(deals)) {
-      for (const deal of deals) {
-        if (deal.type === 'DEAL_TYPE_BUY' || deal.type === 'DEAL_TYPE_SELL') {
+
+    // Step 4: Get OPEN POSITIONS
+    try {
+      const posRes = await fetch(`${clientUrl}/users/current/accounts/${accountId}/positions`, {
+        headers: { 'auth-token': metaApiToken }
+      });
+      const posText = await posRes.text();
+      let positions = [];
+      try { positions = JSON.parse(posText); } catch {
+        console.error('MetaApi positions not JSON:', posText.substring(0, 200));
+      }
+
+      // Clear old open trades for this user then re-insert current open positions
+      if (Array.isArray(positions) && positions.length > 0) {
+        await pool.query('DELETE FROM trades WHERE user_id = $1 AND closed_at IS NULL AND external_id IS NOT NULL', [userId]);
+        
+        for (const pos of positions) {
           try {
             await pool.query(`
-              INSERT INTO trades (user_id, symbol, type, lots, profit, opened_at, closed_at, external_id)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-              ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $5, closed_at = $7
+              INSERT INTO trades (user_id, symbol, type, lots, entry_price, profit, opened_at, closed_at, external_id)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, $8)
+              ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $6, lots = $4
             `, [
               userId,
-              deal.symbol || 'UNKNOWN',
-              deal.type === 'DEAL_TYPE_BUY' ? 'buy' : 'sell',
-              deal.volume || 0,
-              deal.profit || 0,
-              deal.time || new Date().toISOString(),
-              deal.time || new Date().toISOString(),
-              deal.id || `metaapi-${Date.now()}-${synced}`
+              pos.symbol || 'UNKNOWN',
+              (pos.type === 'POSITION_TYPE_BUY' ? 'BUY' : 'SELL'),
+              pos.volume || 0,
+              pos.openPrice || 0,
+              pos.profit || 0,
+              pos.time || new Date().toISOString(),
+              'pos-' + (pos.id || pos.symbol + '-' + Date.now())
             ]);
             synced++;
           } catch (dbErr) {
-            console.error('Trade insert error:', dbErr.message);
+            console.error('Position insert error:', dbErr.message);
           }
         }
       }
+      console.log(`📊 Synced ${positions.length || 0} open positions`);
+    } catch (posErr) {
+      console.error('Positions fetch error:', posErr.message);
     }
+
+    // Step 5: Get CLOSED DEALS (history-orders gives completed trades)
+    try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
+      
+      const tradesRes = await fetch(
+        `${clientUrl}/users/current/accounts/${accountId}/history-deals/time/${thirtyDaysAgo}/${now}`,
+        { headers: { 'auth-token': metaApiToken } }
+      );
+      const tradesText = await tradesRes.text();
+      let rawDeals;
+      try { rawDeals = JSON.parse(tradesText); } catch {
+        console.error('MetaApi deals response not JSON:', tradesText.substring(0, 200));
+        rawDeals = null;
+      }
+
+      // MetaAPI returns either an array directly or { deals: [...] }
+      let deals = [];
+      if (Array.isArray(rawDeals)) {
+        deals = rawDeals;
+      } else if (rawDeals && Array.isArray(rawDeals.deals)) {
+        deals = rawDeals.deals;
+      }
+
+      console.log(`📊 MetaApi returned ${deals.length} deals`);
+
+      // Filter only actual trade deals (not balance/credit/etc) that have profit
+      const tradingDeals = deals.filter(d => 
+        (d.type === 'DEAL_TYPE_BUY' || d.type === 'DEAL_TYPE_SELL') &&
+        d.entryType !== 'DEAL_ENTRY_IN' // Only closing deals have real P/L
+      );
+
+      console.log(`📊 Filtered to ${tradingDeals.length} closing deals`);
+
+      for (const deal of tradingDeals) {
+        try {
+          await pool.query(`
+            INSERT INTO trades (user_id, symbol, type, lots, entry_price, exit_price, profit, opened_at, closed_at, external_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $7, exit_price = $6, closed_at = $9
+          `, [
+            userId,
+            deal.symbol || 'UNKNOWN',
+            deal.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL',
+            deal.volume || 0,
+            deal.price || 0,
+            deal.price || 0,
+            deal.profit || 0,
+            deal.brokerTime || deal.time || new Date().toISOString(),
+            deal.brokerTime || deal.time || new Date().toISOString(),
+            'deal-' + (deal.id || `${Date.now()}-${synced}`)
+          ]);
+          synced++;
+        } catch (dbErr) {
+          console.error('Deal insert error:', dbErr.message);
+        }
+      }
+    } catch (dealErr) {
+      console.error('Deals fetch error:', dealErr.message);
+    }
+
+    console.log(`✅ Sync complete: ${synced} trades synced for user ${userId}`);
 
     res.json({ 
       success: true, 
