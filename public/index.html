@@ -402,12 +402,14 @@
             letter-spacing: -0.5px;
             margin-bottom: 6px;
             color: var(--text);
+            white-space: nowrap;
         }
 
         .stat-change {
             font-size: 12px;
             font-weight: 600;
             color: var(--text-3);
+            min-height: 18px;
         }
 
         .stat-change.positive { color: var(--green); }
@@ -1296,11 +1298,12 @@
 
             /* Fix card overflow */
             .card { padding: 1rem; overflow: hidden; }
-            .stat-card { padding: 1rem 1.15rem; }
-            .stat-value { font-size: 22px; }
+            .stat-card { padding: 1rem 1.15rem; display: flex; flex-direction: column; }
+            .stat-value { font-size: 22px; white-space: nowrap; }
             .stat-label { font-size: 11px; letter-spacing: 0.5px; }
             .stat-icon { width: 32px; height: 32px; margin-bottom: 8px; }
             .stat-icon svg { width: 16px; height: 16px; }
+            .stat-change { font-size: 11px; min-height: 16px; }
             .stats-row-mini { flex-wrap: wrap; }
             .stat-mini { flex: 1 1 45%; border-bottom: 1px solid var(--border); padding: 10px 12px; }
             .stat-mini:nth-child(odd) { border-right: 1px solid var(--border); }
@@ -1540,7 +1543,7 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
                     <div class="stat-label">Total Equity</div>
-                    <div class="stat-value" id="statEquity" style="color:var(--gold);">—</div>
+                    <div class="stat-value" id="statEquity">—</div>
                     <div class="stat-change" id="statEquityChange">Loading...</div>
                 </div>
                 <div class="stat-card">
@@ -3869,12 +3872,28 @@
                 resultBadge = '<span class="signal-result be">BREAK EVEN</span>';
             }
             
+            function fmtSigPrice(val) {
+                if (!val) return '—';
+                const n = parseFloat(val);
+                if (isNaN(n)) return val;
+                // Remove unnecessary trailing zeros but keep meaningful decimals
+                // JPY pairs: 3 decimals, Indices/Gold: 2, Forex: 5
+                const str = n.toString();
+                if (str.includes('.')) {
+                    const dec = str.split('.')[1].length;
+                    if (dec <= 2) return n.toFixed(2);
+                    if (n >= 100) return n.toFixed(2); // Gold, indices
+                    return n.toFixed(dec > 5 ? 5 : dec);
+                }
+                return n.toFixed(n >= 100 ? 2 : 5);
+            }
+
             let prices = '';
-            if (s.entry_price) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.entry_price}')"><span class="copy-hint">COPY</span><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${s.entry_price}</div></div>`;
-            if (s.stop_loss) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.stop_loss}')"><span class="copy-hint">COPY</span><div class="signal-price-label">SL</div><div class="signal-price-val sl">${s.stop_loss}</div></div>`;
-            if (s.tp1) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp1}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${s.tp1}</div></div>`;
-            if (s.tp2) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp2}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${s.tp2}</div></div>`;
-            if (s.tp3) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp3}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${s.tp3}</div></div>`;
+            if (s.entry_price) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.entry_price}')"><span class="copy-hint">COPY</span><div class="signal-price-label">Entry</div><div class="signal-price-val entry">${fmtSigPrice(s.entry_price)}</div></div>`;
+            if (s.stop_loss) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.stop_loss}')"><span class="copy-hint">COPY</span><div class="signal-price-label">SL</div><div class="signal-price-val sl">${fmtSigPrice(s.stop_loss)}</div></div>`;
+            if (s.tp1) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp1}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP1</div><div class="signal-price-val tp">${fmtSigPrice(s.tp1)}</div></div>`;
+            if (s.tp2) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp2}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP2</div><div class="signal-price-val tp">${fmtSigPrice(s.tp2)}</div></div>`;
+            if (s.tp3) prices += `<div class="signal-price" onclick="copyPrice(this,'${s.tp3}')"><span class="copy-hint">COPY</span><div class="signal-price-label">TP3</div><div class="signal-price-val tp">${fmtSigPrice(s.tp3)}</div></div>`;
 
             const closedInfo = s.closed_at ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px;">Closed ${timeAgo(s.closed_at)}</div>` : '';
 
