@@ -159,10 +159,42 @@
         <div class="auth-form" id="registerForm">
             <div class="auth-title">Create your account</div>
             <form onsubmit="handleRegister(event)">
-                <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="regName" required placeholder="Your name"></div>
-                <div class="form-group"><label class="form-label">Email address</label><input type="email" class="form-input" id="regEmail" required autocomplete="email"></div>
-                <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="regPassword" required minlength="8" placeholder="Min 8 characters"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group"><label class="form-label">First Name *</label><input type="text" class="form-input" id="regFirstName" required placeholder="John"></div>
+                    <div class="form-group"><label class="form-label">Last Name *</label><input type="text" class="form-input" id="regLastName" required placeholder="Doe"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group"><label class="form-label">Title</label>
+                        <select class="form-input" id="regTitle" style="cursor:pointer;">
+                            <option value="">Select</option><option>Mr</option><option>Mrs</option><option>Ms</option><option>Dr</option><option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Date of Birth *</label><input type="date" class="form-input" id="regDOB" required></div>
+                </div>
+                <div class="form-group"><label class="form-label">Country *</label>
+                    <select class="form-input" id="regCountry" required style="cursor:pointer;">
+                        <option value="">Select your country</option>
+                        <option>Afghanistan</option><option>Albania</option><option>Algeria</option><option>Argentina</option><option>Australia</option><option>Austria</option><option>Belgium</option><option>Brazil</option><option>Bulgaria</option><option>Canada</option><option>Chile</option><option>China</option><option>Colombia</option><option>Croatia</option><option>Czech Republic</option><option>Denmark</option><option>Egypt</option><option>Estonia</option><option>Finland</option><option>France</option><option>Germany</option><option>Greece</option><option>Hungary</option><option>Iceland</option><option>India</option><option>Indonesia</option><option>Ireland</option><option>Israel</option><option>Italy</option><option>Japan</option><option>Latvia</option><option>Lithuania</option><option>Luxembourg</option><option>Malaysia</option><option>Mexico</option><option>Morocco</option><option>Netherlands</option><option>New Zealand</option><option>Nigeria</option><option>Norway</option><option>Pakistan</option><option>Peru</option><option>Philippines</option><option>Poland</option><option>Portugal</option><option>Romania</option><option>Saudi Arabia</option><option>Serbia</option><option>Singapore</option><option>Slovakia</option><option>Slovenia</option><option>South Africa</option><option>South Korea</option><option>Spain</option><option>Sweden</option><option>Switzerland</option><option>Thailand</option><option>Turkey</option><option>Ukraine</option><option>United Arab Emirates</option><option>United Kingdom</option><option>United States</option><option>Vietnam</option><option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Email Address *</label><input type="email" class="form-input" id="regEmail" required autocomplete="email" placeholder="you@example.com"></div>
+                <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" class="form-input" id="regPhone" placeholder="+39 123 456 7890"></div>
+                <div class="form-group"><label class="form-label">Password *</label><input type="password" class="form-input" id="regPassword" required minlength="8" placeholder="Min 8 characters"></div>
                 <div class="form-group" id="refCodeGroup"><label class="form-label">Referral code</label><input type="text" class="form-input" id="regRefCode" placeholder="Optional"></div>
+
+                <div style="margin-bottom:12px;">
+                    <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;color:var(--text-2);line-height:1.5;">
+                        <input type="checkbox" id="regTerms" required style="margin-top:3px;min-width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
+                        <span>I confirm that I am at least 18 years old and agree to TierAlba's <a href="#" style="color:var(--gold);text-decoration:none;">Terms of Service</a> and <a href="#" style="color:var(--gold);text-decoration:none;">Privacy Policy</a>.</span>
+                    </label>
+                </div>
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;color:var(--text-2);line-height:1.5;">
+                        <input type="checkbox" id="regMarketing" style="margin-top:3px;min-width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
+                        <span>I'd like to receive trading insights, exclusive offers and product updates from TierAlba.</span>
+                    </label>
+                </div>
+
                 <button type="submit" class="btn-submit" id="regBtn">Create Account</button>
             </form>
             <div class="auth-footer">Already have an account? <a href="#" onclick="switchTab('login')"> Sign in</a></div>
@@ -216,7 +248,19 @@
         const btn = document.getElementById('regBtn'); const orig = btn.textContent;
         btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Creating...';
         try {
-            const res = await fetch(`${API_URL}/api/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: document.getElementById('regName').value, email: document.getElementById('regEmail').value, password: document.getElementById('regPassword').value, referralCode: document.getElementById('regRefCode').value.trim() || null }) });
+            const res = await fetch(`${API_URL}/api/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+                name: (document.getElementById('regFirstName').value + ' ' + document.getElementById('regLastName').value).trim(),
+                first_name: document.getElementById('regFirstName').value,
+                last_name: document.getElementById('regLastName').value,
+                title: document.getElementById('regTitle').value || null,
+                date_of_birth: document.getElementById('regDOB').value || null,
+                country: document.getElementById('regCountry').value || null,
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value || null,
+                password: document.getElementById('regPassword').value,
+                referralCode: document.getElementById('regRefCode').value.trim() || null,
+                marketing_consent: document.getElementById('regMarketing').checked
+            }) });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Registration failed');
             localStorage.setItem('auth_token', data.token);
