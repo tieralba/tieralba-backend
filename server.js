@@ -1701,6 +1701,95 @@ app.put('/api/user/password', authenticateToken, async (req, res) => {
 });
 
 // ============================================
+// ENDPOINT: JOURNAL
+// ============================================
+
+// Get all journal entries
+app.get('/api/journal', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT j.*, t.symbol as trade_symbol, t.type as trade_type, t.profit as trade_profit
+      FROM journal_entries j
+      LEFT JOIN trades t ON j.trade_id = t.id
+      WHERE j.user_id = $1
+      ORDER BY j.created_at DESC
+      LIMIT 100
+    `, [req.userId]);
+    res.json({ entries: result.rows });
+  } catch (error) {
+    console.error('Journal list error:', error);
+    res.status(500).json({ error: 'Failed to load journal' });
+  }
+});
+
+// Create journal entry
+app.post('/api/journal', authenticateToken, async (req, res) => {
+  try {
+    const { symbol, direction, notes, tags, mood, trade_id, image } = req.body;
+    if (!notes && !symbol) return res.status(400).json({ error: 'Add at least a symbol or notes' });
+
+    const result = await pool.query(`
+      INSERT INTO journal_entries (user_id, symbol, direction, notes, tags, mood, trade_id, image_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [
+      req.userId,
+      symbol || null,
+      direction || null,
+      notes || null,
+      JSON.stringify(tags || []),
+      mood || null,
+      trade_id || null,
+      image || null
+    ]);
+
+    res.json({ success: true, id: result.rows[0].id });
+  } catch (error) {
+    console.error('Journal create error:', error);
+    res.status(500).json({ error: 'Failed to save entry' });
+  }
+});
+
+// Update journal entry
+app.put('/api/journal/:id', authenticateToken, async (req, res) => {
+  try {
+    const { symbol, direction, notes, tags, mood, trade_id, image } = req.body;
+
+    const result = await pool.query(`
+      UPDATE journal_entries 
+      SET symbol = $1, direction = $2, notes = $3, tags = $4, mood = $5, trade_id = $6, image_url = $7, updated_at = NOW()
+      WHERE id = $8 AND user_id = $9
+      RETURNING id
+    `, [
+      symbol || null, direction || null, notes || null,
+      JSON.stringify(tags || []), mood || null, trade_id || null, image || null,
+      req.params.id, req.userId
+    ]);
+
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Entry not found' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Journal update error:', error);
+    res.status(500).json({ error: 'Failed to update entry' });
+  }
+});
+
+// Delete journal entry
+app.delete('/api/journal/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM journal_entries WHERE id = $1 AND user_id = $2 RETURNING id',
+      [req.params.id, req.userId]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Entry not found' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Journal delete error:', error);
+    res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
+// ============================================
 // ENDPOINT: SUPPORT MESSAGES
 // ============================================
 
