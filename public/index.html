@@ -11,23 +11,23 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #07080b;
-            --surface: #0e0f14;
-            --surface-2: #15161e;
-            --surface-3: #1d1e28;
-            --border: rgba(255,255,255,0.05);
-            --border-hover: rgba(255,255,255,0.1);
+            --bg: #060709;
+            --surface: #0c0d12;
+            --surface-2: #131419;
+            --surface-3: #1a1b22;
+            --border: rgba(255,255,255,0.04);
+            --border-hover: rgba(255,255,255,0.09);
             --gold: #d4b978;
             --gold-light: #f0dfa8;
-            --gold-dim: rgba(212,185,120,0.10);
-            --gold-glow: rgba(212,185,120,0.05);
+            --gold-dim: rgba(212,185,120,0.08);
+            --gold-glow: rgba(212,185,120,0.04);
             --text: #f4f1ea;
             --text-2: #a09b91;
             --text-3: #5c5952;
-            --green: #5cb87a;
-            --green-dim: rgba(92,184,122,0.10);
-            --red: #e05252;
-            --red-dim: rgba(224,82,82,0.10);
+            --green: #4ade80;
+            --green-dim: rgba(74,222,128,0.08);
+            --red: #f87171;
+            --red-dim: rgba(248,113,113,0.08);
             --radius: 12px;
             --radius-lg: 16px;
             --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -62,6 +62,38 @@
             50% { transform: translate(-30px, 40px); }
         }
 
+        body::after {
+            content: '';
+            position: fixed;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(74,222,128,0.02) 0%, transparent 70%);
+            bottom: -100px; left: -50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: ambientFloat 25s ease-in-out infinite reverse;
+        }
+
+        /* Page load animation */
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section.active .stat-card { animation: fadeSlideUp 0.4s ease forwards; }
+        .section.active .stat-card:nth-child(1) { animation-delay: 0s; }
+        .section.active .stat-card:nth-child(2) { animation-delay: 0.06s; }
+        .section.active .stat-card:nth-child(3) { animation-delay: 0.12s; }
+        .section.active .stat-card:nth-child(4) { animation-delay: 0.18s; }
+        .section.active .stats-row-mini { animation: fadeSlideUp 0.4s ease 0.2s forwards; }
+        .section.active .card { animation: fadeSlideUp 0.4s ease 0.25s forwards; }
+
+        /* Better focus states */
+        *:focus-visible { outline: 2px solid rgba(212,185,120,0.4); outline-offset: 2px; border-radius: 4px; }
+
+        /* Selection color */
+        ::selection { background: rgba(212,185,120,0.2); color: var(--text); }
+
         /* ── Sidebar ── */
         .sidebar {
             position: fixed;
@@ -75,6 +107,7 @@
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
+            backdrop-filter: blur(20px);
         }
 
         .sidebar::after {
@@ -82,7 +115,7 @@
             position: absolute;
             top: 0; right: -1px;
             width: 1px; height: 100%;
-            background: linear-gradient(180deg, transparent 5%, rgba(212,185,120,0.12) 50%, transparent 95%);
+            background: linear-gradient(180deg, transparent 5%, rgba(212,185,120,0.15) 50%, transparent 95%);
             pointer-events: none;
         }
 
@@ -92,54 +125,73 @@
             gap: 12px;
             padding: 0 1.5rem 1.75rem;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             flex-shrink: 0;
         }
 
         .logo-mark {
-            width: 38px; height: 38px;
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            border-radius: 10px;
+            width: 40px; height: 40px;
+            background: linear-gradient(145deg, var(--gold), #c5a855, var(--gold-light));
+            border-radius: 11px;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Cormorant Garamond', serif;
-            font-weight: 700; font-size: 19px; color: var(--bg);
-            box-shadow: 0 2px 12px rgba(212,185,120,0.2);
+            font-weight: 700; font-size: 20px; color: var(--bg);
+            box-shadow: 0 4px 16px rgba(212,185,120,0.25), 0 0 0 1px rgba(212,185,120,0.1);
         }
 
         .logo-text {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 21px; font-weight: 700;
+            font-size: 22px; font-weight: 700;
             letter-spacing: -0.3px;
+            background: linear-gradient(135deg, var(--text), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .nav-menu { list-style: none; padding: 0.5rem 0.75rem; flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; }
 
-        /* Custom scrollbar for sidebar */
+        /* Scrollbar */
         .nav-menu::-webkit-scrollbar { width: 3px; }
         .nav-menu::-webkit-scrollbar-track { background: transparent; }
         .nav-menu::-webkit-scrollbar-thumb { background: rgba(212,185,120,0.15); border-radius: 3px; }
         .nav-menu::-webkit-scrollbar-thumb:hover { background: rgba(212,185,120,0.3); }
         .nav-menu { scrollbar-width: thin; scrollbar-color: rgba(212,185,120,0.15) transparent; }
 
-        .nav-item { margin-bottom: 2px; }
+        .nav-section-label {
+            font-size: 9px; font-weight: 700; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 1.5px;
+            padding: 16px 14px 6px;
+        }
+
+        .nav-item { margin-bottom: 1px; }
 
         .nav-link {
             display: flex; align-items: center; gap: 12px;
             padding: 10px 14px;
             color: var(--text-2);
             text-decoration: none;
-            font-size: 14px; font-weight: 500;
-            border-radius: 8px;
+            font-size: 13.5px; font-weight: 500;
+            border-radius: 10px;
             transition: all var(--transition);
             cursor: pointer;
+            position: relative;
         }
 
-        .nav-link:hover { color: var(--text); background: var(--surface-2); }
+        .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
 
         .nav-link.active {
             color: var(--gold);
-            background: var(--gold-dim);
-            box-shadow: inset 0 0 0 1px rgba(212,185,120,0.06);
+            background: linear-gradient(135deg, rgba(212,185,120,0.1), rgba(212,185,120,0.04));
+            box-shadow: inset 0 0 0 1px rgba(212,185,120,0.08);
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 20px;
+            background: var(--gold);
+            border-radius: 0 3px 3px 0;
         }
 
         .nav-link.nav-locked { opacity: 0.4; }
@@ -165,20 +217,21 @@
         .user-card {
             display: flex; align-items: center; gap: 10px;
             padding: 10px 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: background var(--transition);
+            transition: all var(--transition);
+            border: 1px solid transparent;
         }
 
-        .user-card:hover { background: var(--surface-2); }
+        .user-card:hover { background: rgba(255,255,255,0.03); border-color: var(--border); }
 
         .user-avatar {
-            width: 34px; height: 34px;
-            background: linear-gradient(135deg, var(--gold), #c5a855);
-            border-radius: 8px;
+            width: 36px; height: 36px;
+            background: linear-gradient(145deg, var(--gold), #c5a855, var(--gold-light));
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 700; color: var(--bg);
-            box-shadow: 0 2px 10px rgba(212,185,120,0.15);
+            box-shadow: 0 2px 12px rgba(212,185,120,0.2);
         }
 
         .user-name { font-size: 13px; font-weight: 600; }
@@ -216,6 +269,9 @@
             font-family: 'Cormorant Garamond', serif;
             font-size: 28px; font-weight: 600;
             letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--text), rgba(212,185,120,0.6));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
@@ -250,7 +306,7 @@
 
         /* ── Cards ── */
         .card {
-            background: var(--surface);
+            background: linear-gradient(145deg, var(--surface), rgba(12,13,18,0.8));
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
@@ -261,12 +317,12 @@
         .card::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0; left: 20%; right: 20%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.08), transparent);
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.12), transparent);
         }
 
-        .card:hover { border-color: var(--border-hover); }
+        .card:hover { border-color: rgba(255,255,255,0.06); }
 
         .card-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -274,10 +330,10 @@
         }
 
         .card-title {
-            font-size: 15px; font-weight: 600;
-            color: var(--text-2);
+            font-size: 13px; font-weight: 700;
+            color: var(--text-3);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
 
         /* ── Stats Grid ── */
@@ -289,19 +345,30 @@
         }
 
         .stat-card {
-            background: var(--surface);
+            background: linear-gradient(145deg, var(--surface), var(--surface-2));
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 1.25rem 1.5rem;
-            transition: all var(--transition);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
 
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; right: -50%;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(212,185,120,0.03) 0%, transparent 70%);
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+
         .stat-icon {
-            width: 40px; height: 40px; border-radius: 10px;
+            width: 42px; height: 42px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            position: relative;
         }
 
         .stat-card::before {
@@ -309,25 +376,26 @@
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.15), transparent);
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.2), transparent);
             opacity: 0;
             transition: opacity var(--transition);
         }
 
         .stat-card:hover {
-            border-color: rgba(212,185,120,0.12);
-            box-shadow: 0 4px 20px rgba(212,185,120,0.04), 0 0 0 1px rgba(212,185,120,0.06);
-            transform: translateY(-2px);
+            border-color: rgba(212,185,120,0.15);
+            box-shadow: 0 8px 32px rgba(212,185,120,0.06), 0 0 0 1px rgba(212,185,120,0.05);
+            transform: translateY(-3px);
         }
 
         .stat-card:hover::before { opacity: 1; }
+        .stat-card:hover::after { top: -30%; right: -30%; }
 
         .stat-label {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             color: var(--text-3);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             margin-bottom: 8px;
         }
 
@@ -336,8 +404,8 @@
             font-size: 28px;
             font-weight: 500;
             letter-spacing: -0.5px;
-            margin-bottom: 4px;
-            background: linear-gradient(135deg, var(--text), rgba(244,241,234,0.8));
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, var(--text), rgba(244,241,234,0.7));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -345,7 +413,7 @@
 
         .stat-change {
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-3);
         }
 
@@ -354,28 +422,32 @@
 
         .stats-row-mini {
             display: flex; gap: 0; margin-bottom: 1rem;
-            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            background: linear-gradient(145deg, var(--surface), var(--surface-2));
+            border: 1px solid var(--border); border-radius: var(--radius-lg);
             overflow: hidden;
         }
         .stat-mini {
-            flex: 1; padding: 12px 16px; display: flex; align-items: center; gap: 8px;
+            flex: 1; padding: 14px 16px; display: flex; align-items: center; gap: 8px;
             border-right: 1px solid var(--border);
+            transition: background 0.2s ease;
         }
+        .stat-mini:hover { background: rgba(255,255,255,0.015); }
         .stat-mini:last-child { border-right: none; }
-        .stat-mini-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .stat-mini-dot.green { background: var(--green); }
-        .stat-mini-dot.gold { background: var(--gold); }
-        .stat-mini-label { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+        .stat-mini-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .stat-mini-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,0.3); }
+        .stat-mini-dot.gold { background: var(--gold); box-shadow: 0 0 8px rgba(212,185,120,0.3); }
+        .stat-mini-label { font-size: 11px; color: var(--text-3); white-space: nowrap; font-weight: 500; }
         .stat-mini-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); margin-left: auto; }
 
-        .chart-range-btns { display: flex; gap: 4px; }
+        .chart-range-btns { display: flex; gap: 3px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
         .chart-range-btn {
-            padding: 4px 12px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-            background: transparent; border: 1px solid var(--border); border-radius: 6px;
+            padding: 5px 14px; font-size: 11px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+            background: transparent; border: none; border-radius: 6px;
             color: var(--text-3); cursor: pointer; transition: all 0.2s;
+            letter-spacing: 0.3px;
         }
-        .chart-range-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
-        .chart-range-btn.active { background: var(--gold-dim); color: var(--gold); border-color: rgba(212,185,120,0.2); }
+        .chart-range-btn:hover { color: var(--text); }
+        .chart-range-btn.active { background: var(--surface-3); color: var(--gold); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
 
         /* ── Journal ── */
         .journal-tags-select { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -424,30 +496,32 @@
         .journal-card-actions button:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
 
         /* ── Trade List ── */
-        .trade-tabs { display: flex; gap: 4px; }
+        .trade-tabs { display: flex; gap: 4px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
         .trade-tab {
-            padding: 4px 14px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-            background: transparent; border: 1px solid var(--border); border-radius: 6px;
+            padding: 6px 16px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            background: transparent; border: none; border-radius: 6px;
             color: var(--text-3); cursor: pointer; transition: all 0.2s;
         }
         .trade-tab:hover { color: var(--text); }
-        .trade-tab.active { background: var(--surface-2); color: var(--text); border-color: rgba(255,255,255,0.1); }
+        .trade-tab.active { background: var(--surface-3); color: var(--gold); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
         .trade-tab-content { display: none; }
         .trade-tab-content.active { display: block; }
-        .trade-list { max-height: 400px; overflow-y: auto; }
+        .trade-list { max-height: 420px; overflow-y: auto; }
         .trade-list::-webkit-scrollbar { width: 4px; }
         .trade-list::-webkit-scrollbar-track { background: transparent; }
         .trade-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
         .trade-row {
             display: grid; grid-template-columns: 1fr auto auto auto auto;
-            align-items: center; gap: 12px; padding: 12px 0;
+            align-items: center; gap: 12px; padding: 12px 4px;
             border-bottom: 1px solid var(--border); font-size: 13px;
+            transition: background 0.15s ease;
         }
+        .trade-row:hover { background: rgba(255,255,255,0.015); border-radius: 8px; }
         .trade-row:last-child { border-bottom: none; }
         .trade-row-symbol { font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
         .trade-row-dir {
-            font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px;
-            text-transform: uppercase; letter-spacing: 0.3px;
+            font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         .trade-row-dir.buy { background: var(--green-dim); color: var(--green); }
         .trade-row-dir.sell { background: var(--red-dim); color: var(--red); }
@@ -459,12 +533,12 @@
         .trade-row-time { font-size: 11px; color: var(--text-3); text-align: right; min-width: 65px; }
         .trade-list-header {
             display: grid; grid-template-columns: 1fr auto auto auto auto;
-            gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border);
-            font-size: 10px; font-weight: 600; color: var(--text-3);
-            text-transform: uppercase; letter-spacing: 0.5px;
+            gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--border);
+            font-size: 10px; font-weight: 700; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 1px;
         }
         .trade-empty {
-            text-align: center; padding: 2.5rem 1rem; color: var(--text-3); font-size: 13px;
+            text-align: center; padding: 3rem 1rem; color: var(--text-3); font-size: 13px;
         }
         .trade-empty svg { margin-bottom: 8px; opacity: 0.3; }
 
@@ -1156,8 +1230,8 @@
             --surface: #ffffff;
             --surface-2: #f0ede6;
             --surface-3: #e8e4dc;
-            --border: rgba(0,0,0,0.07);
-            --border-hover: rgba(0,0,0,0.14);
+            --border: rgba(0,0,0,0.06);
+            --border-hover: rgba(0,0,0,0.12);
             --gold: #b89a50;
             --gold-light: #c8aa6e;
             --gold-dim: rgba(184,154,80,0.08);
@@ -1330,6 +1404,7 @@
         </div>
         <nav style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;">
             <ul class="nav-menu">
+                <li class="nav-section-label">Main</li>
                 <li class="nav-item">
                     <a class="nav-link active" data-section="overview">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
@@ -1342,6 +1417,7 @@
                         <span>Broker</span>
                     </a>
                 </li>
+                <li class="nav-section-label">Trading</li>
                 <li class="nav-item">
                     <a class="nav-link" data-section="signals">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
@@ -1396,6 +1472,7 @@
                         <span>Calendar</span>
                     </a>
                 </li>
+                <li class="nav-section-label">Account</li>
                 <li class="nav-item">
                     <a class="nav-link" data-section="referral">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -1457,12 +1534,12 @@
         <div id="overview" class="section active">
             <!-- Hero Stats -->
             <div class="stats-grid">
-                <div class="stat-card stat-hero">
-                    <div class="stat-icon" style="background:var(--gold-dim);color:var(--gold);">
+                <div class="stat-card stat-hero" style="background:linear-gradient(145deg, rgba(212,185,120,0.06), var(--surface)); border-color:rgba(212,185,120,0.1);">
+                    <div class="stat-icon" style="background:rgba(212,185,120,0.12);color:var(--gold);">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
                     <div class="stat-label">Total Equity</div>
-                    <div class="stat-value" id="statEquity">—</div>
+                    <div class="stat-value" id="statEquity" style="background:linear-gradient(135deg, var(--gold-light), var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">—</div>
                     <div class="stat-change" id="statEquityChange">Loading...</div>
                 </div>
                 <div class="stat-card">
@@ -1474,7 +1551,7 @@
                     <div class="stat-change" id="statWinRateChange">Loading...</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(129,140,248,0.1);color:#818cf8;">
+                    <div class="stat-icon" style="background:rgba(129,140,248,0.08);color:#818cf8;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
                     </div>
                     <div class="stat-label">Profit Factor</div>
@@ -1516,9 +1593,12 @@
             </div>
 
             <!-- Equity Curve (Full Width) -->
-            <div class="card" style="margin-bottom:1rem;">
+            <div class="card" style="margin-bottom:1rem;overflow:hidden;">
                 <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-                    <span class="card-title">Equity Curve</span>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px rgba(212,185,120,0.4);"></div>
+                        <span class="card-title">Equity Curve</span>
+                    </div>
                     <div class="chart-range-btns">
                         <button class="chart-range-btn active" onclick="changeEquityRange(7, this)">7D</button>
                         <button class="chart-range-btn" onclick="changeEquityRange(30, this)">30D</button>
@@ -1526,49 +1606,65 @@
                         <button class="chart-range-btn" onclick="changeEquityRange(365, this)">1Y</button>
                     </div>
                 </div>
-                <div class="chart-wrap" style="height:340px;"><canvas id="equityChart"></canvas></div>
+                <div class="chart-wrap" style="height:360px;"><canvas id="equityChart"></canvas></div>
             </div>
 
             <!-- Daily P/L (Full Width) -->
-            <div class="card" style="margin-bottom:1rem;">
-                <div class="card-header"><span class="card-title">Daily P/L</span></div>
-                <div class="chart-wrap" style="height:200px;"><canvas id="dailyPLChart"></canvas></div>
+            <div class="card" style="margin-bottom:1rem;overflow:hidden;">
+                <div class="card-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(74,222,128,0.4);"></div>
+                        <span class="card-title">Daily P/L</span>
+                    </div>
+                </div>
+                <div class="chart-wrap" style="height:220px;"><canvas id="dailyPLChart"></canvas></div>
             </div>
 
             <!-- Monthly + W/L Row -->
             <div class="grid-2">
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Monthly Performance</span></div>
+                    <div class="card-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px rgba(212,185,120,0.3);"></div>
+                            <span class="card-title">Monthly Performance</span>
+                        </div>
+                    </div>
                     <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Win / Loss</span></div>
+                    <div class="card-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:8px;height:8px;border-radius:50%;background:#818cf8;box-shadow:0 0 10px rgba(129,140,248,0.4);"></div>
+                            <span class="card-title">Win / Loss</span>
+                        </div>
+                    </div>
                     <div style="display:flex;flex-direction:column;justify-content:center;height:280px;padding:0 1rem;">
-                        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-                            <div style="flex:1;">
-                                <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Wins</div>
+                        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+                            <div style="flex:1;text-align:center;padding:16px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.08);border-radius:12px;">
+                                <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:700;">Wins</div>
                                 <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--green);" id="overviewWins">0</div>
                             </div>
-                            <div style="flex:1;">
-                                <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Losses</div>
+                            <div style="width:1px;height:40px;background:var(--border);"></div>
+                            <div style="flex:1;text-align:center;padding:16px;background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.08);border-radius:12px;">
+                                <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:700;">Losses</div>
                                 <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--red);" id="overviewLosses">0</div>
                             </div>
                         </div>
-                        <div style="height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;margin-bottom:12px;">
-                            <div id="overviewWLBar" style="height:100%;background:var(--green);border-radius:4px;transition:width 0.6s ease;width:50%;"></div>
+                        <div style="height:10px;background:var(--surface-3);border-radius:5px;overflow:hidden;margin-bottom:12px;position:relative;">
+                            <div id="overviewWLBar" style="height:100%;background:linear-gradient(90deg, var(--green), #22c55e);border-radius:5px;transition:width 0.6s ease;width:50%;box-shadow:0 0 12px rgba(74,222,128,0.2);"></div>
                         </div>
                         <div style="display:flex;justify-content:space-between;">
-                            <span style="font-size:12px;color:var(--green);" id="overviewWRPct">0%</span>
-                            <span style="font-size:12px;color:var(--red);" id="overviewLRPct">0%</span>
+                            <span style="font-size:12px;color:var(--green);font-weight:600;" id="overviewWRPct">0%</span>
+                            <span style="font-size:12px;color:var(--red);font-weight:600;" id="overviewLRPct">0%</span>
                         </div>
-                        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                                <span style="font-size:12px;color:var(--text-3);">Avg Win</span>
-                                <span style="font-size:12px;color:var(--green);font-family:'DM Mono',monospace;" id="overviewAvgWin">—</span>
+                        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:10px;align-items:center;">
+                                <span style="font-size:12px;color:var(--text-3);font-weight:500;">Avg Win</span>
+                                <span style="font-size:13px;color:var(--green);font-family:'DM Mono',monospace;font-weight:500;" id="overviewAvgWin">—</span>
                             </div>
-                            <div style="display:flex;justify-content:space-between;">
-                                <span style="font-size:12px;color:var(--text-3);">Avg Loss</span>
-                                <span style="font-size:12px;color:var(--red);font-family:'DM Mono',monospace;" id="overviewAvgLoss">—</span>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:12px;color:var(--text-3);font-weight:500;">Avg Loss</span>
+                                <span style="font-size:13px;color:var(--red);font-family:'DM Mono',monospace;font-weight:500;" id="overviewAvgLoss">—</span>
                             </div>
                         </div>
                     </div>
@@ -1578,7 +1674,10 @@
             <!-- Trade List -->
             <div class="card">
                 <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-                    <span class="card-title">Trades</span>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px rgba(212,185,120,0.3);"></div>
+                        <span class="card-title">Trades</span>
+                    </div>
                     <div class="trade-tabs">
                         <button class="trade-tab active" onclick="switchTradeTab('open', this)">Open</button>
                         <button class="trade-tab" onclick="switchTradeTab('history', this)">History</button>
@@ -2489,11 +2588,11 @@
                             <div style="font-size:11px;color:var(--text-3);">@tieralba</div>
                         </div>
                     </a>
-                    <a href="mailto:info@tieralba.com" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="/cdn-cgi/l/email-protection#6a03040c052a1e030f180b06080b44090507" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <div>
                             <div style="font-size:13px;font-weight:600;color:var(--text);">Email</div>
-                            <div style="font-size:11px;color:var(--text-3);">info@tieralba.com</div>
+                            <div style="font-size:11px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="d5bcbbb3ba95a1bcb0a7b4b9b7b4fbb6bab8">[email&#160;protected]</span></div>
                         </div>
                     </a>
                 </div>
@@ -2524,10 +2623,10 @@
                         <span style="font-size:13px;font-weight:600;color:var(--text);">WhatsApp</span>
                         <span style="font-size:10px;color:var(--text-3);">Direct message</span>
                     </a>
-                    <a href="mailto:info@tieralba.com" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="/cdn-cgi/l/email-protection#bbd2d5ddd4fbcfd2dec9dad7d9da95d8d4d6" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <span style="font-size:13px;font-weight:600;color:var(--text);">Email</span>
-                        <span style="font-size:10px;color:var(--text-3);">info@tieralba.com</span>
+                        <span style="font-size:10px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="3d54535b527d4954584f5c515f5c135e5250">[email&#160;protected]</span></span>
                     </a>
                 </div>
             </div>
@@ -2581,7 +2680,7 @@
         </div>
     </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     // ══════════════════════════════════════════════
     // CONFIG
     // ══════════════════════════════════════════════
@@ -4488,7 +4587,4 @@
                 </div>
                 <p style="font-size:15px;margin-bottom:0.5rem;">This feature requires a <strong id="upgradePlanName">Standard</strong> plan.</p>
                 <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
-                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade to Standard — €49.99/mo</button>
-                <button class="btn-primary" onclick="upgradePlan('pro')" style="width:100%;background:linear-gradient(135deg, #2a6b4a, #3a8a5c);">Upgrade to Pro — €89.99/mo</button>
-                <p style="font-size:11px;color:var(--text-3);margin-top:1rem;">7-day money-back guarantee · Cancel anytime</p>
-            </div>
+                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade
