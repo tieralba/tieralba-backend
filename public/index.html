@@ -377,6 +377,58 @@
         .chart-range-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
         .chart-range-btn.active { background: var(--gold-dim); color: var(--gold); border-color: rgba(212,185,120,0.2); }
 
+        /* ── Trade List ── */
+        .trade-tabs { display: flex; gap: 4px; }
+        .trade-tab {
+            padding: 4px 14px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            background: transparent; border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-3); cursor: pointer; transition: all 0.2s;
+        }
+        .trade-tab:hover { color: var(--text); }
+        .trade-tab.active { background: var(--surface-2); color: var(--text); border-color: rgba(255,255,255,0.1); }
+        .trade-tab-content { display: none; }
+        .trade-tab-content.active { display: block; }
+        .trade-list { max-height: 400px; overflow-y: auto; }
+        .trade-list::-webkit-scrollbar { width: 4px; }
+        .trade-list::-webkit-scrollbar-track { background: transparent; }
+        .trade-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+        .trade-row {
+            display: grid; grid-template-columns: 1fr auto auto auto auto;
+            align-items: center; gap: 12px; padding: 12px 0;
+            border-bottom: 1px solid var(--border); font-size: 13px;
+        }
+        .trade-row:last-child { border-bottom: none; }
+        .trade-row-symbol { font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .trade-row-dir {
+            font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px;
+            text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .trade-row-dir.buy { background: var(--green-dim); color: var(--green); }
+        .trade-row-dir.sell { background: var(--red-dim); color: var(--red); }
+        .trade-row-lots { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); }
+        .trade-row-price { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); text-align: right; }
+        .trade-row-pnl { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; text-align: right; min-width: 70px; }
+        .trade-row-pnl.positive { color: var(--green); }
+        .trade-row-pnl.negative { color: var(--red); }
+        .trade-row-time { font-size: 11px; color: var(--text-3); text-align: right; min-width: 65px; }
+        .trade-list-header {
+            display: grid; grid-template-columns: 1fr auto auto auto auto;
+            gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border);
+            font-size: 10px; font-weight: 600; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .trade-empty {
+            text-align: center; padding: 2.5rem 1rem; color: var(--text-3); font-size: 13px;
+        }
+        .trade-empty svg { margin-bottom: 8px; opacity: 0.3; }
+
+        @media (max-width: 640px) {
+            .trade-row { grid-template-columns: 1fr auto auto; gap: 8px; padding: 10px 0; }
+            .trade-row-lots, .trade-list-header span:nth-child(3) { display: none; }
+            .trade-row-price, .trade-list-header span:nth-child(4) { display: none; }
+            .trade-list-header { grid-template-columns: 1fr auto auto; }
+        }
+
         /* ── Chart Container ── */
         .chart-wrap {
             height: 300px;
@@ -1465,6 +1517,31 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Trade List -->
+            <div class="card">
+                <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span class="card-title">Trades</span>
+                    <div class="trade-tabs">
+                        <button class="trade-tab active" onclick="switchTradeTab('open', this)">Open</button>
+                        <button class="trade-tab" onclick="switchTradeTab('history', this)">History</button>
+                    </div>
+                </div>
+
+                <!-- Open Trades -->
+                <div id="tradeTabOpen" class="trade-tab-content active">
+                    <div id="openTradesList" class="trade-list">
+                        <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:13px;">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- History -->
+                <div id="tradeTabHistory" class="trade-tab-content">
+                    <div id="historyTradesList" class="trade-list">
+                        <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:13px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ═══════ SIGNALS ═══════ -->
@@ -2427,6 +2504,7 @@
             drawMonthlyChart(trades.trades);
             drawAnalytics(trades.trades, stats);
             drawDrawdown(trades.trades);
+            renderTradeList(trades.trades);
         }
 
         toast('success', 'Dashboard', `Welcome, ${user?.name || 'user'}!`);
@@ -2559,6 +2637,72 @@
         btn.classList.add('active');
         const equity = await apiCall('/api/equity-history?days=' + days);
         if (equity?.history) drawEquityChart(equity.history);
+    }
+
+    // ══════════════════════════════════════════════
+    // TRADE LIST (Overview)
+    // ══════════════════════════════════════════════
+    function switchTradeTab(tab, btn) {
+        document.querySelectorAll('.trade-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.trade-tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(tab === 'open' ? 'tradeTabOpen' : 'tradeTabHistory').classList.add('active');
+    }
+
+    function renderTradeList(trades) {
+        const open = trades.filter(t => !t.closed_at);
+        const closed = trades.filter(t => t.closed_at).slice(0, 30);
+
+        // Open trades
+        const openEl = document.getElementById('openTradesList');
+        if (open.length === 0) {
+            openEl.innerHTML = '<div class="trade-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><div>No open trades</div></div>';
+        } else {
+            openEl.innerHTML = '<div class="trade-list-header"><span>Symbol</span><span>Lots</span><span>Entry</span><span>P/L</span><span>Time</span></div>' +
+                open.map(t => {
+                    const dir = (t.type || '').toLowerCase();
+                    const pnl = parseFloat(t.profit) || 0;
+                    return `<div class="trade-row">
+                        <div class="trade-row-symbol"><span class="trade-row-dir ${dir}">${dir}</span>${t.symbol}</div>
+                        <div class="trade-row-lots">${parseFloat(t.lots || 0).toFixed(2)}</div>
+                        <div class="trade-row-price">${t.entry_price || '—'}</div>
+                        <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('it-IT')}</div>
+                        <div class="trade-row-time">${tradeTimeAgo(t.opened_at)}</div>
+                    </div>`;
+                }).join('');
+        }
+
+        // Trade history
+        const histEl = document.getElementById('historyTradesList');
+        if (closed.length === 0) {
+            histEl.innerHTML = '<div class="trade-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg><div>No closed trades yet</div></div>';
+        } else {
+            histEl.innerHTML = '<div class="trade-list-header"><span>Symbol</span><span>Lots</span><span>Exit</span><span>P/L</span><span>Closed</span></div>' +
+                closed.map(t => {
+                    const dir = (t.type || '').toLowerCase();
+                    const pnl = parseFloat(t.profit) || 0;
+                    return `<div class="trade-row">
+                        <div class="trade-row-symbol"><span class="trade-row-dir ${dir}">${dir}</span>${t.symbol}</div>
+                        <div class="trade-row-lots">${parseFloat(t.lots || 0).toFixed(2)}</div>
+                        <div class="trade-row-price">${t.exit_price || '—'}</div>
+                        <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('it-IT')}</div>
+                        <div class="trade-row-time">${tradeTimeAgo(t.closed_at)}</div>
+                    </div>`;
+                }).join('');
+        }
+    }
+
+    function tradeTimeAgo(dateStr) {
+        if (!dateStr) return '—';
+        const diff = Date.now() - new Date(dateStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + 'h ago';
+        const days = Math.floor(hrs / 24);
+        if (days < 7) return days + 'd ago';
+        return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
     }
 
     function drawMonthlyChart(trades) {
