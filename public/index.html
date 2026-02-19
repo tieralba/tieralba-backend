@@ -377,6 +377,52 @@
         .chart-range-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
         .chart-range-btn.active { background: var(--gold-dim); color: var(--gold); border-color: rgba(212,185,120,0.2); }
 
+        /* ── Journal ── */
+        .journal-tags-select { display: flex; flex-wrap: wrap; gap: 6px; }
+        .journal-tag-option {
+            display: flex; align-items: center; gap: 4px; padding: 4px 10px;
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+            font-size: 11px; color: var(--text-2); cursor: pointer; transition: all 0.2s;
+        }
+        .journal-tag-option:has(input:checked) { background: var(--gold-dim); border-color: rgba(212,185,120,0.3); color: var(--gold); }
+        .journal-tag-option input { display: none; }
+        .journal-upload {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 1.5rem; border: 2px dashed var(--border); border-radius: var(--radius);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .journal-upload:hover { border-color: rgba(212,185,120,0.3); background: rgba(212,185,120,0.03); }
+        .mood-btn {
+            flex: 1; padding: 8px 6px; font-size: 11px; font-family: 'DM Sans', sans-serif;
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text-2); cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .mood-btn:hover { border-color: rgba(255,255,255,0.1); }
+        .mood-btn.selected { background: var(--gold-dim); border-color: rgba(212,185,120,0.3); color: var(--gold); }
+        .journal-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            padding: 1.25rem; transition: all 0.2s;
+        }
+        .journal-card:hover { border-color: rgba(255,255,255,0.08); }
+        .journal-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .journal-card-symbol { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+        .journal-card-meta { font-size: 11px; color: var(--text-3); }
+        .journal-card-tags { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+        .journal-tag {
+            padding: 2px 8px; font-size: 10px; font-weight: 600; border-radius: 4px;
+            background: var(--surface-2); color: var(--text-2); text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .journal-card-notes { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 8px; }
+        .journal-card-img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border); cursor: pointer; }
+        .journal-card-img:hover { opacity: 0.9; }
+        .journal-card-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .journal-card-actions button {
+            padding: 4px 12px; font-size: 11px; font-family: 'DM Sans', sans-serif;
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-3); cursor: pointer; transition: all 0.2s;
+        }
+        .journal-card-actions button:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
+
         /* ── Trade List ── */
         .trade-tabs { display: flex; gap: 4px; }
         .trade-tab {
@@ -1345,6 +1391,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-section="journal">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+                        <span>Journal</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-section="referral">
                         <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
                         <span>Referral</span>
@@ -2073,6 +2125,109 @@
             </div>
         </div>
 
+        <!-- ═══════ JOURNAL ═══════ -->
+        <div id="journal" class="section">
+            <!-- Journal Header -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:10px;">
+                <div class="journal-filters">
+                    <button class="chart-range-btn active" onclick="filterJournal('all', this)">All</button>
+                    <button class="chart-range-btn" onclick="filterJournal('scalping', this)">Scalping</button>
+                    <button class="chart-range-btn" onclick="filterJournal('swing', this)">Swing</button>
+                    <button class="chart-range-btn" onclick="filterJournal('news', this)">News</button>
+                    <button class="chart-range-btn" onclick="filterJournal('breakout', this)">Breakout</button>
+                </div>
+                <button class="btn-primary" onclick="openJournalModal()" style="padding:8px 20px;font-size:12px;">
+                    + New Entry
+                </button>
+            </div>
+
+            <!-- Journal Entries -->
+            <div id="journalEntries" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="text-align:center;padding:3rem 1rem;color:var(--text-3);">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity:0.3;margin-bottom:12px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <div style="font-size:14px;font-weight:500;margin-bottom:4px;">No journal entries yet</div>
+                    <div style="font-size:12px;">Click "New Entry" to document your first trade.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Journal Modal -->
+        <div class="modal-overlay" id="journalModal">
+            <div class="modal" style="max-width:560px;">
+                <div class="modal-header">
+                    <div class="modal-title" id="journalModalTitle">New Journal Entry</div>
+                    <button class="modal-close" onclick="closeJournalModal()">&times;</button>
+                </div>
+
+                <!-- Link to trade -->
+                <div class="form-group">
+                    <label class="form-label">Link to Trade (optional)</label>
+                    <select class="form-input" id="journalTradeId" style="cursor:pointer;">
+                        <option value="">No trade linked</option>
+                    </select>
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Symbol</label>
+                        <input type="text" class="form-input" id="journalSymbol" placeholder="e.g. XAUUSD, EURUSD">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Direction</label>
+                        <select class="form-input" id="journalDirection" style="cursor:pointer;">
+                            <option value="">—</option>
+                            <option value="BUY">BUY</option>
+                            <option value="SELL">SELL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <div class="journal-tags-select">
+                        <label class="journal-tag-option"><input type="checkbox" value="scalping"> Scalping</label>
+                        <label class="journal-tag-option"><input type="checkbox" value="swing"> Swing</label>
+                        <label class="journal-tag-option"><input type="checkbox" value="news"> News</label>
+                        <label class="journal-tag-option"><input type="checkbox" value="breakout"> Breakout</label>
+                        <label class="journal-tag-option"><input type="checkbox" value="reversal"> Reversal</label>
+                        <label class="journal-tag-option"><input type="checkbox" value="trend"> Trend</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-input" id="journalNotes" rows="4" placeholder="What was your thesis? What did you observe? What would you do differently?" style="resize:vertical;min-height:80px;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Screenshot (optional)</label>
+                    <div class="journal-upload" id="journalUploadArea" onclick="document.getElementById('journalFileInput').click()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span style="font-size:12px;color:var(--text-3);">Click to upload chart screenshot</span>
+                        <span style="font-size:10px;color:var(--text-3);">PNG, JPG up to 2MB</span>
+                    </div>
+                    <input type="file" id="journalFileInput" accept="image/*" style="display:none;" onchange="handleJournalImage(this)">
+                    <div id="journalImagePreview" style="display:none;margin-top:8px;position:relative;">
+                        <img id="journalPreviewImg" style="width:100%;border-radius:8px;border:1px solid var(--border);">
+                        <button onclick="removeJournalImage()" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.7);color:#fff;border:none;cursor:pointer;font-size:14px;">×</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Emotional State</label>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="mood-btn" data-mood="confident" onclick="selectMood(this)">😎 Confident</button>
+                        <button type="button" class="mood-btn" data-mood="neutral" onclick="selectMood(this)">😐 Neutral</button>
+                        <button type="button" class="mood-btn" data-mood="fearful" onclick="selectMood(this)">😰 Fearful</button>
+                        <button type="button" class="mood-btn" data-mood="greedy" onclick="selectMood(this)">🤑 Greedy</button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="journalEditId" value="">
+                <button class="btn-primary" onclick="saveJournalEntry()" id="journalSaveBtn" style="width:100%;margin-top:0.5rem;">Save Entry</button>
+            </div>
+        </div>
+
         <!-- ═══════ REFERRAL ═══════ -->
         <div id="referral" class="section">
             <!-- Stats -->
@@ -2426,6 +2581,7 @@
             // Load license keys when entering experts section
             if (target === 'experts') loadLicenseKeys();
             if (target === 'settings') loadSettingsData();
+            if (target === 'journal') loadJournal();
         });
     });
 
@@ -3169,8 +3325,8 @@
     // ══════════════════════════════════════════════
     const planAccess = {
         free: ['overview', 'calculator', 'calendar', 'referral', 'refund', 'settings', 'support'],
-        standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings', 'support'],
-        pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'referral', 'refund', 'settings', 'support']
+        standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support'],
+        pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support']
     };
 
     let userPlan = 'free';
@@ -3607,6 +3763,194 @@
         const days = Math.floor(hrs / 24);
         if (days < 7) return days + 'd ago';
         return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    }
+
+    // ══════════════════════════════════════════════
+    // JOURNAL
+    // ══════════════════════════════════════════════
+    let journalImageData = null;
+    let journalEntries = [];
+    let journalFilter = 'all';
+
+    function openJournalModal(editId) {
+        document.getElementById('journalEditId').value = editId || '';
+        document.getElementById('journalModalTitle').textContent = editId ? 'Edit Entry' : 'New Journal Entry';
+        document.getElementById('journalSymbol').value = '';
+        document.getElementById('journalDirection').value = '';
+        document.getElementById('journalNotes').value = '';
+        document.getElementById('journalTradeId').value = '';
+        document.querySelectorAll('.journal-tag-option input').forEach(c => c.checked = false);
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+        journalImageData = null;
+        document.getElementById('journalImagePreview').style.display = 'none';
+
+        // Populate trade dropdown
+        populateTradeDropdown();
+
+        if (editId) {
+            const entry = journalEntries.find(e => e.id === editId);
+            if (entry) {
+                document.getElementById('journalSymbol').value = entry.symbol || '';
+                document.getElementById('journalDirection').value = entry.direction || '';
+                document.getElementById('journalNotes').value = entry.notes || '';
+                document.getElementById('journalTradeId').value = entry.trade_id || '';
+                (entry.tags || []).forEach(tag => {
+                    const cb = document.querySelector(`.journal-tag-option input[value="${tag}"]`);
+                    if (cb) cb.checked = true;
+                });
+                if (entry.mood) {
+                    const mb = document.querySelector(`.mood-btn[data-mood="${entry.mood}"]`);
+                    if (mb) mb.classList.add('selected');
+                }
+                if (entry.image_url) {
+                    journalImageData = entry.image_url;
+                    document.getElementById('journalPreviewImg').src = entry.image_url;
+                    document.getElementById('journalImagePreview').style.display = 'block';
+                }
+            }
+        }
+        document.getElementById('journalModal').classList.add('active');
+    }
+
+    function closeJournalModal() { document.getElementById('journalModal').classList.remove('active'); }
+
+    async function populateTradeDropdown() {
+        const sel = document.getElementById('journalTradeId');
+        sel.innerHTML = '<option value="">No trade linked</option>';
+        const trades = await apiCall('/api/trades?limit=50');
+        if (trades?.trades) {
+            trades.trades.forEach(t => {
+                const pnl = parseFloat(t.profit) || 0;
+                const date = t.closed_at ? new Date(t.closed_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : 'Open';
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `${t.symbol} ${t.type} — ${pnl >= 0 ? '+' : ''}€${Math.round(pnl)} (${date})`;
+                sel.appendChild(opt);
+            });
+        }
+    }
+
+    function selectMood(btn) {
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    }
+
+    function handleJournalImage(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { toast('error', 'Error', 'Image must be under 2MB'); return; }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            journalImageData = e.target.result;
+            document.getElementById('journalPreviewImg').src = journalImageData;
+            document.getElementById('journalImagePreview').style.display = 'block';
+            document.getElementById('journalUploadArea').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeJournalImage() {
+        journalImageData = null;
+        document.getElementById('journalImagePreview').style.display = 'none';
+        document.getElementById('journalUploadArea').style.display = 'flex';
+        document.getElementById('journalFileInput').value = '';
+    }
+
+    async function saveJournalEntry() {
+        const symbol = document.getElementById('journalSymbol').value.trim().toUpperCase();
+        const direction = document.getElementById('journalDirection').value;
+        const notes = document.getElementById('journalNotes').value.trim();
+        const tradeId = document.getElementById('journalTradeId').value || null;
+        const editId = document.getElementById('journalEditId').value || null;
+        const tags = Array.from(document.querySelectorAll('.journal-tag-option input:checked')).map(c => c.value);
+        const mood = document.querySelector('.mood-btn.selected')?.dataset.mood || null;
+
+        if (!notes && !symbol) { toast('error', 'Error', 'Add at least a symbol or notes'); return; }
+
+        const btn = document.getElementById('journalSaveBtn');
+        btn.disabled = true; btn.textContent = 'Saving...';
+
+        const body = { symbol, direction, notes, tags, mood, trade_id: tradeId, image: journalImageData };
+
+        let res;
+        if (editId) {
+            res = await apiCall('/api/journal/' + editId, { method: 'PUT', body: JSON.stringify(body) });
+        } else {
+            res = await apiCall('/api/journal', { method: 'POST', body: JSON.stringify(body) });
+        }
+
+        if (res?.success) {
+            toast('success', 'Saved', editId ? 'Entry updated' : 'Journal entry added');
+            closeJournalModal();
+            loadJournal();
+        } else {
+            toast('error', 'Error', res?.error || 'Failed to save');
+        }
+        btn.disabled = false; btn.textContent = 'Save Entry';
+    }
+
+    async function deleteJournalEntry(id) {
+        if (!confirm('Delete this journal entry?')) return;
+        const res = await apiCall('/api/journal/' + id, { method: 'DELETE' });
+        if (res?.success) { toast('info', 'Deleted', 'Entry removed'); loadJournal(); }
+        else toast('error', 'Error', 'Failed to delete');
+    }
+
+    async function loadJournal() {
+        const res = await apiCall('/api/journal');
+        if (!res?.entries) return;
+        journalEntries = res.entries;
+        renderJournal();
+    }
+
+    function filterJournal(tag, btn) {
+        journalFilter = tag;
+        document.querySelectorAll('.journal-filters .chart-range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderJournal();
+    }
+
+    function renderJournal() {
+        const el = document.getElementById('journalEntries');
+        let entries = journalEntries;
+        if (journalFilter !== 'all') entries = entries.filter(e => (e.tags || []).includes(journalFilter));
+
+        if (entries.length === 0) {
+            el.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--text-3);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity:0.3;margin-bottom:12px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <div style="font-size:14px;font-weight:500;margin-bottom:4px;">${journalFilter === 'all' ? 'No journal entries yet' : 'No entries with tag "' + journalFilter + '"'}</div>
+                <div style="font-size:12px;">Click "New Entry" to document your trades.</div>
+            </div>`;
+            return;
+        }
+
+        el.innerHTML = entries.map(e => {
+            const dir = e.direction || '';
+            const dirClass = dir === 'BUY' ? 'buy' : dir === 'SELL' ? 'sell' : '';
+            const date = new Date(e.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const tagsHtml = (e.tags || []).map(t => `<span class="journal-tag">${t}</span>`).join('');
+            const moodEmoji = { confident: '😎', neutral: '😐', fearful: '😰', greedy: '🤑' }[e.mood] || '';
+            const tradeInfo = e.trade_symbol ? `<span style="font-size:11px;color:var(--text-3);margin-left:8px;">Linked: ${e.trade_symbol} ${e.trade_profit >= 0 ? '+' : ''}€${Math.round(e.trade_profit || 0)}</span>` : '';
+
+            return `<div class="journal-card">
+                <div class="journal-card-header">
+                    <div class="journal-card-symbol">
+                        ${dir ? `<span class="trade-row-dir ${dirClass}" style="font-size:10px;">${dir}</span>` : ''}
+                        ${e.symbol || 'No symbol'}
+                        ${moodEmoji ? `<span style="font-size:16px;">${moodEmoji}</span>` : ''}
+                        ${tradeInfo}
+                    </div>
+                    <div class="journal-card-meta">${date}</div>
+                </div>
+                ${tagsHtml ? `<div class="journal-card-tags">${tagsHtml}</div>` : ''}
+                ${e.notes ? `<div class="journal-card-notes">${e.notes.replace(/\n/g, '<br>')}</div>` : ''}
+                ${e.image_url ? `<img src="${e.image_url}" class="journal-card-img" onclick="window.open(this.src)">` : ''}
+                <div class="journal-card-actions">
+                    <button onclick="openJournalModal(${e.id})">Edit</button>
+                    <button onclick="deleteJournalEntry(${e.id})" style="color:var(--red);">Delete</button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // ══════════════════════════════════════════════
