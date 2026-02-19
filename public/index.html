@@ -11,9 +11,9 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #060709;
-            --surface: #0c0d12;
-            --surface-2: #131419;
+            --bg: #050505;
+            --surface: #0a0a0b;
+            --surface-2: #111113;
             --surface-3: #1a1b22;
             --border: rgba(255,255,255,0.04);
             --border-hover: rgba(255,255,255,0.09);
@@ -2777,7 +2777,7 @@
         plugins: {
             legend: { display: false },
             tooltip: {
-                backgroundColor: '#1a1b25',
+                backgroundColor: '#0e0e10',
                 titleColor: '#c8aa6e',
                 bodyColor: '#f0ede6',
                 borderColor: 'rgba(255,255,255,0.06)',
@@ -2953,7 +2953,7 @@
                     backgroundColor: gradUp,
                     borderWidth: 2.5, tension: 0.3, fill: true,
                     pointRadius: 0, pointHoverRadius: 6,
-                    pointHoverBackgroundColor: lineColor, pointHoverBorderColor: '#0a0b0f', pointHoverBorderWidth: 3
+                    pointHoverBackgroundColor: lineColor, pointHoverBorderColor: '#050505', pointHoverBorderWidth: 3
                 }]
             },
             options: {
@@ -2962,7 +2962,7 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#1a1b25', titleColor: '#d4b978', bodyColor: '#f0ede6',
+                        backgroundColor: '#0e0e10', titleColor: '#d4b978', bodyColor: '#f0ede6',
                         borderColor: 'rgba(255,255,255,0.06)', borderWidth: 1,
                         padding: 12, cornerRadius: 8, displayColors: false,
                         callbacks: {
@@ -3024,7 +3024,7 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#1a1b25', titleColor: '#d4b978', bodyColor: '#f0ede6',
+                        backgroundColor: '#0e0e10', titleColor: '#d4b978', bodyColor: '#f0ede6',
                         borderColor: 'rgba(255,255,255,0.06)', borderWidth: 1,
                         padding: 10, cornerRadius: 8, displayColors: false,
                         callbacks: {
@@ -4210,7 +4210,7 @@
 
     function drawJournalCharts() {
         const entries = journalEntries.filter(e => e.pnl !== null);
-        const barOpts = (cb) => ({ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1b25',bodyColor:'#f0ede6',borderColor:'rgba(255,255,255,0.06)',borderWidth:1,cornerRadius:8,callbacks:{label:cb||function(c){return (c.parsed.y>=0?'+':'')+'€'+c.parsed.y}}}}, scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},x:{grid:{display:false},ticks:{color:'#5c5952',font:{size:10}}}} });
+        const barOpts = (cb) => ({ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{backgroundColor:'#0e0e10',bodyColor:'#f0ede6',borderColor:'rgba(255,255,255,0.06)',borderWidth:1,cornerRadius:8,callbacks:{label:cb||function(c){return (c.parsed.y>=0?'+':'')+'€'+c.parsed.y}}}}, scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},x:{grid:{display:false},ticks:{color:'#5c5952',font:{size:10}}}} });
 
         // P/L by pair
         const pairData = {};
