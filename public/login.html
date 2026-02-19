@@ -509,7 +509,18 @@
                 <input type="password" class="form-input" id="loginPassword" placeholder="Your password" required>
             </div>
             <button type="submit" class="btn-submit" id="loginBtn">Sign In</button>
-            <a href="#" class="forgot-link">Forgot password?</a>
+            <a href="#" class="forgot-link" onclick="showForgot(event)">Forgot password?</a>
+        </form>
+
+        <!-- Forgot Password -->
+        <form id="forgotForm" class="auth-form" onsubmit="handleForgot(event)">
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:1rem;">Enter your email and we'll send you a link to reset your password.</p>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="forgotEmail" placeholder="your@email.com" required>
+            </div>
+            <button type="submit" class="btn-submit" id="forgotBtn">Send Reset Link</button>
+            <a href="#" class="forgot-link" onclick="backToLogin(event)" style="margin-top:0.75rem;">← Back to login</a>
         </form>
 
         <!-- Register -->
@@ -653,6 +664,53 @@
             btn.disabled = false;
             btn.textContent = orig;
         }
+    }
+
+    // ── Forgot Password ──
+    function showForgot(e) {
+        e.preventDefault();
+        hideMessages();
+        document.getElementById('loginForm').classList.remove('active');
+        document.getElementById('registerForm').classList.remove('active');
+        document.getElementById('forgotForm').classList.add('active');
+        document.getElementById('tabLogin').classList.remove('active');
+        document.getElementById('tabRegister').classList.remove('active');
+        document.querySelector('.auth-title').textContent = 'Reset password';
+        document.querySelector('.auth-subtitle').textContent = 'We\'ll email you a reset link';
+    }
+
+    function backToLogin(e) {
+        e.preventDefault();
+        hideMessages();
+        document.getElementById('forgotForm').classList.remove('active');
+        document.getElementById('loginForm').classList.add('active');
+        document.getElementById('tabLogin').classList.add('active');
+        document.querySelector('.auth-title').textContent = 'Welcome back';
+        document.querySelector('.auth-subtitle').textContent = 'Sign in to your account or create a new one';
+    }
+
+    async function handleForgot(e) {
+        e.preventDefault();
+        hideMessages();
+        const btn = document.getElementById('forgotBtn');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Sending...';
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: document.getElementById('forgotEmail').value })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed');
+            showSuccess('Reset link sent! Check your email (and spam folder).');
+        } catch (err) {
+            showError(err.message);
+        }
+        btn.disabled = false;
+        btn.textContent = orig;
     }
 
     // ── Capture referral code from URL ──
