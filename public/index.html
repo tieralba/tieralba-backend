@@ -871,16 +871,42 @@
 
         /* ── Loading State ── */
         .skeleton {
-            background: linear-gradient(90deg, var(--surface-2) 25%, rgba(212,185,120,0.04) 50%, var(--surface-2) 75%);
+            background: linear-gradient(90deg, var(--surface-2) 25%, rgba(255,255,255,0.03) 50%, var(--surface-2) 75%);
             background-size: 300% 100%;
-            animation: shimmer 2s ease-in-out infinite;
-            border-radius: 8px;
+            animation: shimmer 1.8s ease-in-out infinite;
+            border-radius: 6px;
         }
+        .skeleton-line { height: 14px; margin-bottom: 8px; }
+        .skeleton-line.w60 { width: 60%; }
+        .skeleton-line.w40 { width: 40%; }
+        .skeleton-line.w80 { width: 80%; }
+        .skeleton-title { height: 28px; width: 50%; margin-bottom: 10px; }
+        .skeleton-value { height: 32px; width: 70%; margin-bottom: 6px; }
+        .skeleton-sub { height: 12px; width: 45%; }
+        .skeleton-chart { height: 200px; border-radius: var(--radius); }
+        .skeleton-card { padding: 1.25rem; border-radius: var(--radius-lg); border: 1px solid var(--border); margin-bottom: 10px; }
+        .skeleton-row { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .skeleton-circle { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
 
         @keyframes shimmer {
             0% { background-position: 300% 0; }
             100% { background-position: -300% 0; }
         }
+
+        /* Empty State */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 3rem 1.5rem; text-align: center;
+        }
+        .empty-state-icon {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.25rem;
+        }
+        .empty-state-icon svg { width: 28px; height: 28px; stroke: var(--text-3); fill: none; stroke-width: 1.5; opacity: 0.5; }
+        .empty-state-title { font-size: 15px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+        .empty-state-desc { font-size: 13px; color: var(--text-3); line-height: 1.5; max-width: 300px; }
+        .empty-state-btn { margin-top: 1.25rem; padding: 8px 20px; font-size: 12px; }
 
         /* ── Progress Bar (Challenge) ── */
         .progress-bar-bg {
@@ -1544,7 +1570,7 @@
                     </div>
                     <div class="stat-label">Total Equity</div>
                     <div class="stat-value" id="statEquity">—</div>
-                    <div class="stat-change" id="statEquityChange">Loading...</div>
+                    <div class="stat-change" id="statEquityChange"</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:var(--green-dim);color:var(--green);">
@@ -1552,7 +1578,7 @@
                     </div>
                     <div class="stat-label">Win Rate</div>
                     <div class="stat-value" id="statWinRate">—</div>
-                    <div class="stat-change" id="statWinRateChange">Loading...</div>
+                    <div class="stat-change" id="statWinRateChange"</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:rgba(129,140,248,0.08);color:#818cf8;">
@@ -1560,7 +1586,7 @@
                     </div>
                     <div class="stat-label">Profit Factor</div>
                     <div class="stat-value" id="statPF">—</div>
-                    <div class="stat-change" id="statPFChange">Loading...</div>
+                    <div class="stat-change" id="statPFChange"</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:var(--green-dim);color:var(--green);">
@@ -1568,7 +1594,7 @@
                     </div>
                     <div class="stat-label">Total Profit</div>
                     <div class="stat-value" id="statProfit">—</div>
-                    <div class="stat-change" id="statProfitChange">Loading...</div>
+                    <div class="stat-change" id="statProfitChange"</div>
                 </div>
             </div>
 
@@ -1691,14 +1717,14 @@
                 <!-- Open Trades -->
                 <div id="tradeTabOpen" class="trade-tab-content active">
                     <div id="openTradesList" class="trade-list">
-                        <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:13px;">Loading...</div>
+                        <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:13px;"</div>
                     </div>
                 </div>
 
                 <!-- History -->
                 <div id="tradeTabHistory" class="trade-tab-content">
                     <div id="historyTradesList" class="trade-list">
-                        <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:13px;">Loading...</div>
+                        <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:13px;"</div>
                     </div>
                 </div>
             </div>
@@ -2222,7 +2248,7 @@
                     <button class="cal-day-tab" onclick="loadCalendarDay(4)" id="calDay4">—</button>
                 </div>
                 <div id="calendarContent" style="min-height:200px;">
-                    <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading...</div>
+                    <div style="text-align:center;padding:2rem;color:var(--text-3);"</div>
                 </div>
             </div>
         </div>
@@ -2296,7 +2322,9 @@
 
             <!-- Journal Entries -->
             <div id="journalEntries" style="display:flex;flex-direction:column;gap:10px;">
-                <div class="trade-empty">Loading journal...</div>
+                <div class="skeleton-card skeleton" style="height:80px;"></div>
+                <div class="skeleton-card skeleton" style="height:80px;"></div>
+                <div class="skeleton-card skeleton" style="height:80px;"></div>
             </div>
         </div>
 
@@ -2797,7 +2825,57 @@
     // ══════════════════════════════════════════════
     // LOAD DATA
     // ══════════════════════════════════════════════
+    // ══════════════════════════════════════════════
+    // SKELETON LOADERS & EMPTY STATES
+    // ══════════════════════════════════════════════
+    function showSkeletons() {
+        // Stat cards: replace "—" with skeleton pulse
+        document.querySelectorAll('.stat-value').forEach(el => {
+            if (el.textContent === '—' || el.textContent === 'Loading...') {
+                el.innerHTML = '<div class="skeleton skeleton-value" style="height:28px;width:80%;"></div>';
+            }
+        });
+        document.querySelectorAll('.stat-change').forEach(el => {
+            if (el.textContent === 'Loading...' || el.textContent === '—') {
+                el.innerHTML = '<div class="skeleton skeleton-sub" style="height:12px;width:60%;"></div>';
+            }
+        });
+        // Mini stats
+        document.querySelectorAll('.stat-mini-value').forEach(el => {
+            if (el.textContent === '—' || el.textContent === '€0') {
+                el.innerHTML = '<div class="skeleton" style="height:14px;width:50px;display:inline-block;"></div>';
+            }
+        });
+        // Trade list
+        const tradeList = document.getElementById('tradeListContent');
+        if (tradeList) {
+            tradeList.innerHTML = Array(4).fill('').map(() =>
+                `<div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w40"></div></div><div class="skeleton" style="width:60px;height:14px;"></div></div>`
+            ).join('');
+        }
+    }
+
+    function hideSkeletons() {
+        // Remove any remaining skeleton placeholders inside stat-values
+        document.querySelectorAll('.stat-value .skeleton, .stat-change .skeleton, .stat-mini-value .skeleton').forEach(el => {
+            el.remove();
+        });
+    }
+
+    function emptyState(icon, title, desc, btnText, btnAction) {
+        const btnHtml = btnText ? `<button class="btn-primary empty-state-btn" onclick="${btnAction}">${btnText}</button>` : '';
+        return `<div class="empty-state">
+            <div class="empty-state-icon"><svg viewBox="0 0 24 24">${icon}</svg></div>
+            <div class="empty-state-title">${title}</div>
+            <div class="empty-state-desc">${desc}</div>
+            ${btnHtml}
+        </div>`;
+    }
+
     async function loadDashboard() {
+        // Show skeleton loaders
+        showSkeletons();
+
         // User info
         const user = getUserData();
         if (user) {
@@ -2822,6 +2900,7 @@
             updateStats(stats);
             updatePerf(stats);
         }
+        hideSkeletons();
 
         // Load equity history
         const equity = await apiCall('/api/equity-history?days=30');
@@ -2865,22 +2944,24 @@
     function fmt(v) { return '€' + Math.round(v || 0).toLocaleString('it-IT'); }
 
     function updateStats(s) {
-        document.getElementById('statEquity').textContent = fmt(s.equity);
+        const hasData = s.equity > 0 || s.totalTrades > 0;
+        
+        document.getElementById('statEquity').textContent = hasData ? fmt(s.equity) : '€0';
         const eqPct = s.equity > 0 && s.totalProfit ? ((s.totalProfit / (s.equity - s.totalProfit)) * 100).toFixed(1) : 0;
-        document.getElementById('statEquityChange').textContent = s.equity > 0 ? (eqPct >= 0 ? '+' : '') + eqPct + '% all time' : 'No data';
-        document.getElementById('statEquityChange').className = 'stat-change' + (eqPct >= 0 ? ' positive' : ' negative');
+        document.getElementById('statEquityChange').textContent = hasData ? (eqPct >= 0 ? '+' : '') + eqPct + '% all time' : 'Connect broker to sync';
+        document.getElementById('statEquityChange').className = 'stat-change' + (hasData ? (eqPct >= 0 ? ' positive' : ' negative') : '');
 
-        document.getElementById('statWinRate').textContent = (s.winRate || 0).toFixed(1) + '%';
-        document.getElementById('statWinRateChange').textContent = s.totalTrades + ' trades';
+        document.getElementById('statWinRate').textContent = hasData ? (s.winRate || 0).toFixed(1) + '%' : '—';
+        document.getElementById('statWinRateChange').textContent = hasData ? s.totalTrades + ' trades' : 'No trades yet';
         document.getElementById('statWinRateChange').className = 'stat-change' + (s.winRate >= 50 ? ' positive' : s.totalTrades > 0 ? ' negative' : '');
 
-        document.getElementById('statPF').textContent = (s.profitFactor || 0).toFixed(2);
-        const pfText = s.profitFactor >= 2 ? 'Excellent' : s.profitFactor >= 1.5 ? 'Strong' : s.profitFactor >= 1 ? 'Decent' : 'Needs work';
+        document.getElementById('statPF').textContent = hasData && s.profitFactor > 0 ? (s.profitFactor).toFixed(2) : '—';
+        const pfText = s.profitFactor >= 2 ? 'Excellent' : s.profitFactor >= 1.5 ? 'Strong' : s.profitFactor >= 1 ? 'Decent' : hasData ? 'Needs work' : 'No data';
         document.getElementById('statPFChange').textContent = pfText;
-        document.getElementById('statPFChange').className = 'stat-change' + (s.profitFactor >= 1 ? ' positive' : ' negative');
+        document.getElementById('statPFChange').className = 'stat-change' + (s.profitFactor >= 1 ? ' positive' : hasData ? ' negative' : '');
 
-        document.getElementById('statProfit').textContent = fmt(s.totalProfit);
-        document.getElementById('statProfitChange').textContent = s.totalProfit >= 0 ? '↑ Profitable' : '↓ At a loss';
+        document.getElementById('statProfit').textContent = hasData ? fmt(s.totalProfit) : '€0';
+        document.getElementById('statProfitChange').textContent = hasData ? (s.totalProfit >= 0 ? '↑ Profitable' : '↓ At a loss') : 'Start trading';
         document.getElementById('statProfitChange').className = 'stat-change' + (s.totalProfit >= 0 ? ' positive' : ' negative');
 
         // Mini stats row
@@ -3066,7 +3147,12 @@
         // Open trades
         const openEl = document.getElementById('openTradesList');
         if (open.length === 0) {
-            openEl.innerHTML = '<div class="trade-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><div>No open trades</div></div>';
+            openEl.innerHTML = emptyState(
+                '<circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>',
+                'No open trades',
+                'Open positions will appear here when detected from your broker.',
+                ''
+            );
         } else {
             openEl.innerHTML = '<div class="trade-list-header"><span>Symbol</span><span>Lots</span><span>Entry</span><span>P/L</span><span>Time</span></div>' +
                 open.map(t => {
@@ -3087,7 +3173,12 @@
         // Trade history
         const histEl = document.getElementById('historyTradesList');
         if (closed.length === 0) {
-            histEl.innerHTML = '<div class="trade-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg><div>No closed trades yet</div></div>';
+            histEl.innerHTML = emptyState(
+                '<path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>',
+                'No closed trades yet',
+                'Your trade history will populate as trades close on your broker account.',
+                ''
+            );
         } else {
             histEl.innerHTML = '<div class="trade-list-header"><span>Symbol</span><span>Lots</span><span>Exit</span><span>P/L</span><span>Closed</span></div>' +
                 closed.map(t => {
@@ -3852,7 +3943,12 @@
         const container = document.getElementById('signalsList');
 
         if (!filtered.length) {
-            container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3);">No signals yet. Stay tuned!</div>';
+            container.innerHTML = emptyState(
+                '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+                'No signals yet',
+                'Trading signals will appear here when published by our analysts. Check back soon!',
+                ''
+            );
             return;
         }
 
@@ -4168,7 +4264,12 @@
         const el = document.getElementById('journalEntries');
         const entries = getFilteredJournal();
         if (entries.length === 0) {
-            el.innerHTML = '<div class="trade-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity:0.3;margin-bottom:8px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><div>No entries found</div></div>';
+            el.innerHTML = emptyState(
+                '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+                'No journal entries yet',
+                'Start documenting your trades to track your progress and improve your strategy.',
+                '+ New Entry', 'openJournalModal()'
+            );
             return;
         }
         el.innerHTML = entries.map(e => {
