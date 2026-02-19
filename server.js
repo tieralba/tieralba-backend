@@ -677,8 +677,6 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
       avgProfit: parseFloat(stats.avg_profit) || 0,
       bestTrade: parseFloat(stats.best_trade) || 0,
       worstTrade: parseFloat(stats.worst_trade) || 0,
-      totalWinAmount: parseFloat(winningSum.rows[0]?.sum) || 0,
-      totalLossAmount: parseFloat(losingSum.rows[0]?.sum) || 0,
       todayProfit,
       openTrades
     });
