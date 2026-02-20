@@ -2785,6 +2785,10 @@
             if (target === 'experts') loadLicenseKeys();
             if (target === 'settings') loadSettingsData();
             if (target === 'journal') loadJournal();
+            if (target === 'signals') loadSignals();
+            if (target === 'brokers') updateBotStatus();
+            if (target === 'referral') loadReferralData();
+            if (target === 'refund') loadRefundHistory();
         });
     });
 
@@ -3368,11 +3372,21 @@
         const res = await apiCall('/api/broker/sync', { method: 'POST' });
         if (res?.success) {
             toast('success', 'Synced', `${res.synced} trades imported. Equity: €${(res.account?.equity || 0).toFixed(2)}`);
-            // Reload dashboard data
+            // Full dashboard reload after sync
             const stats = await apiCall('/api/stats');
             if (stats) { updateStats(stats); updatePerf(stats); updateRiskGuardian(stats); }
             const equity = await apiCall('/api/equity-history?days=30');
             if (equity?.history) drawEquityChart(equity.history);
+            const trades = await apiCall('/api/trades?limit=200');
+            if (trades?.trades) {
+                renderTradeList(trades.trades);
+                drawMonthlyChart(trades.trades);
+                drawDailyPL(trades.trades);
+                drawAnalytics(trades.trades, stats);
+                drawDrawdown(trades.trades);
+            }
+            // Refresh broker connection status
+            updateBotStatus();
         } else {
             toast('error', 'Sync Failed', res?.error || 'Could not sync data. Account may still be deploying, try again in 1 minute.');
         }
@@ -4661,24 +4675,33 @@
         } catch (e) { /* silent */ }
     }
 
-    // Light refresh from DB only (fast, every 10s)
+    // Light refresh - stats only (fast, every 10s)
     async function refreshDashboard() {
         try {
-            // Stats (from DB, instant)
             const stats = await apiCall('/api/stats');
             if (stats) {
                 updateStats(stats);
                 updatePerf(stats);
                 updateRiskGuardian(stats);
             }
-
-            // Trades (from DB, instant)
             const trades = await apiCall('/api/trades?limit=200');
             if (trades?.trades) {
                 renderTradeList(trades.trades);
             }
+        } catch (e) { /* silent */ }
+    }
 
-            // Equity (from DB snapshots)
+    // Heavy refresh - all charts (every 30s)
+    async function refreshCharts() {
+        try {
+            const stats = await apiCall('/api/stats');
+            const trades = await apiCall('/api/trades?limit=200');
+            if (trades?.trades) {
+                drawDailyPL(trades.trades);
+                drawMonthlyChart(trades.trades);
+                drawAnalytics(trades.trades, stats);
+                drawDrawdown(trades.trades);
+            }
             const activeDays = document.querySelector('.chart-range-btn.active');
             const days = activeDays ? parseInt(activeDays.textContent) || 30 : 30;
             const equity = await apiCall('/api/equity-history?days=' + days);
@@ -4690,8 +4713,10 @@
         loadDashboard();
         // Full MetaAPI sync every 60 seconds
         setInterval(autoSync, 60000);
-        // Light DB refresh every 10 seconds
+        // Light stats refresh every 10 seconds
         setInterval(refreshDashboard, 10000);
+        // Heavy charts refresh every 30 seconds
+        setInterval(refreshCharts, 30000);
         // Refresh signals every 60 seconds
         setInterval(loadSignals, 60000);
     });
