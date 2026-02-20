@@ -54,21 +54,32 @@ pool.connect((err, client, release) => {
 // ============================================
 
 // Helmet: protezione base contro attacchi comuni
-// Configurato per permettere script inline nelle pagine frontend
 app.use(helmet({
-  contentSecurityPolicy: false
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://js.stripe.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://nfs.faireconomy.media"],
+      frameSrc: ["https://js.stripe.com"],
+    }
+  },
+  crossOriginEmbedderPolicy: false
 }));
 
-// CORS: permette al frontend di comunicare con il backend
+// CORS: solo origini autorizzate
 const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman)
+    // Same-origin requests (frontend served from same domain) have no origin header
     if (!origin) return callback(null, true);
+    // Check against allowed list, or allow if serving from same Railway domain
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    callback(null, true); // In production you can restrict this
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
@@ -189,15 +200,40 @@ app.set('trust proxy', 1);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuti
   max: 100, // max 100 richieste per IP
-  message: 'Troppe richieste, riprova tra 15 minuti'
+  message: { error: 'Troppe richieste, riprova tra 15 minuti' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 app.use('/api/', limiter);
 
-// Logging richieste (utile per debug)
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
+// Rate limit stretto per auth (login, register, forgot-password)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minuti
+  max: 10, // max 10 tentativi per IP
+  message: { error: 'Troppi tentativi, riprova tra 15 minuti' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+// Rate limit per admin endpoints
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Troppi tentativi admin' }
+});
+app.use('/api/admin/', adminLimiter);
+
+// Logging richieste (solo in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
+}
 
 // ============================================
 // MIDDLEWARE AUTENTICAZIONE
@@ -229,6 +265,21 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// Admin key verification middleware (timing-safe to prevent timing attacks)
+const crypto = require('crypto');
+function verifyAdminKey(req, res, next) {
+  const adminKey = req.headers['x-admin-key'];
+  const expectedKey = process.env.ADMIN_KEY;
+  if (!adminKey || !expectedKey) return res.status(401).json({ error: 'Unauthorized' });
+  
+  const a = Buffer.from(String(adminKey));
+  const b = Buffer.from(String(expectedKey));
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
 
 // ============================================
 // PROTECTED EA FILE DOWNLOADS
@@ -281,11 +332,20 @@ app.get('/health', (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name, fullName, first_name, last_name, title, date_of_birth, country, phone, referralCode, marketing_consent } = req.body;
-    const userName = name || ((first_name || '') + ' ' + (last_name || '')).trim() || fullName || '';
-    const refCode = (referralCode || '').trim().toUpperCase() || null;
     
-    if (!email || !password) {
+    // Sanitize inputs - strip HTML tags
+    const sanitize = (str) => str ? String(str).replace(/<[^>]*>/g, '').trim() : '';
+    const sanitizedEmail = sanitize(email).toLowerCase();
+    const sanitizedName = sanitize(name) || (sanitize(first_name) + ' ' + sanitize(last_name)).trim() || sanitize(fullName) || '';
+    const refCode = sanitize(referralCode).toUpperCase() || null;
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!sanitizedEmail || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
+    }
+    if (!emailRegex.test(sanitizedEmail)) {
+      return res.status(400).json({ error: 'Invalid email format' });
     }
     
     if (password.length < 8) {
@@ -294,23 +354,23 @@ app.post('/api/auth/register', async (req, res) => {
     
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
-      [email.toLowerCase()]
+      [sanitizedEmail]
     );
     
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'Email already registered' });
     }
     
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     
     // Generate email verification token
-    const crypto = require('crypto');
+
     const verifyToken = crypto.randomBytes(32).toString('hex');
     
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, name, first_name, last_name, title, date_of_birth, country, phone, verify_token, email_verified, referred_by, marketing_consent)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id, email, name, created_at`,
-      [email.toLowerCase(), passwordHash, userName, first_name||null, last_name||null, title||null, date_of_birth||null, country||null, phone||null, verifyToken, false, refCode, marketing_consent||false]
+      [sanitizedEmail, passwordHash, sanitizedName, sanitize(first_name)||null, sanitize(last_name)||null, sanitize(title)||null, date_of_birth||null, sanitize(country)||null, sanitize(phone)||null, verifyToken, false, refCode, marketing_consent||false]
     );
     
     const user = result.rows[0];
@@ -365,7 +425,7 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     );
     
     res.status(201).json({ 
@@ -422,7 +482,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     );
     
     res.json({
@@ -515,7 +575,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.json({ success: true });
     }
 
-    const crypto = require('crypto');
+
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
@@ -587,7 +647,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, 12);
     await pool.query(
       'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
       [passwordHash, user.rows[0].id]
@@ -677,8 +737,6 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
       avgProfit: parseFloat(stats.avg_profit) || 0,
       bestTrade: parseFloat(stats.best_trade) || 0,
       worstTrade: parseFloat(stats.worst_trade) || 0,
-      totalWinAmount: parseFloat(winningSum.rows[0]?.sum) || 0,
-      totalLossAmount: parseFloat(losingSum.rows[0]?.sum) || 0,
       todayProfit,
       openTrades
     });
@@ -1199,7 +1257,7 @@ app.get('/api/referral/info', authenticateToken, async (req, res) => {
 
     // Auto-generate referral code if not set
     if (!referral_code) {
-      const crypto = require('crypto');
+
       referral_code = 'TIER-' + crypto.randomBytes(4).toString('hex').toUpperCase();
       await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [referral_code, req.userId]);
     }
@@ -1307,11 +1365,8 @@ app.get('/api/signals', authenticateToken, async (req, res) => {
 });
 
 // Create signal (admin only)
-app.post('/api/signals', async (req, res) => {
+app.post('/api/signals', verifyAdminKey, async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
     const { source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes } = req.body;
     if (!symbol || !direction) return res.status(400).json({ error: 'Symbol and direction required' });
 
@@ -1330,11 +1385,8 @@ app.post('/api/signals', async (req, res) => {
 });
 
 // Update signal status (admin only)
-app.put('/api/signals/:id', async (req, res) => {
+app.put('/api/signals/:id', verifyAdminKey, async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
     const { status, result } = req.body;
     await pool.query(
       'UPDATE signals SET status = $1, result = $2, closed_at = CASE WHEN $1 = $3 THEN NOW() ELSE closed_at END WHERE id = $4',
@@ -1347,15 +1399,10 @@ app.put('/api/signals/:id', async (req, res) => {
 });
 
 // Delete signal (admin only)
-app.delete('/api/signals/:id', async (req, res) => {
+app.delete('/api/signals/:id', verifyAdminKey, async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
     const result = await pool.query('DELETE FROM signals WHERE id = $1 RETURNING id', [req.params.id]);
     if (result.rowCount === 0) return res.status(404).json({ error: 'Signal not found' });
-
-    console.log(`Signal ${req.params.id} deleted by admin`);
     res.json({ success: true });
   } catch (error) {
     console.error('Delete signal error:', error);
@@ -1364,12 +1411,8 @@ app.delete('/api/signals/:id', async (req, res) => {
 });
 
 // Get all signals for admin
-app.get('/api/admin/signals', async (req, res) => {
+app.get('/api/admin/signals', verifyAdminKey, async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'];
-    console.log('Admin login attempt. Key received:', JSON.stringify(adminKey), 'Expected:', JSON.stringify(process.env.ADMIN_KEY));
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
     const result = await pool.query('SELECT * FROM signals ORDER BY created_at DESC LIMIT 100');
     res.json({ signals: result.rows });
   } catch (error) {
@@ -1379,11 +1422,8 @@ app.get('/api/admin/signals', async (req, res) => {
 
 // ============================================
 // EA auto-close signal by symbol
-app.post('/api/ea/close-signal', async (req, res) => {
+app.post('/api/ea/close-signal', verifyAdminKey, async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
     const { symbol, result } = req.body;
     if (!symbol || !result) return res.status(400).json({ error: 'Symbol and result required' });
 
@@ -1692,7 +1732,7 @@ app.put('/api/user/password', authenticateToken, async (req, res) => {
     const valid = await bcrypt.compare(currentPassword, user.rows[0].password_hash);
     if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, 12);
     await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.userId]);
 
     console.log(`🔒 User ${req.userId} changed password`);
