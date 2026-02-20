@@ -2011,36 +2011,72 @@
 
         <!-- ═══════ PERFORMANCE ═══════ -->
         <div id="performance" class="section">
-            <div class="card" style="margin-bottom:1.5rem;">
-                <div class="card-header"><span class="card-title">Detailed Statistics</span></div>
+            <div class="card" style="margin-bottom:1rem;">
+                <div class="card-header"><span class="card-title">Trade Statistics</span></div>
                 <div class="perf-grid" id="perfGrid">
                     <div class="perf-item"><div class="perf-label">Total Trades</div><div class="perf-value" id="perfTotal">—</div></div>
                     <div class="perf-item"><div class="perf-label">Winners</div><div class="perf-value green" id="perfWins">—</div></div>
                     <div class="perf-item"><div class="perf-label">Losers</div><div class="perf-value red" id="perfLosses">—</div></div>
                     <div class="perf-item"><div class="perf-label">Win Rate</div><div class="perf-value gold" id="perfWR">—</div></div>
                     <div class="perf-item"><div class="perf-label">Profit Factor</div><div class="perf-value gold" id="perfPF">—</div></div>
-                    <div class="perf-item"><div class="perf-label">Avg Profit</div><div class="perf-value green" id="perfAvg">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Avg Win</div><div class="perf-value green" id="perfAvgWin">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Avg Loss</div><div class="perf-value red" id="perfAvgLoss">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Expectancy</div><div class="perf-value gold" id="perfExpect">—</div></div>
                     <div class="perf-item"><div class="perf-label">Best Trade</div><div class="perf-value green" id="perfBest">—</div></div>
                     <div class="perf-item"><div class="perf-label">Worst Trade</div><div class="perf-value red" id="perfWorst">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Avg Trade</div><div class="perf-value" id="perfAvg">—</div></div>
+                    <div class="perf-item"><div class="perf-label">Max Drawdown</div><div class="perf-value red" id="perfMaxDD">—</div></div>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header"><span class="card-title">Drawdown</span></div>
-                <div class="chart-wrap"><canvas id="drawdownChart"></canvas></div>
+            <div class="grid-2" style="margin-bottom:1rem;">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Cumulative P/L</span></div>
+                    <div class="chart-wrap"><canvas id="cumulativePLChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Drawdown</span></div>
+                    <div class="chart-wrap"><canvas id="drawdownChart"></canvas></div>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Win/Loss Streaks</span></div>
+                    <div class="chart-wrap" style="height:200px;"><canvas id="streakChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Monthly Returns</span></div>
+                    <div class="chart-wrap" style="height:200px;"><canvas id="monthlyRetChart"></canvas></div>
+                </div>
             </div>
         </div>
 
         <!-- ═══════ ANALYTICS ═══════ -->
         <div id="analytics" class="section">
-            <div class="grid-2">
+            <div class="grid-2" style="margin-bottom:1rem;">
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Trade Distribution</span></div>
-                    <div class="chart-wrap"><canvas id="distributionChart"></canvas></div>
+                    <div class="card-header"><span class="card-title">Win / Loss Distribution</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;height:250px;">
+                        <canvas id="distributionChart" style="max-width:220px;max-height:220px;"></canvas>
+                    </div>
                 </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">P/L by Day of Week</span></div>
+                    <div class="chart-wrap"><canvas id="dayOfWeekChart"></canvas></div>
+                </div>
+            </div>
+            <div class="grid-2" style="margin-bottom:1rem;">
                 <div class="card">
                     <div class="card-header"><span class="card-title">Hourly Activity</span></div>
                     <div class="chart-wrap"><canvas id="hourlyChart"></canvas></div>
                 </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">P/L by Symbol</span></div>
+                    <div class="chart-wrap"><canvas id="symbolPLChart"></canvas></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title">Trade Size vs Profit</span></div>
+                <div class="chart-wrap" style="height:250px;"><canvas id="lotsPLChart"></canvas></div>
             </div>
         </div>
 
@@ -2919,6 +2955,15 @@
         document.getElementById('perfAvg').textContent = fmt(s.avgProfit);
         document.getElementById('perfBest').textContent = fmt(s.bestTrade);
         document.getElementById('perfWorst').textContent = fmt(s.worstTrade);
+        const avgWin = s.winningTrades > 0 ? (s.totalWinAmount || 0) / s.winningTrades : 0;
+        const avgLoss = s.losingTrades > 0 ? (s.totalLossAmount || 0) / s.losingTrades : 0;
+        document.getElementById('perfAvgWin').textContent = fmt(avgWin);
+        document.getElementById('perfAvgLoss').textContent = fmt(avgLoss);
+        const wr = (s.winRate || 0) / 100;
+        const expectancy = (wr * avgWin) - ((1 - wr) * Math.abs(avgLoss));
+        document.getElementById('perfExpect').textContent = fmt(expectancy);
+        document.getElementById('perfExpect').className = 'perf-value ' + (expectancy >= 0 ? 'green' : 'red');
+        document.getElementById('perfMaxDD').textContent = '—';
     }
 
     // ══════════════════════════════════════════════
@@ -3142,57 +3187,114 @@
     }
 
     function drawAnalytics(trades, stats) {
-        // Distribution
+        const closed = trades.filter(t => t.closed_at);
+        const tt = { backgroundColor:'#0e0e10', titleColor:'#d4b978', bodyColor:'#f0ede6', borderColor:'rgba(255,255,255,0.06)', borderWidth:1, cornerRadius:8 };
+        const br = { borderRadius:4, barPercentage:0.6 };
+
+        // Win/Loss/BE Distribution
         const distCtx = document.getElementById('distributionChart');
         if (charts.dist) charts.dist.destroy();
+        const be = (stats?.totalTrades||0) - (stats?.winningTrades||0) - (stats?.losingTrades||0);
         charts.dist = new Chart(distCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Winners', 'Losers'],
-                datasets: [{ data: [stats?.winningTrades || 0, stats?.losingTrades || 0], backgroundColor: ['#5cb87a', '#e05252'], borderWidth: 0, spacing: 3 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: { legend: { position: 'bottom', labels: { color: '#9b978f', padding: 16, font: { size: 12 }, usePointStyle: true } } }
-            }
+            type:'doughnut',
+            data:{ labels:['Winners','Losers','Breakeven'], datasets:[{ data:[stats?.winningTrades||0, stats?.losingTrades||0, be], backgroundColor:['#5cb87a','#e05252','#5c5952'], borderWidth:0, spacing:3 }] },
+            options:{ responsive:true, maintainAspectRatio:true, cutout:'65%', plugins:{ legend:{ position:'bottom', labels:{ color:'#9b978f', padding:14, font:{size:11}, usePointStyle:true }}}}
         });
 
-        // Hourly
+        // P/L by Day of Week
+        const dowPL = {Mon:0,Tue:0,Wed:0,Thu:0,Fri:0};
+        const dowN = {Mon:0,Tue:0,Wed:0,Thu:0,Fri:0};
+        const dn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        closed.forEach(t => { const d = dn[new Date(t.closed_at).getDay()]; if(dowPL[d]!==undefined){ dowPL[d]+=parseFloat(t.profit)||0; dowN[d]++; }});
+        const dowV = Object.values(dowPL).map(v=>parseFloat(v.toFixed(2)));
+        const dowCtx = document.getElementById('dayOfWeekChart');
+        if (charts.dow) charts.dow.destroy();
+        charts.dow = new Chart(dowCtx, {
+            type:'bar', data:{ labels:Object.keys(dowPL), datasets:[{ data:dowV, backgroundColor:dowV.map(v=>v>=0?'rgba(92,184,122,0.6)':'rgba(224,82,82,0.6)'), ...br }] },
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>(c.parsed.y>=0?'+':'')+'€'+c.parsed.y+' ('+dowN[c.label]+' trades)'}}}, scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},x:{grid:{display:false},ticks:{color:'#9b978f',font:{size:11,weight:600}}}}}
+        });
+
+        // Hourly P/L
+        const hPL = Array(12).fill(0), hN = Array(12).fill(0);
+        closed.forEach(t => { if(t.opened_at){ const h=Math.floor(new Date(t.opened_at).getHours()/2); hPL[h]+=parseFloat(t.profit)||0; hN[h]++; }});
         const hourCtx = document.getElementById('hourlyChart');
-        const hourData = Array(12).fill(0);
-        trades.forEach(t => { if (t.opened_at) hourData[Math.floor(new Date(t.opened_at).getHours() / 2)]++; });
         if (charts.hourly) charts.hourly.destroy();
         charts.hourly = new Chart(hourCtx, {
-            type: 'bar',
-            data: {
-                labels: ['0h','2h','4h','6h','8h','10h','12h','14h','16h','18h','20h','22h'],
-                datasets: [{ data: hourData, backgroundColor: 'rgba(200,170,110,0.5)', borderRadius: 4, barPercentage: 0.5 }]
-            },
-            options: chartDefaults
+            type:'bar', data:{ labels:['0-2h','2-4h','4-6h','6-8h','8-10h','10-12h','12-14h','14-16h','16-18h','18-20h','20-22h','22-24h'],
+                datasets:[{ data:hPL.map(v=>parseFloat(v.toFixed(2))), backgroundColor:hPL.map(v=>v>=0?'rgba(200,170,110,0.5)':'rgba(224,82,82,0.4)'), ...br }] },
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>(c.parsed.y>=0?'+':'')+'€'+c.parsed.y+' ('+hN[c.dataIndex]+' trades)'}}}, scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},x:{grid:{display:false},ticks:{color:'#5c5952',font:{size:9}}}}}
+        });
+
+        // P/L by Symbol (horizontal bar)
+        const sym = {};
+        closed.forEach(t => { if(t.symbol) sym[t.symbol]=(sym[t.symbol]||0)+(parseFloat(t.profit)||0); });
+        const sL = Object.keys(sym).sort((a,b)=>sym[b]-sym[a]);
+        const sV = sL.map(l=>parseFloat(sym[l].toFixed(2)));
+        const symCtx = document.getElementById('symbolPLChart');
+        if (charts.symPL) charts.symPL.destroy();
+        charts.symPL = new Chart(symCtx, {
+            type:'bar', data:{ labels:sL, datasets:[{ data:sV, backgroundColor:sV.map(v=>v>=0?'rgba(92,184,122,0.6)':'rgba(224,82,82,0.6)'), ...br }] },
+            options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>(c.parsed.x>=0?'+':'')+'€'+c.parsed.x}}}, scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},y:{grid:{display:false},ticks:{color:'#9b978f',font:{size:11}}}}}
+        });
+
+        // Lots vs P/L Scatter
+        const sc = closed.map(t=>({x:parseFloat(t.lots)||0,y:parseFloat(t.profit)||0})).filter(p=>p.x>0);
+        const lotsCtx = document.getElementById('lotsPLChart');
+        if (charts.lotsPL) charts.lotsPL.destroy();
+        charts.lotsPL = new Chart(lotsCtx, {
+            type:'scatter', data:{ datasets:[{ data:sc, backgroundColor:sc.map(p=>p.y>=0?'rgba(92,184,122,0.6)':'rgba(224,82,82,0.6)'), pointRadius:5, pointHoverRadius:7 }] },
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>'Lots: '+c.parsed.x.toFixed(2)+' → '+(c.parsed.y>=0?'+':'')+'€'+c.parsed.y.toFixed(2)}}}, scales:{x:{title:{display:true,text:'Lot Size',color:'#5c5952',font:{size:11}},grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10}}},y:{title:{display:true,text:'P/L (€)',color:'#5c5952',font:{size:11}},grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}}}}
         });
     }
 
     function drawDrawdown(trades) {
-        const ctx = document.getElementById('drawdownChart');
-        const sorted = [...trades].filter(t => t.closed_at).sort((a, b) => new Date(a.closed_at) - new Date(b.closed_at));
-        let cum = 0, peak = 0;
-        const ddData = [], labels = [];
+        const sorted = [...trades].filter(t=>t.closed_at).sort((a,b)=>new Date(a.closed_at)-new Date(b.closed_at));
+        if (!sorted.length) return;
+        let cum=0, peak=0, maxDD=0;
+        const dd=[], cumD=[], labels=[];
         sorted.forEach(t => {
-            cum += parseFloat(t.profit) || 0;
-            if (cum > peak) peak = cum;
-            ddData.push(peak > 0 ? parseFloat(((cum - peak) / peak * 100).toFixed(2)) : 0);
-            labels.push(new Date(t.closed_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }));
+            cum+=parseFloat(t.profit)||0;
+            if(cum>peak) peak=cum;
+            const d=peak>0?parseFloat(((cum-peak)/peak*100).toFixed(2)):0;
+            if(d<maxDD) maxDD=d;
+            dd.push(d); cumD.push(parseFloat(cum.toFixed(2)));
+            labels.push(new Date(t.closed_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}));
         });
-        if (charts.dd) charts.dd.destroy();
-        charts.dd = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels.length ? labels : ['N/D'],
-                datasets: [{ data: ddData.length ? ddData : [0], borderColor: '#e05252', backgroundColor: 'rgba(224,82,82,0.08)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0 }]
-            },
-            options: chartDefaults
-        });
+        const ddEl=document.getElementById('perfMaxDD');
+        if(ddEl) ddEl.textContent=maxDD.toFixed(1)+'%';
+        const tt={backgroundColor:'#0e0e10',bodyColor:'#f0ede6',borderColor:'rgba(255,255,255,0.06)',borderWidth:1,cornerRadius:8};
+
+        // Drawdown
+        const ctx=document.getElementById('drawdownChart');
+        if(charts.dd) charts.dd.destroy();
+        charts.dd=new Chart(ctx,{type:'line',data:{labels,datasets:[{data:dd,borderColor:'#e05252',backgroundColor:'rgba(224,82,82,0.08)',borderWidth:2,tension:0.3,fill:true,pointRadius:0,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>c.parsed.y.toFixed(2)+'%'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>v+'%'}},x:{display:false}}}});
+
+        // Cumulative P/L
+        const cumCtx=document.getElementById('cumulativePLChart');
+        if(charts.cumPL) charts.cumPL.destroy();
+        const up=cumD[cumD.length-1]>=0;
+        const lc=up?'#5cb87a':'#e05252';
+        const gc=cumCtx.getContext('2d');
+        const grd=gc.createLinearGradient(0,0,0,300);
+        grd.addColorStop(0,up?'rgba(92,184,122,0.2)':'rgba(224,82,82,0.2)');
+        grd.addColorStop(1,'transparent');
+        charts.cumPL=new Chart(cumCtx,{type:'line',data:{labels,datasets:[{data:cumD,borderColor:lc,backgroundColor:grd,borderWidth:2,tension:0.3,fill:true,pointRadius:0,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>(c.parsed.y>=0?'+':'')+'€'+c.parsed.y}}},scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},x:{display:false}}}});
+
+        // Streaks
+        let cs=0; const streaks=[];
+        sorted.forEach(t=>{const p=parseFloat(t.profit)||0;if(p>0)cs=cs>0?cs+1:1;else if(p<0)cs=cs<0?cs-1:-1;else cs=0;streaks.push(cs);});
+        const skCtx=document.getElementById('streakChart');
+        if(charts.streak) charts.streak.destroy();
+        const sl=streaks.slice(-30), slL=labels.slice(-30);
+        charts.streak=new Chart(skCtx,{type:'bar',data:{labels:slL,datasets:[{data:sl,backgroundColor:sl.map(v=>v>0?'rgba(92,184,122,0.6)':'rgba(224,82,82,0.6)'),borderRadius:3,barPercentage:0.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>(c.parsed.y>0?'+':'')+c.parsed.y+' streak'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},stepSize:1}},x:{display:false}}}});
+
+        // Monthly Returns
+        const mo={};
+        sorted.forEach(t=>{const m=new Date(t.closed_at).toLocaleDateString('en-US',{month:'short',year:'2-digit'});mo[m]=(mo[m]||0)+(parseFloat(t.profit)||0);});
+        const mL=Object.keys(mo), mV=mL.map(l=>parseFloat(mo[l].toFixed(2)));
+        const mCtx=document.getElementById('monthlyRetChart');
+        if(charts.monthRet) charts.monthRet.destroy();
+        charts.monthRet=new Chart(mCtx,{type:'bar',data:{labels:mL,datasets:[{data:mV,backgroundColor:mV.map(v=>v>=0?'rgba(92,184,122,0.6)':'rgba(224,82,82,0.6)'),borderRadius:4,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>(c.parsed.y>=0?'+':'')+'€'+c.parsed.y}}},scales:{y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5c5952',font:{size:10},callback:v=>'€'+v}},x:{grid:{display:false},ticks:{color:'#9b978f',font:{size:10}}}}}});
     }
 
     // ══════════════════════════════════════════════
