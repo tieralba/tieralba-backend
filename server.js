@@ -55,18 +55,10 @@ pool.connect((err, client, release) => {
 
 // Helmet: protezione base contro attacchi comuni
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://js.stripe.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://nfs.faireconomy.media"],
-      frameSrc: ["https://js.stripe.com"],
-    }
-  },
-  crossOriginEmbedderPolicy: false
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false
 }));
 
 // CORS: solo origini autorizzate
