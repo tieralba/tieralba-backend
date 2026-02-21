@@ -1888,7 +1888,14 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
 
 // Landing page on root
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  const landingPath = path.join(__dirname, 'public', 'landing.html');
+  const fs = require('fs');
+  if (fs.existsSync(landingPath)) {
+    res.sendFile(landingPath);
+  } else {
+    // Fallback to dashboard if landing.html not yet deployed
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
 });
 
 // Dashboard (requires login on client side)
