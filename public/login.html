@@ -239,7 +239,7 @@
             if (document.getElementById('rememberMe').checked) localStorage.setItem('remember_email', document.getElementById('loginEmail').value);
             else localStorage.removeItem('remember_email');
             showSuccess('Signed in!');
-            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+            setTimeout(() => { window.location.href = '/dashboard'; }, 800);
         } catch (err) { showError(err.message); btn.disabled = false; btn.textContent = orig; }
     }
 
@@ -266,7 +266,7 @@
             localStorage.setItem('auth_token', data.token);
             localStorage.setItem('user_data', JSON.stringify(data.user));
             showSuccess('Account created!');
-            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+            setTimeout(() => { window.location.href = '/dashboard'; }, 800);
         } catch (err) { showError(err.message); btn.disabled = false; btn.textContent = orig; }
     }
 
@@ -302,7 +302,7 @@
 
     (function() { const ref = new URLSearchParams(window.location.search).get('ref'); if (ref) { document.getElementById('regRefCode').value = ref; document.getElementById('refCodeGroup').style.display = 'block'; switchTab('register'); } })();
 
-    if (localStorage.getItem('auth_token')) window.location.href = 'index.html';
+    if (localStorage.getItem('auth_token')) window.location.href = '/dashboard';
 </script>
 </body>
 </html>
