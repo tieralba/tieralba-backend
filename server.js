@@ -1513,8 +1513,8 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
       payment_method_types: ['card'],
       customer_email: userResult.rows[0].email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html?upgrade=success`,
-      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html?upgrade=cancelled`,
+      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard?upgrade=success`,
+      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard?upgrade=cancelled`,
       metadata: { userId: req.userId.toString() }
     });
     
@@ -1551,7 +1551,7 @@ app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
     
     const session = await stripe.billingPortal.sessions.create({
       customer: result.rows[0].stripe_customer_id,
-      return_url: `${req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app'}/index.html`
+      return_url: `${req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard`
     });
     
     res.json({ url: session.url });
@@ -1885,7 +1885,14 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
 // ============================================
 // SERVE FRONTEND per route non-API
 // ============================================
+
+// Landing page on root
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+// Dashboard (requires login on client side)
+app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
