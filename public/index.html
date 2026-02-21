@@ -2736,11 +2736,11 @@
     function logout() {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_data');
-        window.location.href = 'login.html';
+        window.location.href = '/login';
     }
 
     // Auth check
-    if (!getToken()) { window.location.href = 'login.html'; }
+    if (!getToken()) { window.location.href = '/login'; }
 
     async function apiCall(endpoint, options = {}) {
         const token = getToken();
