@@ -61,20 +61,8 @@ app.use(helmet({
   crossOriginOpenerPolicy: false
 }));
 
-// CORS: solo origini autorizzate
-const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors({
-  origin: function(origin, callback) {
-    // Same-origin requests (frontend served from same domain) have no origin header
-    if (!origin) return callback(null, true);
-    // Check against allowed list, or allow if serving from same Railway domain
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-}));
+// CORS: permetti tutte le origini (frontend servito dallo stesso server)
+app.use(cors());
 
 // Stripe webhook needs raw body - must be before express.json()
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
