@@ -179,7 +179,20 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 // Body parser: permette di leggere JSON nelle richieste
 app.use(express.json());
 
-// Serve frontend static files (login.html, index.html)
+// Explicit routes FIRST (before static, so landing.html is served on /)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Serve frontend static files (CSS, JS, images, other HTML)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Trust proxy (Railway runs behind a proxy)
@@ -1845,18 +1858,6 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
 // ============================================
 // SERVE FRONTEND per route non-API
 // ============================================
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
 // ============================================
 // GESTIONE ERRORI 404 (solo per API)
 // ============================================
