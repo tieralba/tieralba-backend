@@ -1508,7 +1508,7 @@
                 <div class="user-avatar" id="userAvatar">U</div>
                 <div>
                     <div class="user-name" id="userName">User</div>
-                    <div class="user-email" id="userEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bcd9d1ddd5d0fcc8d9cfc892dfd3d1">[email&#160;protected]</a></div>
+                    <div class="user-email" id="userEmail"></div>
                 </div>
             </div>
         </div>
@@ -2628,11 +2628,11 @@
                             <div style="font-size:11px;color:var(--text-3);">@tieralba</div>
                         </div>
                     </a>
-                    <a href="/cdn-cgi/l/email-protection#6a03040c052a1e030f180b06080b44090507" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="mailto:support@tieralba.com" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <div>
                             <div style="font-size:13px;font-weight:600;color:var(--text);">Email</div>
-                            <div style="font-size:11px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="d5bcbbb3ba95a1bcb0a7b4b9b7b4fbb6bab8">[email&#160;protected]</span></div>
+                            <div style="font-size:11px;color:var(--text-3);">support@tieralba.com</div>
                         </div>
                     </a>
                 </div>
@@ -2663,10 +2663,10 @@
                         <span style="font-size:13px;font-weight:600;color:var(--text);">WhatsApp</span>
                         <span style="font-size:10px;color:var(--text-3);">Direct message</span>
                     </a>
-                    <a href="/cdn-cgi/l/email-protection#bbd2d5ddd4fbcfd2dec9dad7d9da95d8d4d6" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="mailto:support@tieralba.com" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <span style="font-size:13px;font-weight:600;color:var(--text);">Email</span>
-                        <span style="font-size:10px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="3d54535b527d4954584f5c515f5c135e5250">[email&#160;protected]</span></span>
+                        <span style="font-size:10px;color:var(--text-3);">support@tieralba.com</span>
                     </a>
                 </div>
             </div>
@@ -2720,7 +2720,7 @@
         </div>
     </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
     // ══════════════════════════════════════════════
     // CONFIG
     // ══════════════════════════════════════════════
@@ -2736,11 +2736,11 @@
     function logout() {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_data');
-        window.location.href = 'login.html';
+        window.location.href = '/login';
     }
 
     // Auth check
-    if (!getToken()) { window.location.href = 'login.html'; }
+    if (!getToken()) { window.location.href = '/login'; }
 
     async function apiCall(endpoint, options = {}) {
         const token = getToken();
@@ -4472,7 +4472,7 @@
         document.getElementById('refTotalEarned').textContent = '€' + (res.total_earned || 0).toFixed(2);
         document.getElementById('refTotalReferrals').textContent = res.total_referrals || 0;
         document.getElementById('refCodeDisplay').textContent = res.referral_code || '—';
-        document.getElementById('refLinkInput').value = baseUrl + '/login.html?ref=' + (res.referral_code || '');
+        document.getElementById('refLinkInput').value = baseUrl + '/login?ref=' + (res.referral_code || '');
         if (res.usdt_wallet) document.getElementById('refWallet').value = res.usdt_wallet;
 
         document.getElementById('refBalanceNote').textContent = res.balance >= 50 ? 'Ready for payout!' : 'Min. €50 for payout';
@@ -4710,3 +4710,11 @@
                 <p style="font-size:15px;margin-bottom:0.5rem;">This feature requires a <strong id="upgradePlanName">Standard</strong> plan.</p>
                 <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
                 <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade
+ to Standard — €49.99/mo</button>
+                <button class="btn-primary" onclick="upgradePlan('pro')" style="width:100%;background:linear-gradient(135deg, #2a6b4a, #3a8a5c);">Upgrade to Pro — €89.99/mo</button>
+                <p style="font-size:11px;color:var(--text-3);margin-top:1rem;">7-day money-back guarantee · Cancel anytime</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
