@@ -391,6 +391,45 @@ a{text-decoration:none;color:inherit}
 .faq-a{max-height:0;overflow:hidden;transition:max-height 0.5s var(--ease),padding 0.4s;font-size:15px;color:var(--text-2);line-height:1.8}
 .faq-item.open .faq-a{max-height:300px;padding-bottom:28px}
 
+/* ═══ REVIEWS ═══ */
+.reviews-sec{padding:120px 32px;overflow:hidden}
+.reviews-header{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto 48px;flex-wrap:wrap;gap:20px}
+.reviews-tp{display:flex;align-items:center;gap:16px}
+.tp-logo{height:28px;opacity:0.9}
+.tp-score{display:flex;flex-direction:column;gap:2px}
+.tp-score-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.tp-score-lbl{font-size:12px;color:var(--text-2);font-weight:500}
+.tp-stars{display:flex;gap:3px}
+.tp-star{width:28px;height:28px;background:#00b67a;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.tp-star-half{background:linear-gradient(90deg,#00b67a 50%,#dcdce6 50%)}
+.reviews-track-wrap{position:relative;max-width:1100px;margin:0 auto}
+.reviews-track-wrap::before,.reviews-track-wrap::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none}
+.reviews-track-wrap::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.reviews-track-wrap::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+.reviews-track{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:8px 4px 20px;scrollbar-width:none}
+.reviews-track::-webkit-scrollbar{display:none}
+.review-card{flex-shrink:0;width:340px;padding:32px 28px;border-radius:20px;background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);scroll-snap-align:start;transition:all 0.4s var(--ease);position:relative}
+.review-card:hover{border-color:var(--border-h);transform:translateY(-4px);box-shadow:0 16px 48px rgba(200,169,78,0.06)}
+.review-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.review-stars{display:flex;gap:2px}
+.review-star{color:#00b67a;font-size:16px}
+.review-date{font-size:11px;color:var(--text-3);font-weight:500}
+.review-text{font-size:14px;color:var(--text-2);line-height:1.8;margin-bottom:20px;min-height:50px}
+.review-author{display:flex;align-items:center;gap:12px}
+.review-avatar{width:36px;height:36px;border-radius:10px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gold)}
+.review-name{font-size:13px;font-weight:600}
+.review-loc{font-size:11px;color:var(--text-3)}
+.review-badge{font-size:10px;color:#00b67a;font-weight:600;display:flex;align-items:center;gap:4px;margin-top:2px}
+.review-badge::before{content:'✓';font-size:9px}
+
+@media(max-width:768px){
+  .reviews-header{flex-direction:column;align-items:flex-start}
+  .review-card{width:290px;padding:24px 20px}
+  .reviews-track-wrap::before,.reviews-track-wrap::after{width:40px}
+}
+
 /* ═══ CTA ═══ */
 .cta-sec{padding:160px 32px;text-align:center;position:relative;overflow:hidden}
 .cta-sec .ambient{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;border-radius:50%;
@@ -720,6 +759,121 @@ a{text-decoration:none;color:inherit}
   </div>
   <div style="text-align:center;margin-top:48px" class="rv">
     <a href="/faq" class="btn-p" style="font-size:12px;padding:14px 36px;">View All FAQ &rarr;</a>
+  </div>
+</section>
+
+<!-- ═══ TRUSTPILOT REVIEWS ═══ -->
+<section class="reviews-sec">
+  <div class="reviews-header rv">
+    <div class="sh" style="text-align:left;margin-bottom:0">
+      <div class="sh-tag">Reviews</div>
+      <h2 class="sh-title">Trusted by <span class="g">Traders</span></h2>
+    </div>
+    <div class="reviews-tp">
+      <div class="tp-stars">
+        <div class="tp-star"></div><div class="tp-star"></div><div class="tp-star"></div><div class="tp-star"></div><div class="tp-star-half tp-star"></div>
+      </div>
+      <div class="tp-score">
+        <div class="tp-score-val">4.5 / 5</div>
+        <div class="tp-score-lbl">Based on <a href="https://www.trustpilot.com/review/tieralba.com" target="_blank" style="color:var(--gold);font-weight:600">15 reviews</a> on Trustpilot</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="reviews-track-wrap rv rv-d1">
+    <div class="reviews-track" id="reviewsTrack">
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Feb 2026</span>
+        </div>
+        <div class="review-text">I joined their free channel and they only send great calls. The other day they perfectly predicted before the FED news — XAU long. Incredible accuracy.</div>
+        <div class="review-author">
+          <div class="review-avatar">AK</div>
+          <div><div class="review-name">Andrew K.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star" style="color:var(--text-3)">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">I've been using TierAlba for a while. Their EA is perfect for passing challenges and for funded accounts, specially as it's all hands-free and doesn't require manual trading at all. Let the bot do what's best.</div>
+        <div class="review-author">
+          <div class="review-avatar">MK</div>
+          <div><div class="review-name">Menar K.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">The most reliable, safest, and best company I've worked with. Their service exceeded my expectations. Highly recommended for any trader looking for professional support.</div>
+        <div class="review-author">
+          <div class="review-avatar">HH</div>
+          <div><div class="review-name">Hekuran H.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">The best prop firm support out there. Their tools and team are top notch. I wouldn't trust anyone else with my funded accounts.</div>
+        <div class="review-author">
+          <div class="review-avatar">CO</div>
+          <div><div class="review-name">Consumer</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">I suggest TierAlba for all new users. The best service you can get in this space. Easy to set up, professional support, and real results. Can't ask for more.</div>
+        <div class="review-author">
+          <div class="review-avatar">SJ</div>
+          <div><div class="review-name">Shqiperia J.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">Super company! Everything works smoothly. The EA handles challenges perfectly and the team is always available when you need them. Five stars from me.</div>
+        <div class="review-author">
+          <div class="review-avatar">EA</div>
+          <div><div class="review-name">Edison A.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Dec 2025</span>
+        </div>
+        <div class="review-text">A great experience so far. Professional team, reliable software, and transparent communication. Exactly what you need when trusting someone with your trading account.</div>
+        <div class="review-author">
+          <div class="review-avatar">EA</div>
+          <div><div class="review-name">Endrit A.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:40px" class="rv rv-d2">
+    <a href="https://www.trustpilot.com/review/tieralba.com" target="_blank" style="font-size:13px;color:var(--text-2);font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:color 0.3s">
+      Read all reviews on Trustpilot <span style="color:var(--gold)">&rarr;</span>
+    </a>
   </div>
 </section>
 
