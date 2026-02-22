@@ -1,1893 +1,813 @@
-// ============================================
-// TIERALBA BACKEND API
-// ============================================
-// Questo è il server principale che gestisce:
-// - Autenticazione utenti (login/register)
-// - Gestione trade
-// - Statistiche dashboard
-// - Connessione broker MetaTrader
-// ============================================
-
-require('dotenv').config();
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Temp fix for MetaApi cert issue
-const express = require('express');
-const path = require('path');
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-
-// Stripe (optional - only if STRIPE_SECRET_KEY is set)
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
-
-// Resend (email - optional)
-const { Resend } = process.env.RESEND_API_KEY ? require('resend') : { Resend: null };
-const resend = Resend ? new Resend(process.env.RESEND_API_KEY) : null;
-
-// ============================================
-// CONFIGURAZIONE SERVER
-// ============================================
-
-const app = express();
-const port = process.env.PORT || 3000;
-
-// Connessione al database PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
-// Test connessione database
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Errore connessione database:', err.stack);
-  } else {
-    console.log('✅ Database connesso con successo');
-    release();
-  }
-});
-
-// ============================================
-// MIDDLEWARE (funzioni che processano ogni richiesta)
-// ============================================
-
-// Helmet: protezione base contro attacchi comuni
-// Configurato per permettere script inline nelle pagine frontend
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
-
-// CORS: permette al frontend di comunicare con il backend
-const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(null, true); // In production you can restrict this
-  },
-  credentials: true
-}));
-
-// Stripe webhook needs raw body - must be before express.json()
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
-  
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).json({ error: 'Invalid signature' });
-  }
-
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const customerEmail = session.customer_email || session.customer_details?.email;
-        const customerId = session.customer;
-        const subscriptionId = session.subscription;
-        
-        // Get subscription to determine plan
-        let plan = 'standard';
-        let amount = 0;
-        if (subscriptionId) {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
-          const priceId = sub.items.data[0]?.price?.id;
-          amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
-          // Map price IDs to plans
-          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
-          if (proPriceIds.includes(priceId)) plan = 'pro';
-        }
-        
-        // Update user
-        if (customerEmail) {
-          await pool.query(
-            'UPDATE users SET plan = $1, stripe_customer_id = $2, stripe_subscription_id = $3 WHERE LOWER(email) = LOWER($4)',
-            [plan, customerId, subscriptionId, customerEmail]
-          );
-          console.log(`✅ User ${customerEmail} upgraded to ${plan}`);
-
-          // Credit referral commission
-          try {
-            const buyer = await pool.query('SELECT id, referred_by FROM users WHERE LOWER(email) = LOWER($1)', [customerEmail]);
-            if (buyer.rows[0]?.referred_by) {
-              const referrer = await pool.query('SELECT id FROM users WHERE referral_code = $1', [buyer.rows[0].referred_by]);
-              if (referrer.rows.length > 0) {
-                const commissionRate = 15;
-                const saleAmount = amount || (plan === 'pro' ? 89.99 : 49.99);
-                const commission = parseFloat((saleAmount * commissionRate / 100).toFixed(2));
-                
-                await pool.query(
-                  'INSERT INTO referral_commissions (referrer_id, referred_id, referred_email, plan_purchased, sale_amount, commission_rate, commission_amount) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                  [referrer.rows[0].id, buyer.rows[0].id, customerEmail, plan, saleAmount, commissionRate, commission]
-                );
-                await pool.query(
-                  'UPDATE users SET referral_balance = referral_balance + $1, referral_total_earned = referral_total_earned + $1 WHERE id = $2',
-                  [commission, referrer.rows[0].id]
-                );
-                console.log(`💰 Referral commission: €${commission} credited to referrer`);
-              }
-            }
-          } catch (refErr) {
-            console.error('Referral commission error:', refErr);
-          }
-        }
-        break;
-      }
-      
-      case 'customer.subscription.updated': {
-        const sub = event.data.object;
-        const status = sub.status;
-        if (status === 'active') {
-          const priceId = sub.items.data[0]?.price?.id;
-          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
-          const plan = proPriceIds.includes(priceId) ? 'pro' : 'standard';
-          await pool.query(
-            'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
-            [plan, sub.id]
-          );
-        }
-        break;
-      }
-      
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object;
-        await pool.query(
-          'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
-          ['free', sub.id]
-        );
-        console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
-        break;
-      }
-    }
-  } catch (err) {
-    console.error('Webhook handler error:', err);
-  }
-  
-  res.json({ received: true });
-});
-
-// Body parser: permette di leggere JSON nelle richieste
-app.use(express.json());
-
-// Explicit routes FIRST (before static, so landing.html is served on /)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// Serve frontend static files (CSS, JS, images, other HTML)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Trust proxy (Railway runs behind a proxy)
-app.set('trust proxy', 1);
-
-// Rate limiting: previene spam/attacchi
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 100, // max 100 richieste per IP
-  message: 'Troppe richieste, riprova tra 15 minuti'
-});
-app.use('/api/', limiter);
-
-// Logging richieste (utile per debug)
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// ============================================
-// MIDDLEWARE AUTENTICAZIONE
-// ============================================
-// Questa funzione verifica che l'utente sia loggato
-// controllando il token JWT
-
-const authenticateToken = (req, res, next) => {
-  // Prende il token dall'header Authorization
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
-  
-  if (!token) {
-    return res.status(401).json({ 
-      error: 'Accesso negato. Token non fornito.' 
-    });
-  }
-  
-  // Verifica che il token sia valido
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ 
-        error: 'Token non valido o scaduto' 
-      });
-    }
-    
-    // Salva l'ID utente nella richiesta per usarlo dopo
-    req.userId = user.userId;
-    next();
-  });
-};
-
-// ============================================
-// PROTECTED EA FILE DOWNLOADS
-// ============================================
-
-app.get('/ea-files/:filename', authenticateToken, async (req, res) => {
-  try {
-    const user = await pool.query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId]);
-    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    const u = user.rows[0];
-    const subActive = u.plan === 'standard' || u.plan === 'pro';
-    const subNotExpired = !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
-
-    if (!subActive || !subNotExpired) {
-      return res.status(403).json({ error: 'Active subscription required to download EA files.' });
-    }
-
-    const filename = path.basename(req.params.filename);
-    const filePath = path.join(__dirname, 'ea-files', filename);
-    
-    if (!require('fs').existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    res.download(filePath, filename);
-  } catch (err) {
-    console.error('EA download error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================
-// ENDPOINT: SALUTE DEL SERVER
-// ============================================
-
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    service: 'TierAlba API'
-  });
-});
-
-// ============================================
-// ENDPOINT: AUTENTICAZIONE
-// ============================================
-
-// REGISTRAZIONE NUOVO UTENTE
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { email, password, name, fullName, first_name, last_name, title, date_of_birth, country, phone, referralCode, marketing_consent } = req.body;
-    const userName = name || ((first_name || '') + ' ' + (last_name || '')).trim() || fullName || '';
-    const refCode = (referralCode || '').trim().toUpperCase() || null;
-    
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-    
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters' });
-    }
-    
-    const existingUser = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email.toLowerCase()]
-    );
-    
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-    
-    const passwordHash = await bcrypt.hash(password, 10);
-    
-    // Generate email verification token
-    const crypto = require('crypto');
-    const verifyToken = crypto.randomBytes(32).toString('hex');
-    
-    const result = await pool.query(
-      `INSERT INTO users (email, password_hash, name, first_name, last_name, title, date_of_birth, country, phone, verify_token, email_verified, referred_by, marketing_consent)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id, email, name, created_at`,
-      [email.toLowerCase(), passwordHash, userName, first_name||null, last_name||null, title||null, date_of_birth||null, country||null, phone||null, verifyToken, false, refCode, marketing_consent||false]
-    );
-    
-    const user = result.rows[0];
-    
-    // Send welcome + verification email
-    const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
-    const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyToken}`;
-    
-    if (resend) {
-      try {
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
-          to: [email.toLowerCase()],
-          subject: 'Welcome to TierAlba — Verify Your Email',
-          html: `
-            <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
-              <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
-                <h1 style="margin:0;font-size:24px;color:#c8aa6e;letter-spacing:-0.3px;">TierAlba</h1>
-              </div>
-              <div style="padding:40px;">
-                <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Welcome${userName ? ', ' + userName : ''}!</h2>
-                <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                  Thank you for joining TierAlba. Your trading dashboard is ready.
-                </p>
-                <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 32px;">
-                  Please verify your email address to unlock all features:
-                </p>
-                <div style="text-align:center;margin:0 0 32px;">
-                  <a href="${verifyUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;text-transform:uppercase;letter-spacing:1.2px;">
-                    Verify Email
-                  </a>
-                </div>
-                <p style="color:#5c5952;font-size:12px;margin:0;">
-                  Or copy this link: ${verifyUrl}
-                </p>
-              </div>
-              <div style="background:#12131a;padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);">
-                <p style="color:#5c5952;font-size:12px;margin:0;text-align:center;">
-                  © ${new Date().getFullYear()} TierAlba · Trading involves risk
-                </p>
-              </div>
-            </div>
-          `
-        });
-        console.log(`✅ Welcome email sent to ${email}`);
-      } catch (emailErr) {
-        console.error('Email send error:', emailErr);
-        // Don't fail registration if email fails
-      }
-    }
-    
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        plan: 'free'
-      },
-      token 
-    });
-    
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
-  }
-});
-
-// LOGIN UTENTE
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Email e password sono obbligatori' 
-      });
-    }
-    
-    // Trova utente nel database
-    const result = await pool.query(
-      'SELECT id, email, name, password_hash, plan FROM users WHERE email = $1',
-      [email.toLowerCase()]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(401).json({ 
-        error: 'Email o password non corretti' 
-      });
-    }
-    
-    const user = result.rows[0];
-    
-    // Verifica password
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
-      return res.status(401).json({ 
-        error: 'Email o password non corretti' 
-      });
-    }
-    
-    // Genera token
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        plan: user.plan || 'free'
-      },
-      token
-    });
-    
-  } catch (error) {
-    console.error('Errore login:', error);
-    res.status(500).json({ 
-      error: 'Errore durante il login' 
-    });
-  }
-});
-
-// VERIFICA TOKEN (utile per il frontend)
-app.get('/api/auth/me', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, email, name, plan, created_at FROM users WHERE id = $1',
-      [req.userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Utente non trovato' });
-    }
-    
-    res.json({ user: result.rows[0] });
-  } catch (error) {
-    console.error('Errore verifica utente:', error);
-    res.status(500).json({ error: 'Errore server' });
-  }
-});
-
-// EMAIL VERIFICATION
-app.get('/api/auth/verify', async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) return res.status(400).send('Invalid verification link');
-    
-    const result = await pool.query(
-      'UPDATE users SET email_verified = true, verify_token = NULL WHERE verify_token = $1 RETURNING email',
-      [token]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.send(`
-        <html><body style="font-family:sans-serif;background:#0a0b0f;color:#f0ede6;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
-          <div style="text-align:center;">
-            <h1 style="color:#e05252;">Invalid or Expired Link</h1>
-            <p style="color:#9b978f;">This verification link is no longer valid.</p>
-            <a href="/login.html" style="color:#c8aa6e;">Go to Login</a>
-          </div>
-        </body></html>
-      `);
-    }
-    
-    res.send(`
-      <html><body style="font-family:sans-serif;background:#0a0b0f;color:#f0ede6;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
-        <div style="text-align:center;">
-          <div style="font-size:48px;margin-bottom:16px;">✅</div>
-          <h1 style="color:#c8aa6e;">Email Verified!</h1>
-          <p style="color:#9b978f;">Your email <strong>${result.rows[0].email}</strong> has been verified successfully.</p>
-          <a href="/login.html" style="display:inline-block;margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:8px;">Go to Dashboard</a>
-        </div>
-      </body></html>
-    `);
-  } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).send('Verification failed');
-  }
-});
-
-// FORGOT PASSWORD — Send reset email
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-
-    const user = await pool.query('SELECT id, name FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    
-    // Always return success to prevent email enumeration
-    if (user.rows.length === 0) {
-      return res.json({ success: true });
-    }
-
-    const crypto = require('crypto');
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    await pool.query(
-      'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
-      [resetToken, expires, user.rows[0].id]
-    );
-
-    const baseUrl = process.env.APP_URL || `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'tieralba-backend-production-f18f.up.railway.app'}`;
-    const resetUrl = `${baseUrl}/reset-password.html?token=${resetToken}`;
-    const userName = user.rows[0].name || '';
-
-    if (resend) {
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
-        to: [email.toLowerCase()],
-        subject: 'TierAlba — Reset Your Password',
-        html: `
-          <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
-            <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
-              <h1 style="margin:0;font-size:24px;color:#c8aa6e;letter-spacing:-0.3px;">TierAlba</h1>
-            </div>
-            <div style="padding:40px;">
-              <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Reset your password</h2>
-              <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                Hi${userName ? ' ' + userName : ''}, we received a request to reset your password. Click the button below to set a new one.
-              </p>
-              <div style="text-align:center;margin:0 0 32px;">
-                <a href="${resetUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;text-transform:uppercase;letter-spacing:1.2px;">
-                  Reset Password
-                </a>
-              </div>
-              <p style="color:#5c5952;font-size:12px;margin:0 0 8px;">This link expires in 1 hour.</p>
-              <p style="color:#5c5952;font-size:12px;margin:0;">If you didn't request this, you can safely ignore this email.</p>
-            </div>
-            <div style="background:#12131a;padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);">
-              <p style="color:#5c5952;font-size:12px;margin:0;text-align:center;">
-                © ${new Date().getFullYear()} TierAlba · Trading involves risk
-              </p>
-            </div>
-          </div>
-        `
-      });
-      console.log(`📧 Password reset email sent to ${email}`);
-    } else {
-      console.log(`⚠️ Resend not configured. Reset URL: ${resetUrl}`);
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ error: 'Failed to process request' });
-  }
-});
-
-// RESET PASSWORD — Set new password with token
-app.post('/api/auth/reset-password', async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required' });
-    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
-
-    const user = await pool.query(
-      'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
-      [token]
-    );
-
-    if (user.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    await pool.query(
-      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
-      [passwordHash, user.rows[0].id]
-    );
-
-    console.log(`🔒 Password reset completed for user ${user.rows[0].id}`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({ error: 'Failed to reset password' });
-  }
-});
-
-// ============================================
-// ENDPOINT: STATISTICHE DASHBOARD
-// ============================================
-
-app.get('/api/stats', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    
-    // Ottieni l'equity più recente
-    const equityResult = await pool.query(
-      'SELECT equity FROM equity_snapshots WHERE user_id = $1 ORDER BY recorded_at DESC LIMIT 1',
-      [userId]
-    );
-    
-    // Calcola statistiche dai trade
-    const statsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_trades,
-        SUM(CASE WHEN profit > 0 THEN 1 ELSE 0 END) as winning_trades,
-        SUM(CASE WHEN profit < 0 THEN 1 ELSE 0 END) as losing_trades,
-        SUM(profit) as total_profit,
-        AVG(profit) as avg_profit,
-        MAX(profit) as best_trade,
-        MIN(profit) as worst_trade
-      FROM trades 
-      WHERE user_id = $1 AND closed_at IS NOT NULL
-    `, [userId]);
-    
-    const stats = statsResult.rows[0];
-    
-    // Calcola win rate
-    const totalTrades = parseInt(stats.total_trades) || 0;
-    const winningTrades = parseInt(stats.winning_trades) || 0;
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100) : 0;
-    
-    // Calcola profit factor
-    const winningSum = await pool.query(
-      'SELECT SUM(profit) as sum FROM trades WHERE user_id = $1 AND profit > 0 AND closed_at IS NOT NULL',
-      [userId]
-    );
-    const losingSum = await pool.query(
-      'SELECT SUM(ABS(profit)) as sum FROM trades WHERE user_id = $1 AND profit < 0 AND closed_at IS NOT NULL',
-      [userId]
-    );
-    
-    const profitFactor = losingSum.rows[0].sum > 0 
-      ? (winningSum.rows[0].sum / losingSum.rows[0].sum) 
-      : 0;
-
-    // Today's profit (trades closed today)
-    const todayResult = await pool.query(
-      `SELECT COALESCE(SUM(profit), 0) as today_profit
-       FROM trades WHERE user_id = $1 AND closed_at IS NOT NULL 
-       AND closed_at >= CURRENT_DATE`,
-      [userId]
-    );
-    const todayProfit = parseFloat(todayResult.rows[0]?.today_profit) || 0;
-
-    // Open trades count
-    const openResult = await pool.query(
-      'SELECT COUNT(*) as open_count FROM trades WHERE user_id = $1 AND closed_at IS NULL',
-      [userId]
-    );
-    const openTrades = parseInt(openResult.rows[0]?.open_count) || 0;
-    
-    res.json({
-      equity: parseFloat(equityResult.rows[0]?.equity) || 0,
-      totalTrades,
-      winningTrades,
-      losingTrades: parseInt(stats.losing_trades) || 0,
-      winRate: parseFloat(winRate.toFixed(1)),
-      profitFactor: parseFloat(profitFactor.toFixed(2)),
-      totalProfit: parseFloat(stats.total_profit) || 0,
-      avgProfit: parseFloat(stats.avg_profit) || 0,
-      bestTrade: parseFloat(stats.best_trade) || 0,
-      worstTrade: parseFloat(stats.worst_trade) || 0,
-      totalWinAmount: parseFloat(winningSum.rows[0]?.sum) || 0,
-      totalLossAmount: parseFloat(losingSum.rows[0]?.sum) || 0,
-      todayProfit,
-      openTrades
-    });
-    
-  } catch (error) {
-    console.error('Errore statistiche:', error);
-    res.status(500).json({ error: 'Errore recupero statistiche' });
-  }
-});
-
-// ============================================
-// ENDPOINT: GESTIONE TRADE
-// ============================================
-
-// LISTA TRADE
-app.get('/api/trades', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
-    
-    const result = await pool.query(
-      `SELECT * FROM trades 
-       WHERE user_id = $1 
-       ORDER BY closed_at DESC NULLS FIRST
-       LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
-    );
-    
-    // Conta totale trade
-    const countResult = await pool.query(
-      'SELECT COUNT(*) FROM trades WHERE user_id = $1',
-      [userId]
-    );
-    
-    res.json({ 
-      trades: result.rows,
-      total: parseInt(countResult.rows[0].count),
-      limit,
-      offset
-    });
-    
-  } catch (error) {
-    console.error('Errore recupero trade:', error);
-    res.status(500).json({ error: 'Errore recupero trade' });
-  }
-});
-
-// AGGIUNGI TRADE MANUALMENTE
-app.post('/api/trades', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { symbol, type, lots, entryPrice, exitPrice, openedAt, closedAt } = req.body;
-    
-    // Validazione
-    if (!symbol || !type || !lots || !entryPrice) {
-      return res.status(400).json({ 
-        error: 'Campi obbligatori: symbol, type, lots, entryPrice' 
-      });
-    }
-    
-    // Calcola profit (semplificato - da adattare per simbolo)
-    let profit = 0;
-    if (exitPrice) {
-      const pipValue = 10; // Valore pip standard
-      const pips = (exitPrice - entryPrice) * 10000;
-      profit = pips * lots * pipValue * (type.toLowerCase() === 'buy' ? 1 : -1);
-    }
-    
-    const result = await pool.query(
-      `INSERT INTO trades (user_id, symbol, type, lots, entry_price, exit_price, profit, opened_at, closed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [userId, symbol, type.toUpperCase(), lots, entryPrice, exitPrice, profit, openedAt, closedAt]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      trade: result.rows[0] 
-    });
-    
-  } catch (error) {
-    console.error('Errore aggiunta trade:', error);
-    res.status(500).json({ error: 'Errore aggiunta trade' });
-  }
-});
-
-// ELIMINA TRADE
-app.delete('/api/trades/:id', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const tradeId = req.params.id;
-    
-    const result = await pool.query(
-      'DELETE FROM trades WHERE id = $1 AND user_id = $2 RETURNING id',
-      [tradeId, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Trade non trovato' });
-    }
-    
-    res.json({ success: true, message: 'Trade eliminato' });
-    
-  } catch (error) {
-    console.error('Errore eliminazione trade:', error);
-    res.status(500).json({ error: 'Errore eliminazione trade' });
-  }
-});
-
-// ============================================
-// ENDPOINT: STORICO EQUITY
-// ============================================
-
-app.get('/api/equity-history', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const days = parseInt(req.query.days) || 30;
-    
-    const result = await pool.query(
-      `SELECT equity, recorded_at 
-       FROM equity_snapshots 
-       WHERE user_id = $1 
-       AND recorded_at > NOW() - INTERVAL '1 day' * $2
-       ORDER BY recorded_at ASC`,
-      [userId, days]
-    );
-    
-    res.json({ 
-      history: result.rows.map(row => ({
-        equity: parseFloat(row.equity),
-        date: row.recorded_at
-      }))
-    });
-    
-  } catch (error) {
-    console.error('Errore storico equity:', error);
-    res.status(500).json({ error: 'Errore recupero storico' });
-  }
-});
-
-// AGGIUNGI SNAPSHOT EQUITY
-app.post('/api/equity-snapshot', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { equity } = req.body;
-    
-    if (!equity || isNaN(equity)) {
-      return res.status(400).json({ error: 'Equity non valido' });
-    }
-    
-    const result = await pool.query(
-      'INSERT INTO equity_snapshots (user_id, equity) VALUES ($1, $2) RETURNING *',
-      [userId, equity]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      snapshot: result.rows[0] 
-    });
-    
-  } catch (error) {
-    console.error('Errore snapshot equity:', error);
-    res.status(500).json({ error: 'Errore salvataggio equity' });
-  }
-});
-
-// ============================================
-// ENDPOINT: CONNESSIONE BROKER (MetaApi)
-// ============================================
-
-app.post('/api/broker/connect', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { platform, accountNumber, investorPassword, brokerName } = req.body;
-    
-    if (!platform || !accountNumber || !investorPassword || !brokerName) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-    
-    if (!['mt4', 'mt5'].includes(platform.toLowerCase())) {
-      return res.status(400).json({ error: 'Platform not supported. Use MT4 or MT5' });
-    }
-
-    const metaApiToken = process.env.METAAPI_TOKEN;
-    if (!metaApiToken) {
-      return res.status(500).json({ error: 'MetaApi not configured' });
-    }
-
-    // Create MetaApi account via REST API
-    const metaApiRes = await fetch('https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'auth-token': metaApiToken
-      },
-      body: JSON.stringify({
-        name: `TierAlba-${accountNumber}`,
-        type: 'cloud',
-        login: accountNumber,
-        password: investorPassword,
-        server: brokerName,
-        platform: platform.toLowerCase(),
-        magic: 0
-      })
-    });
-
-    const metaAccount = await metaApiRes.json();
-    
-    if (metaAccount.error || !metaAccount.id) {
-      console.error('MetaApi error:', metaAccount);
-      return res.status(400).json({ 
-        error: metaAccount.message || 'Failed to connect. Check your credentials and broker server name.' 
-      });
-    }
-
-    // Deploy the account
-    await fetch(`https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${metaAccount.id}/deploy`, {
-      method: 'POST',
-      headers: { 'auth-token': metaApiToken }
-    });
-
-    // Deactivate old connections
-    const existing = await pool.query(
-      'SELECT id FROM broker_connections WHERE user_id = $1 AND is_active = true',
-      [userId]
-    );
-    if (existing.rows.length > 0) {
-      await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [userId]);
-    }
-    
-    // Save new connection with MetaApi account ID
-    const result = await pool.query(
-      `INSERT INTO broker_connections (user_id, platform, account_number, broker_name, metaapi_account_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, true)
-       RETURNING id, platform, account_number, broker_name, created_at`,
-      [userId, platform.toLowerCase(), accountNumber, brokerName, metaAccount.id]
-    );
-    
-    res.status(201).json({ 
-      success: true,
-      message: 'Account connected successfully! Syncing data...',
-      connection: result.rows[0]
-    });
-    
-  } catch (error) {
-    console.error('Broker connect error:', error);
-    res.status(500).json({ error: 'Failed to connect broker' });
-  }
-});
-
-// SYNC ACCOUNT DATA FROM METAAPI
-app.post('/api/broker/sync', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const metaApiToken = process.env.METAAPI_TOKEN;
-    if (!metaApiToken) return res.status(500).json({ error: 'MetaApi not configured' });
-
-    const conn = await pool.query(
-      'SELECT metaapi_account_id, account_number FROM broker_connections WHERE user_id = $1 AND is_active = true',
-      [userId]
-    );
-    if (conn.rows.length === 0) return res.status(400).json({ error: 'No active broker connection' });
-
-    const accountId = conn.rows[0].metaapi_account_id;
-    const baseUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
-
-    // Step 1: Check account state
-    const stateRes = await fetch(`${baseUrl}/users/current/accounts/${accountId}`, {
-      headers: { 'auth-token': metaApiToken }
-    });
-    const stateText = await stateRes.text();
-    let state;
-    try { state = JSON.parse(stateText); } catch { 
-      console.error('MetaApi state response not JSON:', stateText.substring(0, 200));
-      return res.status(500).json({ error: 'MetaApi returned an invalid response. Try again in a minute.' });
-    }
-
-    console.log(`MetaApi account state: ${state.state}, connectionStatus: ${state.connectionStatus}`);
-
-    if (state.state !== 'DEPLOYED') {
-      await fetch(`${baseUrl}/users/current/accounts/${accountId}/deploy`, {
-        method: 'POST',
-        headers: { 'auth-token': metaApiToken }
-      });
-      return res.json({ success: false, error: 'Account is being deployed. Please try syncing again in 1-2 minutes.' });
-    }
-
-    if (state.connectionStatus !== 'CONNECTED') {
-      return res.json({ success: false, error: `Account status: ${state.connectionStatus}. Please wait and try again.` });
-    }
-
-    // Step 2: Get client API URL
-    const region = state.region || 'vint-hill';
-    const clientUrl = `https://mt-client-api-v1.${region}.agiliumtrade.ai`;
-    console.log(`MetaApi using client URL: ${clientUrl}`);
-
-    // Step 3: Get account info (equity, balance)
-    const infoRes = await fetch(`${clientUrl}/users/current/accounts/${accountId}/account-information`, {
-      headers: { 'auth-token': metaApiToken }
-    });
-    const infoText = await infoRes.text();
-    let info;
-    try { info = JSON.parse(infoText); } catch {
-      console.error('MetaApi info response not JSON:', infoText.substring(0, 200));
-      return res.status(500).json({ error: 'Could not fetch account info. Try again in a minute.' });
-    }
-
-    if (info.equity !== undefined) {
-      await pool.query(
-        'INSERT INTO equity_snapshots (user_id, equity, balance, recorded_at) VALUES ($1, $2, $3, NOW())',
-        [userId, info.equity, info.balance]
-      );
-    }
-
-    let synced = 0;
-
-    // Step 4: Get OPEN POSITIONS
-    try {
-      const posRes = await fetch(`${clientUrl}/users/current/accounts/${accountId}/positions`, {
-        headers: { 'auth-token': metaApiToken }
-      });
-      const posText = await posRes.text();
-      let positions = [];
-      try { positions = JSON.parse(posText); } catch {
-        console.error('MetaApi positions not JSON:', posText.substring(0, 200));
-      }
-
-      // Clear old open trades for this user then re-insert current open positions
-      if (Array.isArray(positions) && positions.length > 0) {
-        await pool.query('DELETE FROM trades WHERE user_id = $1 AND closed_at IS NULL AND external_id IS NOT NULL', [userId]);
-        
-        for (const pos of positions) {
-          try {
-            await pool.query(`
-              INSERT INTO trades (user_id, symbol, type, lots, entry_price, profit, opened_at, closed_at, external_id)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, $8)
-              ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $6, lots = $4
-            `, [
-              userId,
-              pos.symbol || 'UNKNOWN',
-              (pos.type === 'POSITION_TYPE_BUY' ? 'BUY' : 'SELL'),
-              pos.volume || 0,
-              pos.openPrice || 0,
-              pos.profit || 0,
-              pos.time || new Date().toISOString(),
-              'pos-' + (pos.id || pos.symbol + '-' + Date.now())
-            ]);
-            synced++;
-          } catch (dbErr) {
-            console.error('Position insert error:', dbErr.message);
-          }
-        }
-      }
-      console.log(`📊 Synced ${positions.length || 0} open positions`);
-    } catch (posErr) {
-      console.error('Positions fetch error:', posErr.message);
-    }
-
-    // Step 5: Get CLOSED DEALS (history-orders gives completed trades)
-    try {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const now = new Date().toISOString();
-      
-      const tradesRes = await fetch(
-        `${clientUrl}/users/current/accounts/${accountId}/history-deals/time/${thirtyDaysAgo}/${now}`,
-        { headers: { 'auth-token': metaApiToken } }
-      );
-      const tradesText = await tradesRes.text();
-      let rawDeals;
-      try { rawDeals = JSON.parse(tradesText); } catch {
-        console.error('MetaApi deals response not JSON:', tradesText.substring(0, 200));
-        rawDeals = null;
-      }
-
-      // MetaAPI returns either an array directly or { deals: [...] }
-      let deals = [];
-      if (Array.isArray(rawDeals)) {
-        deals = rawDeals;
-      } else if (rawDeals && Array.isArray(rawDeals.deals)) {
-        deals = rawDeals.deals;
-      }
-
-      console.log(`📊 MetaApi returned ${deals.length} deals`);
-
-      // Filter only actual CLOSING trade deals
-      // - Must be BUY or SELL type
-      // - Must be DEAL_ENTRY_OUT (closing a position) — DEAL_ENTRY_IN is opening
-      // - Must have a symbol (balance/credit operations don't)
-      // - Exclude deals with 0 volume (not real trades)
-      const tradingDeals = deals.filter(d => 
-        (d.type === 'DEAL_TYPE_BUY' || d.type === 'DEAL_TYPE_SELL') &&
-        d.entryType === 'DEAL_ENTRY_OUT' &&
-        d.symbol &&
-        d.volume > 0
-      );
-
-      console.log(`📊 Filtered to ${tradingDeals.length} closing deals`);
-
-      for (const deal of tradingDeals) {
-        try {
-          await pool.query(`
-            INSERT INTO trades (user_id, symbol, type, lots, entry_price, exit_price, profit, opened_at, closed_at, external_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            ON CONFLICT (user_id, external_id) DO UPDATE SET profit = $7, exit_price = $6, closed_at = $9
-          `, [
-            userId,
-            deal.symbol || 'UNKNOWN',
-            deal.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL',
-            deal.volume || 0,
-            deal.price || 0,
-            deal.price || 0,
-            deal.profit || 0,
-            deal.brokerTime || deal.time || new Date().toISOString(),
-            deal.brokerTime || deal.time || new Date().toISOString(),
-            'deal-' + (deal.id || `${Date.now()}-${synced}`)
-          ]);
-          synced++;
-        } catch (dbErr) {
-          console.error('Deal insert error:', dbErr.message);
-        }
-      }
-    } catch (dealErr) {
-      console.error('Deals fetch error:', dealErr.message);
-    }
-
-    console.log(`✅ Sync complete: ${synced} trades synced for user ${userId}`);
-
-    res.json({ 
-      success: true, 
-      synced,
-      account: {
-        equity: info.equity || 0,
-        balance: info.balance || 0,
-        profit: (info.equity || 0) - (info.balance || 0)
-      }
-    });
-    
-  } catch (error) {
-    console.error('Sync error:', error);
-    res.status(500).json({ error: 'Sync failed. Please try again.' });
-  }
-});
-
-// GET BROKER CONNECTIONS
-app.get('/api/broker/connections', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(
-      `SELECT id, platform, account_number, broker_name, is_active, created_at 
-       FROM broker_connections WHERE user_id = $1 ORDER BY created_at DESC`,
-      [userId]
-    );
-    res.json({ connections: result.rows });
-  } catch (error) {
-    console.error('Connections error:', error);
-    res.status(500).json({ error: 'Failed to get connections' });
-  }
-});
-
-// DISCONNECT BROKER
-app.post('/api/broker/disconnect', authenticateToken, async (req, res) => {
-  try {
-    await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [req.userId]);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to disconnect' });
-  }
-});
-
-// PANIC: Close all open trades
-app.post('/api/broker/close-all', authenticateToken, async (req, res) => {
-  try {
-    // Get active broker connection
-    const conn = await pool.query(
-      'SELECT * FROM broker_connections WHERE user_id = $1 AND is_active = true LIMIT 1',
-      [req.userId]
-    );
-
-    if (conn.rows.length === 0) {
-      return res.status(400).json({ error: 'No active broker connection' });
-    }
-
-    // Close all open trades in database (mark as closed at current time)
-    const result = await pool.query(
-      `UPDATE trades SET closed_at = NOW(), exit_price = entry_price, profit = 0 
-       WHERE user_id = $1 AND closed_at IS NULL 
-       RETURNING id`,
-      [req.userId]
-    );
-
-    const closedCount = result.rowCount || 0;
-
-    // Note: In production with MetaApi, you would also call:
-    // metaApi.closeAllPositions(accountId)
-    // For now we just update the database
-
-    console.log(`PANIC: User ${req.userId} closed ${closedCount} trades`);
-    res.json({ success: true, closed: closedCount, message: 'All trades marked as closed' });
-
-  } catch (error) {
-    console.error('Close-all error:', error);
-    res.status(500).json({ error: 'Failed to close trades' });
-  }
-});
-
-// ============================================
-// ENDPOINT: REFERRAL SYSTEM
-// ============================================
-
-// Generate referral code on first access
-app.get('/api/referral/info', authenticateToken, async (req, res) => {
-  try {
-    const user = await pool.query('SELECT id, email, referral_code, referral_balance, referral_total_earned, usdt_wallet FROM users WHERE id = $1', [req.userId]);
-    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    let { referral_code, referral_balance, referral_total_earned, usdt_wallet } = user.rows[0];
-
-    // Auto-generate referral code if not set
-    if (!referral_code) {
-      const crypto = require('crypto');
-      referral_code = 'TIER-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-      await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [referral_code, req.userId]);
-    }
-
-    // Get referral stats
-    const referrals = await pool.query(
-      'SELECT COUNT(*) as count FROM users WHERE referred_by = $1',
-      [referral_code]
-    );
-
-    const commissions = await pool.query(
-      'SELECT * FROM referral_commissions WHERE referrer_id = $1 ORDER BY created_at DESC LIMIT 20',
-      [req.userId]
-    );
-
-    const pendingPayouts = await pool.query(
-      'SELECT * FROM referral_payouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10',
-      [req.userId]
-    );
-
-    res.json({
-      referral_code,
-      balance: parseFloat(referral_balance) || 0,
-      total_earned: parseFloat(referral_total_earned) || 0,
-      total_referrals: parseInt(referrals.rows[0].count) || 0,
-      usdt_wallet: usdt_wallet || '',
-      commissions: commissions.rows,
-      payouts: pendingPayouts.rows,
-      commission_rate: 15,
-      min_payout: 50
-    });
-  } catch (error) {
-    console.error('Referral info error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Save USDT wallet
-app.post('/api/referral/wallet', authenticateToken, async (req, res) => {
-  try {
-    const { wallet } = req.body;
-    if (!wallet || wallet.length < 10) return res.status(400).json({ error: 'Invalid wallet address' });
-    await pool.query('UPDATE users SET usdt_wallet = $1 WHERE id = $2', [wallet.trim(), req.userId]);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Request payout
-app.post('/api/referral/payout', authenticateToken, async (req, res) => {
-  try {
-    const user = await pool.query('SELECT referral_balance, usdt_wallet FROM users WHERE id = $1', [req.userId]);
-    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    const balance = parseFloat(user.rows[0].referral_balance) || 0;
-    const wallet = user.rows[0].usdt_wallet;
-
-    if (balance < 50) return res.status(400).json({ error: 'Minimum payout is €50. Current balance: €' + balance.toFixed(2) });
-    if (!wallet) return res.status(400).json({ error: 'Please set your USDT wallet address first' });
-
-    // Check for existing pending payout
-    const pending = await pool.query(
-      'SELECT id FROM referral_payouts WHERE user_id = $1 AND status = $2',
-      [req.userId, 'pending']
-    );
-    if (pending.rows.length > 0) return res.status(400).json({ error: 'You already have a pending payout request' });
-
-    // Create payout and deduct balance
-    await pool.query(
-      'INSERT INTO referral_payouts (user_id, amount, usdt_wallet) VALUES ($1, $2, $3)',
-      [req.userId, balance, wallet]
-    );
-    await pool.query('UPDATE users SET referral_balance = 0 WHERE id = $1', [req.userId]);
-
-    res.json({ success: true, amount: balance, message: 'Payout request submitted! We will process it within 48 hours.' });
-  } catch (error) {
-    console.error('Payout error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================
-// ENDPOINT: TRADING SIGNALS
-// ============================================
-
-// Get signals (for clients)
-app.get('/api/signals', authenticateToken, async (req, res) => {
-  try {
-    // Check plan - only standard and pro
-    const user = await pool.query('SELECT plan FROM users WHERE id = $1', [req.userId]);
-    const plan = user.rows[0]?.plan || 'free';
-    if (plan === 'free') return res.status(403).json({ error: 'Upgrade to Standard or Pro to access signals' });
-
-    const limit = parseInt(req.query.limit) || 30;
-    const result = await pool.query(
-      'SELECT * FROM signals ORDER BY created_at DESC LIMIT $1',
-      [limit]
-    );
-    res.json({ signals: result.rows });
-  } catch (error) {
-    console.error('Signals error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Create signal (admin only)
-app.post('/api/signals', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
-    const { source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes } = req.body;
-    if (!symbol || !direction) return res.status(400).json({ error: 'Symbol and direction required' });
-
-    const result = await pool.query(
-      `INSERT INTO signals (source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [source || 'team', symbol.toUpperCase(), direction.toUpperCase(), entry_price || null, stop_loss || null, tp1 || null, tp2 || null, tp3 || null, notes || null]
-    );
-    
-    console.log(`📡 New signal: ${direction} ${symbol} @ ${entry_price}`);
-    res.status(201).json({ success: true, signal: result.rows[0] });
-  } catch (error) {
-    console.error('Create signal error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Update signal status (admin only)
-app.put('/api/signals/:id', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
-    const { status, result } = req.body;
-    await pool.query(
-      'UPDATE signals SET status = $1, result = $2, closed_at = CASE WHEN $1 = $3 THEN NOW() ELSE closed_at END WHERE id = $4',
-      [status, result || null, 'closed', req.params.id]
-    );
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Delete signal (admin only)
-app.delete('/api/signals/:id', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
-    const result = await pool.query('DELETE FROM signals WHERE id = $1 RETURNING id', [req.params.id]);
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Signal not found' });
-
-    console.log(`Signal ${req.params.id} deleted by admin`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Delete signal error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Get all signals for admin
-app.get('/api/admin/signals', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    console.log('Admin login attempt. Key received:', JSON.stringify(adminKey), 'Expected:', JSON.stringify(process.env.ADMIN_KEY));
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
-    const result = await pool.query('SELECT * FROM signals ORDER BY created_at DESC LIMIT 100');
-    res.json({ signals: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================
-// EA auto-close signal by symbol
-app.post('/api/ea/close-signal', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-
-    const { symbol, result } = req.body;
-    if (!symbol || !result) return res.status(400).json({ error: 'Symbol and result required' });
-
-    // Close the most recent active signal for this symbol
-    const updated = await pool.query(
-      `UPDATE signals SET status = 'closed', result = $1, closed_at = NOW() 
-       WHERE symbol = $2 AND status = 'active' 
-       AND id = (SELECT id FROM signals WHERE symbol = $2 AND status = 'active' ORDER BY created_at DESC LIMIT 1)
-       RETURNING id`,
-      [result, symbol.toUpperCase()]
-    );
-
-    if (updated.rows.length > 0) {
-      console.log(`📡 EA closed signal: ${symbol} → ${result}`);
-      res.json({ success: true, closed_id: updated.rows[0].id });
-    } else {
-      res.json({ success: false, message: 'No active signal found for ' + symbol });
-    }
-  } catch (error) {
-    console.error('EA close signal error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ENDPOINT: REFUND REQUESTS
-// ============================================
-
-app.post('/api/refund/request', authenticateToken, async (req, res) => {
-  try {
-    const { reason, details } = req.body;
-    if (!reason) return res.status(400).json({ error: 'Reason is required' });
-
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    // Check for existing pending request
-    const existing = await pool.query(
-      'SELECT id FROM refund_requests WHERE user_id = $1 AND status = $2',
-      [req.userId, 'pending']
-    );
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'You already have a pending refund request' });
-    }
-
-    await pool.query(
-      'INSERT INTO refund_requests (user_id, email, reason, details) VALUES ($1, $2, $3, $4)',
-      [req.userId, userResult.rows[0].email, reason, details || '']
-    );
-
-    res.json({ success: true, message: 'Refund request submitted successfully' });
-  } catch (error) {
-    console.error('Refund request error:', error);
-    res.status(500).json({ error: 'Failed to submit refund request' });
-  }
-});
-
-app.get('/api/refund/status', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, reason, status, created_at, reviewed_at FROM refund_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5',
-      [req.userId]
-    );
-    res.json({ requests: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================
-// ENDPOINT: STRIPE SUBSCRIPTION
-// ============================================
-
-// Create checkout session
-app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
-  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
-  
-  try {
-    const { priceId } = req.body;
-    if (!priceId) return res.status(400).json({ error: 'Price ID required' });
-    
-    // Get user email
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      customer_email: userResult.rows[0].email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard?upgrade=success`,
-      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard?upgrade=cancelled`,
-      metadata: { userId: req.userId.toString() }
-    });
-    
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error('Stripe checkout error:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
-  }
-});
-
-// Get user plan
-app.get('/api/user/plan', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT plan, stripe_customer_id, stripe_subscription_id FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json({ plan: result.rows[0].plan || 'free' });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Stripe billing portal (manage subscription)
-app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
-  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
-  
-  try {
-    const result = await pool.query('SELECT stripe_customer_id FROM users WHERE id = $1', [req.userId]);
-    if (!result.rows[0]?.stripe_customer_id) {
-      return res.status(400).json({ error: 'No subscription found' });
-    }
-    
-    const session = await stripe.billingPortal.sessions.create({
-      customer: result.rows[0].stripe_customer_id,
-      return_url: `${req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard`
-    });
-    
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error('Portal error:', error);
-    res.status(500).json({ error: 'Failed to create portal session' });
-  }
-});
-
-// ============================================
-// ============================================
-// EA LICENSE VERIFICATION SYSTEM
-// ============================================
-
-// Generate a unique license key
-function generateLicenseKey() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const segments = [];
-  for (let s = 0; s < 4; s++) {
-    let segment = '';
-    for (let i = 0; i < 5; i++) {
-      segment += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    segments.push(segment);
-  }
-  return 'TA-' + segments.join('-');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TierAlba — Professional Prop Firm Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#06070a;--surface:rgba(14,15,22,0.6);--surface-solid:#0e0f16;
+  --surface-2:#13141c;--surface-3:#1a1c26;
+  --border:rgba(255,255,255,0.04);--border-h:rgba(200,169,78,0.15);
+  --gold:#c8a94e;--gold-l:#e8d5a0;--gold-d:rgba(200,169,78,0.06);
+  --gold-glow:rgba(200,169,78,0.12);
+  --text:#ece8de;--text-2:#8e897e;--text-3:#55514a;
+  --green:#5ee0a0;--red:#e87272;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-back:cubic-bezier(.34,1.56,.64,1);
 }
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(200,169,78,0.25)}
+a{text-decoration:none;color:inherit}
+.g{color:var(--gold)}
 
-// POST /api/ea/verify — Called by the EA from MetaTrader
-app.post('/api/ea/verify', async (req, res) => {
-  try {
-    const { license_key, product, account } = req.body;
+/* ═══ GRAIN ═══ */
+#grain{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:0.35}
 
-    if (!license_key) {
-      return res.json({ valid: false, error: 'No license key provided' });
-    }
+/* ═══ GLOW CURSOR ═══ */
+#glow{position:fixed;width:500px;height:500px;border-radius:50%;pointer-events:none;z-index:1;
+  background:radial-gradient(circle,rgba(200,169,78,0.04) 0%,transparent 70%);
+  transform:translate(-50%,-50%);transition:opacity 0.4s}
+.cursor-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:10001;transition:transform 0.08s;mix-blend-mode:exclusion}
+.cursor-ring{width:40px;height:40px;border:1.5px solid rgba(200,169,78,0.3);border-radius:50%;position:fixed;pointer-events:none;z-index:10001;transition:all 0.18s ease-out}
+.cursor-ring.active{transform:scale(1.6);border-color:var(--gold);background:rgba(200,169,78,0.04)}
+@media(max-width:768px){.cursor-dot,.cursor-ring,#glow{display:none!important}}
 
-    const result = await pool.query(
-      `SELECT el.*, u.plan, u.plan_expires_at, u.email
-       FROM ea_licenses el
-       JOIN users u ON u.id = el.user_id
-       WHERE el.license_key = $1 AND el.product = $2 AND el.is_active = true`,
-      [license_key, product || 'any']
-    );
+/* ═══ SHAPES ═══ */
+.shape{position:absolute;pointer-events:none;opacity:0.04;z-index:0}
+.shape-diamond{width:60px;height:60px;border:1.5px solid var(--gold);transform:rotate(45deg);animation:shapeFloat 20s ease-in-out infinite}
+.shape-circle{width:80px;height:80px;border:1.5px solid var(--gold);border-radius:50%;animation:shapeFloat 25s ease-in-out infinite reverse}
+.shape-cross{width:40px;height:40px;position:relative}
+.shape-cross::before,.shape-cross::after{content:'';position:absolute;background:var(--gold)}
+.shape-cross::before{width:100%;height:1.5px;top:50%;left:0}
+.shape-cross::after{width:1.5px;height:100%;top:0;left:50%}
+.shape-cross{animation:shapeSpin 30s linear infinite}
+@keyframes shapeFloat{0%,100%{transform:rotate(45deg) translate(0,0)}25%{transform:rotate(45deg) translate(15px,-20px)}50%{transform:rotate(45deg) translate(-10px,25px)}75%{transform:rotate(45deg) translate(20px,10px)}}
+@keyframes shapeSpin{to{transform:rotate(360deg)}}
 
-    if (result.rows.length === 0) {
-      return res.json({ valid: false, error: 'License not found or inactive' });
-    }
+/* ═══ NAV ═══ */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:72px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(6,7,10,0.6);backdrop-filter:blur(32px) saturate(1.5);
+  border-bottom:1px solid var(--border);transition:all 0.5s var(--ease)}
+.nav.scrolled{height:60px;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px;letter-spacing:-0.3px}
+.nav-logo .logo-text{display:inline}
+.nav-mark{width:38px;height:38px;background:linear-gradient(145deg,var(--gold),#b59840,var(--gold-l));border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#06070a;
+  box-shadow:0 4px 24px rgba(200,169,78,0.3),inset 0 1px 0 rgba(255,255,255,0.2);transition:all 0.4s var(--ease-back)}
+.nav-mark:hover{transform:rotate(-8deg) scale(1.1)}
+.nav-mid{display:flex;gap:28px}
+.nav-mid a{font-size:12px;font-weight:500;color:var(--text-2);letter-spacing:0.5px;text-transform:uppercase;
+  transition:color 0.3s;position:relative;padding:4px 0;white-space:nowrap}
+.nav-mid a::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--gold);
+  transform:scaleX(0);transition:transform 0.4s var(--ease);transform-origin:right}
+.nav-mid a:hover{color:var(--text)}
+.nav-mid a:hover::after{transform:scaleX(1);transform-origin:left}
+.nav-end{display:flex;align-items:center;gap:14px}
+.nav-cta{padding:10px 28px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b59840);
+  color:#06070a;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;
+  transition:all 0.4s var(--ease);border:none;cursor:pointer;box-shadow:0 2px 16px rgba(200,169,78,0.2);
+  position:relative;overflow:hidden}
+.nav-cta::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 20%,rgba(255,255,255,0.2) 50%,transparent 80%);
+  transform:translateX(-100%);transition:transform 0.6s}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,169,78,0.35)}
+.nav-cta:hover::before{transform:translateX(100%)}
 
-    const license = result.rows[0];
+.mob-toggle{display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;
+  color:var(--text);cursor:pointer;align-items:center;justify-content:center;font-size:18px;transition:all 0.3s;z-index:1002}
+.mob-toggle:hover{border-color:var(--gold);color:var(--gold)}
 
-    // Check if subscription is active
-    const subActive = license.plan === 'standard' || license.plan === 'pro';
-    const subNotExpired = !license.plan_expires_at || new Date(license.plan_expires_at) > new Date();
+.mob-menu{position:fixed;inset:0;z-index:1001;background:rgba(6,7,10,0.97);backdrop-filter:blur(32px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;transition:all 0.4s var(--ease);pointer-events:none}
+.mob-menu.open{opacity:1;visibility:visible;pointer-events:all}
+.mob-menu-close{position:absolute;top:20px;right:20px;width:44px;height:44px;border-radius:12px;
+  border:1px solid var(--border);background:transparent;color:var(--text);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;transition:all 0.3s}
+.mob-menu-close:hover{border-color:var(--gold);color:var(--gold)}
+.mob-menu-links{display:flex;flex-direction:column;align-items:center;gap:0}
+.mob-menu-links a{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--text-2);
+  padding:16px 0;transition:all 0.3s;position:relative;letter-spacing:-0.5px}
+.mob-menu-links a:hover,.mob-menu-links a:active{color:var(--gold)}
+.mob-menu-links a::after{content:'';position:absolute;bottom:12px;left:50%;transform:translateX(-50%) scaleX(0);
+  width:40px;height:1px;background:var(--gold);transition:transform 0.3s var(--ease)}
+.mob-menu-links a:hover::after{transform:translateX(-50%) scaleX(1)}
+.mob-menu-cta{margin-top:32px;padding:16px 48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
+  font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;
+  letter-spacing:1.5px;border:none;cursor:pointer;transition:all 0.3s}
+.mob-menu-cta:hover{transform:scale(1.05);box-shadow:0 8px 30px rgba(200,169,78,0.35)}
 
-    if (!subActive || !subNotExpired) {
-      return res.json({ valid: false, expired: true, error: 'Subscription expired' });
-    }
+/* ═══ HERO ═══ */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:160px 32px 100px;position:relative;overflow:hidden}
+.hero-mesh{position:absolute;inset:0;overflow:hidden;z-index:0}
+.mesh-blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.5}
+.mesh-1{width:60vw;height:60vw;max-width:800px;max-height:800px;top:-20%;right:-15%;
+  background:radial-gradient(circle,rgba(200,169,78,0.07) 0%,transparent 70%);animation:meshMove1 22s ease-in-out infinite}
+.mesh-2{width:50vw;height:50vw;max-width:600px;max-height:600px;bottom:-15%;left:-10%;
+  background:radial-gradient(circle,rgba(94,224,160,0.035) 0%,transparent 70%);animation:meshMove2 28s ease-in-out infinite}
+.mesh-3{width:35vw;height:35vw;max-width:400px;max-height:400px;top:40%;left:55%;
+  background:radial-gradient(circle,rgba(200,169,78,0.04) 0%,transparent 70%);animation:meshMove3 18s ease-in-out infinite}
+@keyframes meshMove1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-50px,40px) scale(1.1)}66%{transform:translate(30px,-60px) scale(0.95)}}
+@keyframes meshMove2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,-40px) scale(1.15)}}
+@keyframes meshMove3{0%,100%{transform:translate(0,0)}33%{transform:translate(-30px,50px)}66%{transform:translate(40px,-20px)}}
+.hero-grid-bg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:200%;pointer-events:none;opacity:0.025;z-index:0;
+  height:60vh;overflow:hidden}
+.hero-grid-bg::before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(200,169,78,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(200,169,78,0.6) 1px,transparent 1px);
+  background-size:60px 60px;transform:perspective(400px) rotateX(65deg);transform-origin:center bottom}
+#particles{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero-content{position:relative;z-index:2}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:10px 24px;border-radius:100px;
+  background:linear-gradient(135deg,var(--gold-d),rgba(200,169,78,0.02));border:1px solid rgba(200,169,78,0.08);
+  font-size:13px;font-weight:600;color:var(--gold);margin-bottom:40px;
+  opacity:0;animation:heroIn 1s var(--ease) 0.3s forwards}
+.eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 16px rgba(94,224,160,0.6);animation:blink 2.5s infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(46px,8.5vw,92px);font-weight:800;
+  line-height:0.98;letter-spacing:-3px;margin-bottom:32px;max-width:880px;
+  opacity:0;animation:heroIn 1.2s var(--ease) 0.5s forwards}
+.hero h1 .g::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--gold),transparent);border-radius:2px;
+  transform:scaleX(0);animation:lineGrow 0.8s var(--ease) 1.4s forwards;transform-origin:left}
+.hero h1 .g{position:relative;display:inline-block}
+@keyframes lineGrow{to{transform:scaleX(1)}}
+.hero-desc{font-size:clamp(16px,2vw,19px);font-weight:400;color:var(--text-2);
+  max-width:620px;margin:0 auto 56px;line-height:1.8;
+  opacity:0;animation:heroIn 1s var(--ease) 0.7s forwards}
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+  opacity:0;animation:heroIn 1s var(--ease) 0.9s forwards}
+@keyframes heroIn{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+.scroll-ind{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;animation:heroIn 1s var(--ease) 1.4s forwards}
+.scroll-mouse{width:24px;height:38px;border:2px solid var(--text-3);border-radius:12px;position:relative}
+.scroll-dot{width:3px;height:8px;background:var(--gold);border-radius:2px;position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  animation:scrollBounce 1.8s infinite}
+@keyframes scrollBounce{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(14px)}}
+.scroll-text{font-size:10px;color:var(--text-3);letter-spacing:3px;text-transform:uppercase;font-weight:600}
 
-    // Update last verification time and MT account
-    await pool.query(
-      `UPDATE ea_licenses SET last_verified = NOW(), mt_account = $1, verification_count = verification_count + 1
-       WHERE id = $2`,
-      [account || null, license.id]
-    );
+/* Buttons */
+.btn-p{padding:18px 48px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,var(--gold),#b59840,var(--gold-l));background-size:200% 200%;background-position:0 50%;
+  color:#06070a;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all 0.4s var(--ease);
+  position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(200,169,78,0.2);display:inline-flex;align-items:center;gap:8px}
+.btn-p::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 20%,rgba(255,255,255,0.25) 50%,transparent 80%);
+  transform:translateX(-100%);transition:transform 0.7s}
+.btn-p:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 12px 48px rgba(200,169,78,0.35);background-position:100% 50%}
+.btn-p:hover::after{transform:translateX(100%)}
+.btn-p:active{transform:translateY(0) scale(0.98)}
+.btn-g{padding:18px 48px;border:1px solid var(--border);border-radius:14px;background:transparent;
+  color:var(--text-2);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;
+  cursor:pointer;transition:all 0.4s var(--ease);display:inline-flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
+.btn-g:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-3px);background:var(--gold-d)}
+.btn-g .arr{transition:transform 0.3s var(--ease);display:inline-block}
+.btn-g:hover .arr{transform:translateX(5px)}
 
-    return res.json({ valid: true, product: license.product, email: license.email });
+/* ═══ PARTNERS ═══ */
+.partners{padding:28px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;position:relative}
+.partners::before,.partners::after{content:'';position:absolute;top:0;bottom:0;width:150px;z-index:2;pointer-events:none}
+.partners::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.partners::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
+.p-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
+.p-track img{height:24px;margin:0 52px;opacity:0.3;filter:brightness(0) invert(1);transition:all 0.4s}
+.p-track img:hover{opacity:0.6;transform:scale(1.05)}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-  } catch (err) {
-    console.error('EA verify error:', err);
-    return res.json({ valid: false, error: 'Server error' });
-  }
-});
+/* ═══ STATS ═══ */
+.stats-sec{padding:100px 32px}
+.stats-row{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.stat-card{text-align:center;padding:48px 24px;border-radius:20px;
+  background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:25%;right:25%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,169,78,0.25),transparent)}
+.stat-card::after{content:'';position:absolute;inset:0;border-radius:20px;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(200,169,78,0.04) 0%,transparent 60%);
+  opacity:0;transition:opacity 0.4s;pointer-events:none}
+.stat-card:hover{transform:translateY(-8px);border-color:var(--border-h);box-shadow:0 24px 64px rgba(200,169,78,0.06)}
+.stat-card:hover::after{opacity:1}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:clamp(42px,6vw,58px);font-weight:700;color:var(--gold);line-height:1;margin-bottom:12px}
+.stat-lbl{font-size:14px;color:var(--text-2);font-weight:500;letter-spacing:0.5px}
 
-// GET /api/ea/license — Get user's license keys (requires auth)
-app.get('/api/ea/license', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, license_key, product, is_active, created_at, last_verified, mt_account, verification_count
-       FROM ea_licenses WHERE user_id = $1 ORDER BY created_at DESC`,
-      [req.userId]
-    );
-    res.json({ licenses: result.rows });
-  } catch (err) {
-    console.error('Get licenses error:', err);
-    res.status(500).json({ error: 'Errore server' });
-  }
-});
+/* ═══ SECTION HEADER ═══ */
+.sh{text-align:center;margin-bottom:72px}
+.sh-tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:3px;
+  margin-bottom:20px;padding:7px 18px;border-radius:8px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.06)}
+.sh-tag::before{content:'';width:4px;height:4px;background:var(--gold);border-radius:50%}
+.sh-title{font-family:'Playfair Display',serif;font-size:clamp(34px,5vw,54px);font-weight:700;letter-spacing:-2px;line-height:1.1;margin-bottom:18px}
+.sh-sub{font-size:16px;color:var(--text-2);max-width:500px;margin:0 auto;line-height:1.7}
 
-// POST /api/ea/license/generate — Generate license keys for user (requires auth + active sub)
-app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
-  try {
-    // Check subscription
-    const user = await pool.query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId]);
-    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+/* ═══ OUR SERVICES (NEW) ═══ */
+.svc-sec{padding:120px 32px}
+.svc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1200px;margin:0 auto}
+.svc-block{padding:48px 36px;border-radius:24px;background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden}
+.svc-block::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,169,78,0.2),transparent);opacity:0;transition:opacity 0.4s}
+.svc-block:hover{border-color:var(--border-h);transform:translateY(-8px);box-shadow:0 24px 80px rgba(200,169,78,0.06)}
+.svc-block:hover::before{opacity:1}
+.svc-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);letter-spacing:2px;margin-bottom:20px}
+.svc-ic{width:64px;height:64px;border-radius:18px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);
+  display:flex;align-items:center;justify-content:center;margin-bottom:28px;transition:all 0.4s}
+.svc-block:hover .svc-ic{background:linear-gradient(135deg,var(--gold),#b59840);box-shadow:0 8px 32px rgba(200,169,78,0.3)}
+.svc-ic svg{width:28px;height:28px;stroke:var(--gold);fill:none;stroke-width:1.5;transition:stroke 0.4s}
+.svc-block:hover .svc-ic svg{stroke:#06070a}
+.svc-block h3{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:12px}
+.svc-block .svc-sub{font-size:15px;color:var(--gold);font-weight:600;margin-bottom:20px}
+.svc-block p{font-size:14px;color:var(--text-2);line-height:1.8;margin-bottom:28px}
+.svc-features{list-style:none;margin-bottom:32px}
+.svc-features li{padding:10px 0;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.svc-features li:last-child{border:none}
+.svc-features li::before{content:'✓';font-size:11px;font-weight:700;color:var(--green);width:22px;height:22px;
+  background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.08);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.svc-cta{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;
+  background:var(--gold-d);border:1px solid rgba(200,169,78,0.1);color:var(--gold);
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  transition:all 0.4s var(--ease);cursor:pointer}
+.svc-cta:hover{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;border-color:transparent;
+  box-shadow:0 8px 32px rgba(200,169,78,0.3);transform:translateY(-2px)}
+.svc-cta .arr{transition:transform 0.3s}
+.svc-cta:hover .arr{transform:translateX(4px)}
 
-    const u = user.rows[0];
-    const subActive = u.plan === 'standard' || u.plan === 'pro';
-    const subNotExpired = !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
+/* ═══ PRICING ═══ */
+.pricing-sec{padding:120px 32px;position:relative}
+.pricing-sec .ambient{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:900px;height:900px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,169,78,0.03) 0%,transparent 60%);pointer-events:none}
+.svc-sel{display:flex;gap:4px;justify-content:center;margin-bottom:60px;padding:5px;
+  background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;
+  max-width:500px;margin-left:auto;margin-right:auto;box-shadow:0 4px 24px rgba(0,0,0,0.1)}
+.svc-btn{flex:1;padding:15px 20px;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all 0.4s var(--ease);background:transparent;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.svc-btn.on{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.3)}
+.svc-btn:hover:not(.on){color:var(--text);background:rgba(255,255,255,0.02)}
+.pnl{display:none;position:relative}.pnl.on{display:block;animation:pnlUp 0.5s var(--ease)}
+@keyframes pnlUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.sw{position:relative}
+.sw::before,.sw::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:3;pointer-events:none}
+.sw::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.sw::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
+.sc{display:flex;gap:20px;padding:16px 32px 36px;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:1200px;margin:0 auto}
+.sc::-webkit-scrollbar{display:none}
+.s-nav{display:flex;justify-content:center;gap:12px;margin-top:20px}
+.s-arr{width:46px;height:46px;border-radius:50%;border:1px solid var(--border);background:var(--surface);backdrop-filter:blur(8px);
+  color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.3s var(--ease)}
+.s-arr:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d);transform:scale(1.05)}
+.s-arr:active{transform:scale(0.95)}
+.gcard{border-radius:22px;padding:44px 32px;text-align:center;
+  background:var(--surface);backdrop-filter:blur(20px);
+  border:1px solid var(--border);transition:all 0.5s var(--ease);
+  position:relative;overflow:hidden;flex-shrink:0;scroll-snap-align:center;
+  transform-style:preserve-3d;perspective:800px}
+.gcard::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,169,78,0.2),transparent);transition:opacity 0.4s;opacity:0}
+.gcard-shine{position:absolute;inset:0;border-radius:22px;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(200,169,78,0.06) 0%,transparent 50%);
+  opacity:0;transition:opacity 0.4s;pointer-events:none}
+.gcard:hover{border-color:var(--border-h);box-shadow:0 24px 80px rgba(200,169,78,0.08)}
+.gcard:hover::before{opacity:1}
+.gcard:hover .gcard-shine{opacity:1}
+.tp{min-width:215px}
+.tp-tier{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.tp-size{font-family:'Playfair Display',serif;font-size:54px;font-weight:800;margin-bottom:8px;letter-spacing:-3px}
+.tp-price{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--gold);margin-bottom:28px}
+.card-btn{display:block;width:100%;padding:14px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.1);
+  border-radius:12px;color:var(--gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;transition:all 0.4s var(--ease);position:relative;overflow:hidden}
+.card-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 20%,rgba(255,255,255,0.15) 50%,transparent 80%);
+  transform:translateX(-100%);transition:transform 0.5s}
+.card-btn:hover{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
+  border-color:transparent;box-shadow:0 4px 24px rgba(200,169,78,0.3);transform:translateY(-2px)}
+.card-btn:hover::after{transform:translateX(100%)}
+.mg{min-width:320px}
+.mg-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:10px}
+.mg-price{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.mg-price span{font-size:15px;color:var(--text-3);font-weight:400}
+.mg-sub{font-size:13px;color:var(--text-3);margin-bottom:28px}
+.mg.feat{border-color:rgba(200,169,78,0.1)}
+.mg.feat::after{content:'POPULAR';position:absolute;top:20px;right:-28px;transform:rotate(45deg);
+  font-size:9px;font-weight:800;padding:5px 44px;letter-spacing:1.5px;
+  background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a}
+.ft-list{list-style:none;text-align:left;margin-bottom:32px}
+.ft-list li{padding:10px 0;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.ft-list li:last-child{border:none}
+.ft-list li::before{content:'✓';font-size:11px;font-weight:700;color:var(--green);width:22px;height:22px;
+  background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.08);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ta{min-width:320px}
+.ta-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:16px}
+.bill-row{display:flex;gap:3px;justify-content:center;margin-bottom:20px;background:var(--surface-3);border-radius:10px;padding:3px}
+.bill-b{padding:9px 18px;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all 0.25s;background:transparent;color:var(--text-3)}
+.bill-b.on{background:var(--gold-d);color:var(--gold)}
+.ta-price{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.ta-price span{font-size:14px;color:var(--text-3);font-weight:400}
+.ta-save{font-size:12px;color:var(--green);font-weight:600;margin-bottom:28px;min-height:18px}
 
-    if (!subActive || !subNotExpired) {
-      return res.status(403).json({ error: 'Subscription not active. Renew to generate license keys.' });
-    }
+/* ═══ HOW IT WORKS - TABBED ═══ */
+.hiw-sec{padding:120px 32px;background:var(--surface-solid)}
+.hiw-tabs{display:flex;gap:4px;justify-content:center;margin-bottom:60px;padding:5px;
+  background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;
+  max-width:600px;margin-left:auto;margin-right:auto}
+.hiw-tab{flex:1;padding:14px 20px;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all 0.4s var(--ease);background:transparent;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.hiw-tab.on{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.3)}
+.hiw-tab:hover:not(.on){color:var(--text);background:rgba(255,255,255,0.02)}
+.hiw-pnl{display:none}.hiw-pnl.on{display:block;animation:pnlUp 0.5s var(--ease)}
+.hiw-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1100px;margin:0 auto}
+.hiw-card{padding:36px 24px;border-radius:20px;background:linear-gradient(160deg,var(--surface-2),var(--bg));
+  border:1px solid var(--border);transition:all 0.4s var(--ease);position:relative}
+.hiw-card:hover{transform:translateY(-6px);border-color:var(--border-h)}
+.hiw-n{width:48px;height:48px;border-radius:14px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);
+  color:var(--gold);display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;margin-bottom:24px;transition:all 0.3s}
+.hiw-card:hover .hiw-n{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 16px rgba(200,169,78,0.2)}
+.hiw-card h3{font-size:17px;font-weight:700;margin-bottom:12px}
+.hiw-card p{font-size:14px;color:var(--text-2);line-height:1.75}
+.hiw-card::after{content:'';position:absolute;top:60px;right:-12px;width:24px;height:1px;
+  background:linear-gradient(90deg,rgba(200,169,78,0.15),transparent);pointer-events:none}
+.hiw-card:last-child::after{display:none}
 
-    // Check if already has licenses for both products
-    const existing = await pool.query('SELECT product FROM ea_licenses WHERE user_id = $1 AND is_active = true', [req.userId]);
-    const existingProducts = existing.rows.map(r => r.product);
+/* ═══ WHY US ═══ */
+.why-sec{padding:120px 32px}
+.why-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1100px;margin:0 auto}
+.why-card{padding:32px 24px;border:1px solid var(--border);border-radius:20px;transition:all 0.4s var(--ease);
+  position:relative;overflow:hidden}
+.why-card::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at top right,var(--gold-d),transparent 60%);opacity:0;transition:opacity 0.4s}
+.why-card:hover{border-color:var(--border-h);transform:translateY(-4px)}
+.why-card:hover::before{opacity:1}
+.why-ic{width:52px;height:52px;border-radius:16px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.06);
+  display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;position:relative;z-index:1}
+.why-card h3{font-size:16px;font-weight:700;margin-bottom:8px;position:relative;z-index:1}
+.why-card p{font-size:13px;color:var(--text-2);line-height:1.7;position:relative;z-index:1}
 
-    const products = ['tier_algo_gold', 'tier_algo_us100'];
-    const newLicenses = [];
+/* ═══ SUCCESS ═══ */
+.success-sec{padding:120px 32px;background:var(--surface-solid)}
+.success-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;max-width:1100px;margin:0 auto;align-items:center}
+.success-img{border-radius:24px;overflow:hidden;border:1px solid var(--border);position:relative;
+  aspect-ratio:4/3;background:var(--surface-2);box-shadow:0 24px 80px rgba(0,0,0,0.2)}
+.success-img img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;opacity:0;transition:opacity 1s var(--ease)}
+.success-img img.on{opacity:1}
+.s-dots{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.sd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);cursor:pointer;transition:all 0.4s var(--ease)}
+.sd.on{background:var(--gold);width:28px;border-radius:4px;box-shadow:0 0 16px rgba(200,169,78,0.4)}
+.success-txt h3{font-family:'Playfair Display',serif;font-size:38px;font-weight:700;margin-bottom:24px;letter-spacing:-1px}
+.success-txt p{font-size:16px;color:var(--text-2);line-height:1.85;margin-bottom:28px}
+.s-list{list-style:none}.s-list li{padding:12px 0;font-size:15px;color:var(--text-2);display:flex;align-items:center;gap:14px}
+.s-list li::before{content:'✓';width:28px;height:28px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:12px;font-weight:700;flex-shrink:0}
 
-    for (const product of products) {
-      if (!existingProducts.includes(product)) {
-        const key = generateLicenseKey();
-        const result = await pool.query(
-          `INSERT INTO ea_licenses (user_id, license_key, product, is_active)
-           VALUES ($1, $2, $3, true) RETURNING id, license_key, product, is_active, created_at`,
-          [req.userId, key, product]
-        );
-        newLicenses.push(result.rows[0]);
-      }
-    }
+/* ═══ PLATFORMS ═══ */
+.plat-sec{padding:100px 32px}
+.plat-row{display:flex;gap:20px;justify-content:center;max-width:500px;margin:0 auto}
+.plat-box{flex:1;padding:36px;text-align:center;border-radius:20px;background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);font-size:18px;font-weight:700;transition:all 0.4s var(--ease);letter-spacing:-0.3px}
+.plat-box:hover{border-color:var(--border-h);transform:translateY(-4px);box-shadow:0 16px 48px rgba(200,169,78,0.06)}
 
-    if (newLicenses.length === 0) {
-      return res.json({ message: 'License keys already exist', licenses: existing.rows });
-    }
+/* ═══ FAQ ═══ */
+.faq-sec{padding:120px 32px;background:var(--surface-solid)}
+.faq-list{max-width:720px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{padding:28px 0;font-size:16px;font-weight:700;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;transition:color 0.3s;gap:16px}
+.faq-q:hover{color:var(--gold)}
+.faq-ic{width:34px;height:34px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-3);
+  transition:all 0.4s var(--ease);flex-shrink:0}
+.faq-item.open .faq-ic{background:var(--gold-d);border-color:rgba(200,169,78,0.1);color:var(--gold);transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.5s var(--ease),padding 0.4s;font-size:15px;color:var(--text-2);line-height:1.8}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:28px}
 
-    res.json({ message: 'License keys generated', licenses: newLicenses });
+/* ═══ CTA ═══ */
+.cta-sec{padding:160px 32px;text-align:center;position:relative;overflow:hidden}
+.cta-sec .ambient{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,169,78,0.06) 0%,transparent 60%);pointer-events:none;animation:meshMove1 20s ease-in-out infinite}
+.cta-sec h2{font-family:'Playfair Display',serif;font-size:clamp(38px,6vw,60px);font-weight:700;margin-bottom:20px;letter-spacing:-2px;position:relative;z-index:1}
+.cta-sec p{font-size:17px;color:var(--text-2);margin-bottom:52px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.7;position:relative;z-index:1}
 
-  } catch (err) {
-    console.error('Generate license error:', err);
-    res.status(500).json({ error: 'Errore server' });
-  }
-});
+/* ═══ FOOTER ═══ */
+.footer{padding:64px 32px 32px;border-top:1px solid var(--border)}
+.footer-in{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px}
+.footer-brand{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px}
+.footer-links{display:flex;gap:28px}
+.footer-links a{font-size:13px;color:var(--text-3);transition:color 0.3s;font-weight:500}
+.footer-links a:hover{color:var(--gold)}
+.footer-copy{width:100%;text-align:center;font-size:12px;color:var(--text-3);margin-top:32px;padding-top:32px;border-top:1px solid var(--border);letter-spacing:0.5px}
 
-// POST /api/ea/license/revoke — Admin revoke a license
-app.post('/api/ea/license/revoke', async (req, res) => {
-  try {
-    const { admin_key, license_id } = req.body;
-    if (admin_key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+/* ═══ REVEAL ═══ */
+.rv{opacity:0;transform:translateY(32px);transition:opacity 0.9s var(--ease),transform 0.9s var(--ease)}
+.rv.v{opacity:1;transform:translateY(0)}
+.rv-d1{transition-delay:.1s}.rv-d2{transition-delay:.2s}.rv-d3{transition-delay:.3s}
 
-    await pool.query('UPDATE ea_licenses SET is_active = false WHERE id = $1', [license_id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Revoke license error:', err);
-    res.status(500).json({ error: 'Errore server' });
-  }
-});
+/* ═══ MOBILE ═══ */
+@media(max-width:768px){
+  .nav{padding:0 16px;position:fixed}
+  .mob-toggle{display:flex;position:absolute;left:16px}
+  .nav-logo{position:absolute;left:50%;transform:translateX(-50%)}
+  .nav-logo .logo-text{display:none}
+  .nav-mid{display:none}
+  .nav-end{position:absolute;right:16px}
+  .nav-end .nav-cta{padding:8px 18px;font-size:10px;letter-spacing:1px}
+  .hero{padding:130px 20px 80px}
+  .stats-row{grid-template-columns:1fr;gap:12px}
+  .svc-row{grid-template-columns:1fr;gap:16px}
+  .svc-block{padding:36px 24px}
+  .hiw-row{grid-template-columns:1fr 1fr;gap:12px}.hiw-card::after{display:none}
+  .hiw-tabs{max-width:100%}.hiw-tab{padding:12px 6px;font-size:10px;letter-spacing:.3px}
+  .why-row{grid-template-columns:1fr 1fr;gap:12px}
+  .success-grid{grid-template-columns:1fr;gap:36px}
+  .partner-box{grid-template-columns:1fr;gap:36px}
+  .plat-row{flex-direction:column;max-width:240px}
+  .svc-sel{max-width:100%}.svc-btn{padding:12px 6px;font-size:11px;letter-spacing:.3px}
+  .footer-in{flex-direction:column;align-items:center;text-align:center}
+  .footer-links{flex-wrap:wrap;justify-content:center}
+  .scroll-ind{display:none}
+  .sw::before,.sw::after{width:40px}
+}
+@media(max-width:480px){
+  .hiw-row{grid-template-columns:1fr}
+  .why-row{grid-template-columns:1fr}
+  .svc-row{gap:12px}
+}
+</style>
+</head>
+<body>
 
-// ============================================
-// ENDPOINT: USER PROFILE & SECURITY
-// ============================================
+<!-- Effects -->
+<canvas id="grain"></canvas>
+<div id="glow"></div>
+<div class="cursor-dot" id="cDot"></div>
+<div class="cursor-ring" id="cRing"></div>
 
-// Update profile name
-app.put('/api/user/profile', authenticateToken, async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <button class="mob-toggle" onclick="document.getElementById('mobMenu').classList.add('open')">&#9776;</button>
+  <div class="nav-logo"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></div>
+  <div class="nav-mid">
+    <a href="#services">Services</a>
+    <a href="#how">How It Works</a>
+    <a href="#why">Why Us</a>
+    <a href="/partner">Be a Partner</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div class="nav-end">
+    <a href="/login" class="nav-cta">Dashboard</a>
+  </div>
+</nav>
 
-    await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name.trim(), req.userId]);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Profile update error:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
-});
+<!-- MOBILE MENU -->
+<div class="mob-menu" id="mobMenu">
+  <button class="mob-menu-close" onclick="document.getElementById('mobMenu').classList.remove('open')">&times;</button>
+  <div class="mob-menu-links">
+    <a href="#" onclick="closeMob()">Home</a>
+    <a href="#services" onclick="closeMob()">Services</a>
+    <a href="#how" onclick="closeMob()">How It Works</a>
+    <a href="#why" onclick="closeMob()">Why Us</a>
+    <a href="/partner" onclick="closeMob()">Be a Partner</a>
+    <a href="#faq" onclick="closeMob()">FAQ</a>
+  </div>
+  <a href="/login" class="mob-menu-cta">Dashboard</a>
+</div>
 
-// Change password
-app.put('/api/user/password', authenticateToken, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
-    if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-mesh"><div class="mesh-blob mesh-1"></div><div class="mesh-blob mesh-2"></div><div class="mesh-blob mesh-3"></div></div>
+  <div class="hero-grid-bg"></div>
+  <canvas id="particles"></canvas>
+  <div class="shape shape-diamond" style="top:15%;left:8%"></div>
+  <div class="shape shape-circle" style="top:70%;right:6%"></div>
+  <div class="shape shape-cross" style="top:25%;right:15%"></div>
+  <div class="shape shape-diamond" style="bottom:20%;left:20%"></div>
 
-    const user = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.userId]);
-    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Trusted by 100+ Traders Worldwide</div>
+    <h1>Your Path to<br><span class="g">Funded Success</span></h1>
+    <p class="hero-desc">Pass your prop firm challenge with <strong>Tier Pass</strong>, grow your funded account with <strong>Tier Manage</strong>, and trade smarter with the <strong>TradesAlba</strong> dashboard. Three services, one platform.</p>
+    <div class="hero-btns">
+      <a href="#services" class="btn-p">Explore Services</a>
+      <a href="/login" class="btn-g">Client Dashboard <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+  <div class="scroll-ind"><div class="scroll-mouse"><div class="scroll-dot"></div></div><span class="scroll-text">Scroll</span></div>
+</section>
 
-    const valid = await bcrypt.compare(currentPassword, user.rows[0].password_hash);
-    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+<!-- PARTNERS -->
+<div class="partners">
+  <div class="p-track">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Bloomberg_idW0aSj-2M_1.png?v=1736036564" alt="Bloomberg">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/yahoo-finance_BIG.D.png?v=1736036947" alt="Yahoo Finance">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Forbes_logo_black-1_1.png?v=1736037181" alt="Forbes">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/business-insider-1-1536x864_1.png?v=1736037356" alt="Business Insider">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/eee_1_1.png?v=1736037587" alt="EEE">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Bloomberg_idW0aSj-2M_1.png?v=1736036564" alt="Bloomberg">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/yahoo-finance_BIG.D.png?v=1736036947" alt="Yahoo Finance">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Forbes_logo_black-1_1.png?v=1736037181" alt="Forbes">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/business-insider-1-1536x864_1.png?v=1736037356" alt="Business Insider">
+    <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/eee_1_1.png?v=1736037587" alt="EEE">
+  </div>
+</div>
 
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.userId]);
+<!-- STATS -->
+<section class="stats-sec">
+  <div class="stats-row">
+    <div class="stat-card rv"><div class="stat-val" data-t="100" data-s="+">0</div><div class="stat-lbl">Challenges Passed</div></div>
+    <div class="stat-card rv rv-d1"><div class="stat-val" data-t="94" data-s="%">0</div><div class="stat-lbl">Pass Success Rate</div></div>
+    <div class="stat-card rv rv-d2"><div class="stat-val" data-t="40" data-s="+">0</div><div class="stat-lbl">Accounts Managed</div></div>
+  </div>
+</section>
 
-    console.log(`🔒 User ${req.userId} changed password`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Password change error:', error);
-    res.status(500).json({ error: 'Failed to change password' });
-  }
-});
+<!-- ═══ OUR 3 SERVICES ═══ -->
+<section class="svc-sec" id="services">
+  <div class="sh rv"><div class="sh-tag">Our Services</div><h2 class="sh-title">Three Ways to <span class="g">Succeed</span></h2><p class="sh-sub">Each service is designed for a different stage of your trading journey. Choose one or combine them all.</p></div>
 
-// ============================================
-// ENDPOINT: JOURNAL
-// ============================================
+  <div class="svc-row">
+    <!-- TIER PASS -->
+    <div class="svc-block rv">
+      <div class="svc-num">01</div>
+      <div class="svc-ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <h3>Tier Pass</h3>
+      <div class="svc-sub">We pass your challenge for you</div>
+      <p>Our Expert Advisor is installed on your MetaTrader platform and trades your prop firm challenge with professional risk management. You watch, we deliver.</p>
+      <ul class="svc-features">
+        <li>94% pass rate on all challenges</li>
+        <li>Works on any MT4/MT5 prop firm</li>
+        <li>Accounts from 5K to 200K</li>
+        <li>Private Zoom setup session</li>
+        <li>No passwords shared — investor access only</li>
+      </ul>
+      <a href="#pricing" class="svc-cta" onclick="setTimeout(()=>swSvc('tp',document.querySelector('.svc-btn')),300)">View Plans <span class="arr">&rarr;</span></a>
+    </div>
 
-// Get all journal entries
-app.get('/api/journal', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT j.*, t.symbol as trade_symbol, t.type as trade_type, t.profit as trade_profit
-      FROM journal_entries j
-      LEFT JOIN trades t ON j.trade_id = t.id
-      WHERE j.user_id = $1
-      ORDER BY j.trade_date DESC NULLS LAST, j.created_at DESC
-      LIMIT 200
-    `, [req.userId]);
-    res.json({ entries: result.rows });
-  } catch (error) {
-    console.error('Journal list error:', error);
-    res.status(500).json({ error: 'Failed to load journal' });
-  }
-});
+    <!-- TIER MANAGE -->
+    <div class="svc-block rv rv-d1">
+      <div class="svc-num">02</div>
+      <div class="svc-ic"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg></div>
+      <h3>Tier Manage</h3>
+      <div class="svc-sub">We manage your funded account</div>
+      <p>After you receive your funded account, our EA manages it for consistent monthly returns. You keep full access, we handle the trading.</p>
+      <ul class="svc-features">
+        <li>Monthly profit targets 5-15%</li>
+        <li>Strict drawdown management (2-4%)</li>
+        <li>Full account visibility at all times</li>
+        <li>EA software provided &amp; installed</li>
+        <li>24/7 support &amp; private Q&amp;A</li>
+      </ul>
+      <a href="#pricing" class="svc-cta" onclick="setTimeout(()=>swSvc('mg',document.querySelectorAll('.svc-btn')[1]),300)">View Plans <span class="arr">&rarr;</span></a>
+    </div>
 
-// Create journal entry
-app.post('/api/journal', authenticateToken, async (req, res) => {
-  try {
-    const { symbol, direction, lots, risk_pct, entry_price, sl, tp, pnl, rr_planned,
-            trade_date, setup, timeframe, mood, followed_rules, notes, trade_id, image } = req.body;
-    if (!symbol) return res.status(400).json({ error: 'Pair is required' });
+    <!-- TRADESALBA -->
+    <div class="svc-block rv rv-d2">
+      <div class="svc-num">03</div>
+      <div class="svc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <h3>TradesAlba</h3>
+      <div class="svc-sub">Your complete trading dashboard</div>
+      <p>A premium all-in-one dashboard to level up your trading. Access live signals, track your performance, manage risk, and connect your broker — all in one place.</p>
+      <ul class="svc-features">
+        <li>Live trading signals from our analysts</li>
+        <li>Trading journal with tags &amp; screenshots</li>
+        <li>Risk management &amp; position calculator</li>
+        <li>TradingView indicators (Pro plan)</li>
+        <li>Broker integration via MetaTrader</li>
+        <li>Economic calendar &amp; market news</li>
+      </ul>
+      <a href="#pricing" class="svc-cta" onclick="setTimeout(()=>swSvc('ta',document.querySelectorAll('.svc-btn')[2]),300)">View Plans <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+</section>
 
-    const result = await pool.query(`
-      INSERT INTO journal_entries (user_id, symbol, direction, lots, risk_pct, entry_price, sl, tp, pnl, rr_planned,
-        trade_date, setup, timeframe, mood, followed_rules, notes, trade_id, image_url)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
-      RETURNING id
-    `, [
-      req.userId, symbol||null, direction||null, lots||null, risk_pct||null,
-      entry_price||null, sl||null, tp||null, pnl||null, rr_planned||null,
-      trade_date||null, setup||null, timeframe||null, mood||null, followed_rules,
-      notes||null, trade_id||null, image||null
-    ]);
+<!-- ═══ HOW IT WORKS — TABBED ═══ -->
+<section class="hiw-sec" id="how">
+  <div class="sh rv"><div class="sh-tag">Process</div><h2 class="sh-title">How It <span class="g">Works</span></h2><p class="sh-sub">Simple steps for each service.</p></div>
 
-    res.json({ success: true, id: result.rows[0].id });
-  } catch (error) {
-    console.error('Journal create error:', error);
-    res.status(500).json({ error: 'Failed to save entry' });
-  }
-});
+  <div class="hiw-tabs rv">
+    <button class="hiw-tab on" onclick="swHiw('tp',this)">Tier Pass</button>
+    <button class="hiw-tab" onclick="swHiw('mg',this)">Tier Manage</button>
+    <button class="hiw-tab" onclick="swHiw('ta',this)">TradesAlba</button>
+  </div>
 
-// Update journal entry
-app.put('/api/journal/:id', authenticateToken, async (req, res) => {
-  try {
-    const { symbol, direction, lots, risk_pct, entry_price, sl, tp, pnl, rr_planned,
-            trade_date, setup, timeframe, mood, followed_rules, notes, trade_id, image } = req.body;
+  <!-- Tier Pass -->
+  <div class="hiw-pnl on" id="hiw-tp">
+    <div class="hiw-row">
+      <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Get a Challenge</h3><p>Have an active prop firm challenge on MT4 or MT5 that allows Expert Advisors.</p></div>
+      <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Choose Your Size</h3><p>Select a Tier Pass plan from 5K to 200K matching your challenge account size.</p></div>
+      <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>Zoom Setup</h3><p>We install the EA on your machine during a private Zoom call. Takes 15 minutes.</p></div>
+      <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Challenge Passed</h3><p>The EA trades your challenge with low-risk strategies. You get your funded account.</p></div>
+    </div>
+  </div>
 
-    const result = await pool.query(`
-      UPDATE journal_entries SET
-        symbol=$1, direction=$2, lots=$3, risk_pct=$4, entry_price=$5, sl=$6, tp=$7, pnl=$8,
-        rr_planned=$9, trade_date=$10, setup=$11, timeframe=$12, mood=$13, followed_rules=$14,
-        notes=$15, trade_id=$16, image_url=$17, updated_at=NOW()
-      WHERE id=$18 AND user_id=$19 RETURNING id
-    `, [
-      symbol||null, direction||null, lots||null, risk_pct||null, entry_price||null,
-      sl||null, tp||null, pnl||null, rr_planned||null, trade_date||null,
-      setup||null, timeframe||null, mood||null, followed_rules, notes||null,
-      trade_id||null, image||null, req.params.id, req.userId
-    ]);
+  <!-- Tier Manage -->
+  <div class="hiw-pnl" id="hiw-mg">
+    <div class="hiw-row">
+      <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Get Funded</h3><p>Pass your challenge (with Tier Pass or on your own) and receive your funded account.</p></div>
+      <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Subscribe</h3><p>Choose Lite, Starter, or Pro based on your profit target and risk preferences.</p></div>
+      <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>EA Installed</h3><p>We install the management EA via Zoom. You keep full access to your account.</p></div>
+      <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Monthly Returns</h3><p>Our EA manages your funded account for consistent monthly profit targets.</p></div>
+    </div>
+  </div>
 
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Entry not found' });
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Journal update error:', error);
-    res.status(500).json({ error: 'Failed to update entry' });
-  }
-});
+  <!-- TradesAlba -->
+  <div class="hiw-pnl" id="hiw-ta">
+    <div class="hiw-row">
+      <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Subscribe</h3><p>Choose Standard or Pro plan based on the tools you need.</p></div>
+      <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Access Dashboard</h3><p>Log in and get instant access to signals, journal, risk tools, and more.</p></div>
+      <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>Connect Broker</h3><p>Link your MetaTrader account for automatic trade tracking and analytics.</p></div>
+      <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Trade Smarter</h3><p>Use our signals, indicators, and risk tools to make better trading decisions.</p></div>
+    </div>
+  </div>
+</section>
 
-// Delete journal entry
-app.delete('/api/journal/:id', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'DELETE FROM journal_entries WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
-    );
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Entry not found' });
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Journal delete error:', error);
-    res.status(500).json({ error: 'Failed to delete entry' });
-  }
-});
+<!-- ═══ PRICING ═══ -->
+<section class="pricing-sec" id="pricing">
+  <div class="ambient"></div>
+  <div class="sh rv"><div class="sh-tag">Pricing</div><h2 class="sh-title">Choose Your <span class="g">Plan</span></h2><p class="sh-sub">Transparent pricing. No hidden fees. Cancel anytime.</p></div>
+  <div class="svc-sel rv"><button class="svc-btn on" onclick="swSvc('tp',this)">Tier Pass</button><button class="svc-btn" onclick="swSvc('mg',this)">Tier Manage</button><button class="svc-btn" onclick="swSvc('ta',this)">TradesAlba</button></div>
 
-// ============================================
-// ENDPOINT: SUPPORT MESSAGES
-// ============================================
+  <div class="pnl on" id="p-tp"><div class="sw"><div class="sc" id="sc-tp">
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Bronze</div><div class="tp-size">5K</div><div class="tp-price">&euro;59</div><a href="/products/tierpass-5k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Silver</div><div class="tp-size">10K</div><div class="tp-price">&euro;99</div><a href="/products/tierpass-10k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Gold</div><div class="tp-size">25K</div><div class="tp-price">&euro;149</div><a href="/products/tierpass-25k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Platinum</div><div class="tp-size">50K</div><div class="tp-price">&euro;199</div><a href="/products/tierpass-50k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Emerald</div><div class="tp-size">100K</div><div class="tp-price">&euro;249</div><a href="/products/tierpass-100k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Diamond</div><div class="tp-size">200K</div><div class="tp-price">&euro;349</div><a href="/products/tierpass-200k" class="card-btn">Select Plan</a></div>
+  </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-tp',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-tp',1)">&rarr;</button></div></div>
 
-app.post('/api/support/message', authenticateToken, async (req, res) => {
-  try {
-    const { subject, message } = req.body;
-    if (!subject || !message) return res.status(400).json({ error: 'Subject and message required' });
+  <div class="pnl" id="p-mg"><div class="sw"><div class="sc" id="sc-mg">
+    <div class="gcard mg"><div class="gcard-shine"></div><div class="mg-name">Lite Funded</div><div class="mg-price">&euro;89<span>/mo</span></div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 5%/month</li><li>Max drawdown 4%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="https://buy.stripe.com/4gw4kf8z66P4gkE9AJ" target="_blank" class="card-btn">Subscribe</a></div>
+    <div class="gcard mg feat"><div class="gcard-shine"></div><div class="mg-name">Starter Funded</div><div class="mg-price">&euro;149<span>/mo</span></div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 9%/month</li><li>Max drawdown 3%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="https://buy.stripe.com/dR603Z3eM0qGfgA4gi" target="_blank" class="card-btn">Subscribe</a></div>
+    <div class="gcard mg"><div class="gcard-shine"></div><div class="mg-name">Pro Funded</div><div class="mg-price">&euro;299<span>/mo</span></div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 15%/month</li><li>Max drawdown 2%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="https://buy.stripe.com/dR63gb7v24GWgkEbIL" target="_blank" class="card-btn">Subscribe</a></div>
+  </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-mg',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-mg',1)">&rarr;</button></div></div>
 
-    const userResult = await pool.query('SELECT email, name FROM users WHERE id = $1', [req.userId]);
-    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+  <div class="pnl" id="p-ta"><div class="sw"><div class="sc" id="sc-ta" style="justify-content:center">
+    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Standard</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'std','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'std','y')">Yearly</button></div><div class="ta-price" id="std-p">&euro;49<span>/mo</span></div><div class="ta-save" id="std-s">&nbsp;</div><ul class="ft-list"><li>Live trading signals</li><li>Trading journal</li><li>Risk management tools</li><li>Economic calendar</li><li>Email support</li></ul><a href="#" class="card-btn" id="std-b">Subscribe</a></div>
+    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Pro</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'pro','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'pro','y')">Yearly</button></div><div class="ta-price" id="pro-p">&euro;89<span>/mo</span></div><div class="ta-save" id="pro-s">&nbsp;</div><ul class="ft-list"><li>Everything in Standard</li><li>Expert Advisor access</li><li>3 TradingView indicators</li><li>Broker integration (MT4/MT5)</li><li>Priority 24/7 support</li></ul><a href="#" class="card-btn" id="pro-b">Subscribe</a></div>
+  </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-ta',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-ta',1)">&rarr;</button></div></div>
+</section>
 
-    const user = userResult.rows[0];
+<!-- WHY US -->
+<section class="why-sec" id="why">
+  <div class="sh rv"><div class="sh-tag">Advantages</div><h2 class="sh-title">Why <span class="g">TierAlba</span></h2><p class="sh-sub">What sets us apart from the rest.</p></div>
+  <div class="why-row">
+    <div class="why-card rv"><div class="why-ic">&#9733;</div><h3>94% Pass Rate</h3><p>Consistent, data-driven approach. We don't gamble with your challenge — we deliver results.</p></div>
+    <div class="why-card rv rv-d1"><div class="why-ic">&#9830;</div><h3>Best Prices</h3><p>Premium service at competitive prices. No hidden fees. Full transparency on everything.</p></div>
+    <div class="why-card rv rv-d2"><div class="why-ic">&#9650;</div><h3>Scale to 200K</h3><p>From 5K to 200K accounts. We grow alongside your capital and ambitions.</p></div>
+    <div class="why-card rv rv-d3"><div class="why-ic">&#10070;</div><h3>One Ecosystem</h3><p>Pass, manage, and trade — all from one company. No juggling multiple services.</p></div>
+  </div>
+</section>
 
-    // Save to database
-    await pool.query(
-      `INSERT INTO support_messages (user_id, email, name, subject, message)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [req.userId, user.email, user.name || '', subject, message]
-    );
+<!-- SUCCESS -->
+<section class="success-sec">
+  <div class="sh rv"><div class="sh-tag">Results</div><h2 class="sh-title">The Key to Your <span class="g">Success</span></h2><p class="sh-sub">Real results from real clients.</p></div>
+  <div class="success-grid">
+    <div class="success-img rv" id="sImg">
+      <img class="on" src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-01-05_01-44-15.jpg?v=1736037864" alt="">
+      <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-07-15_21-29-18.jpg?v=1752607786" alt="">
+      <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-08-31_14-38-10.jpg?v=1756643944" alt="">
+      <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-09-21_18-00-22.jpg?v=1758490381" alt="">
+      <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-09-21_18-04-56.jpg?v=1758490387" alt="">
+      <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-10-20_19-19-47.jpg?v=1760980794" alt="">
+      <img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Immagine_WhatsApp_2025-10-17_ore_13.43.41_8d502752.jpg?v=1760980646" alt="">
+      <div class="s-dots" id="sDots"></div>
+    </div>
+    <div class="success-txt rv">
+      <h3>Proven Results, Real Traders</h3>
+      <p>Over 100 challenges passed and 40+ funded accounts managed. Our clients trust us because we deliver — consistently.</p>
+      <ul class="s-list">
+        <li>Challenges passed within days, not weeks</li>
+        <li>Funded accounts growing every month</li>
+        <li>Full transparency — you see every trade</li>
+        <li>Dedicated support from start to finish</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
-    console.log(`📩 Support from ${user.email}: [${subject}] ${message.substring(0, 100)}`);
+<!-- PLATFORMS -->
+<section class="plat-sec">
+  <div class="sh rv"><div class="sh-tag">Compatibility</div><h2 class="sh-title">Supported <span class="g">Platforms</span></h2></div>
+  <div class="plat-row">
+    <div class="plat-box rv">MetaTrader 4</div>
+    <div class="plat-box rv rv-d1">MetaTrader 5</div>
+  </div>
+</section>
 
-    // Send notification email (not the message itself, just a heads-up)
-    if (resend) {
-      try {
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
-          to: ['info@tieralba.com'],
-          subject: '[TierAlba] New support request from ' + user.email,
-          html: '<div style="font-family:sans-serif;padding:20px;">' +
-            '<h3 style="color:#c8aa6e;">New Support Request</h3>' +
-            '<p><strong>From:</strong> ' + (user.name || 'N/A') + ' (' + user.email + ')</p>' +
-            '<p><strong>Subject:</strong> ' + subject + '</p>' +
-            '<p style="color:#888;">View full message in Supabase → support_messages table</p>' +
-            '</div>'
-        });
-      } catch (emailErr) {
-        console.error('Support notification email error:', emailErr);
-      }
-    }
+<!-- FAQ -->
+<section class="faq-sec" id="faq">
+  <div class="sh rv"><div class="sh-tag">Support</div><h2 class="sh-title">Frequently Asked <span class="g">Questions</span></h2></div>
+  <div class="faq-list">
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is the difference between Tier Pass, Tier Manage, and TradesAlba?</span><div class="faq-ic">+</div></div><div class="faq-a"><strong>Tier Pass</strong> passes your prop firm challenge using our Expert Advisor. <strong>Tier Manage</strong> manages your funded account for monthly returns after you're funded. <strong>TradesAlba</strong> is a standalone trading dashboard with signals, journal, risk tools, and broker integration. You can use one, two, or all three.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the Tier Pass EA work?</span><div class="faq-ic">+</div></div><div class="faq-a">We install the EA on your MetaTrader platform during a private Zoom session. It trades your challenge automatically with low-risk strategies. You maintain full access to your account at all times. We use the investor (read-only) password — your master password is never needed.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What's included in the TradesAlba dashboard?</span><div class="faq-ic">+</div></div><div class="faq-a">Standard plan: live trading signals, trading journal with tags and screenshots, risk management tools, position size calculator, and economic calendar. Pro plan adds: TradingView indicators, Expert Advisor access, broker integration (MT4/MT5), and priority 24/7 support.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I need to share my password?</span><div class="faq-ic">+</div></div><div class="faq-a">No. For Tier Pass and Tier Manage, we only use the investor (read-only) password. Your master password is never required. Everything is installed securely via a private Zoom session.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic">+</div></div><div class="faq-a">Any prop firm that allows Expert Advisors on MetaTrader 4 or MetaTrader 5. This includes most major firms in the industry.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your success rate?</span><div class="faq-ic">+</div></div><div class="faq-a">We maintain a 94% pass rate with Tier Pass. Our approach uses consistent, low-risk trading strategies designed to maximize your probability of passing.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the referral program work?</span><div class="faq-ic">+</div></div><div class="faq-a">Sign up for a free account, get your unique referral link from the dashboard, and share it. You earn 15% commission on every subscription your referrals make. Minimum payout is €50, paid via USDT (TRC-20).</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I cancel anytime?</span><div class="faq-ic">+</div></div><div class="faq-a">Yes. All subscriptions (Tier Manage and TradesAlba) can be cancelled anytime from your dashboard. No commitments, no hidden fees. Tier Pass is a one-time purchase.</div></div>
+  </div>
+</section>
 
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Support message error:', error);
-    res.status(500).json({ error: 'Failed to send message' });
-  }
-});
+<!-- CTA -->
+<section class="cta-sec">
+  <div class="ambient"></div>
+  <h2 class="rv">Ready to Get <span class="g">Funded</span>?</h2>
+  <p class="rv">Join hundreds of traders who trust TierAlba to pass, manage, and trade.</p>
+  <div class="rv"><a href="#pricing" class="btn-p">Get Started Now</a></div>
+</section>
 
-// ============================================
-// SERVE FRONTEND per route non-API
-// ============================================
-// ============================================
-// GESTIONE ERRORI 404 (solo per API)
-// ============================================
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-in">
+    <div class="footer-brand"><div class="nav-mark" style="width:28px;height:28px;font-size:12px;border-radius:7px">T</div>TierAlba</div>
+    <div class="footer-links"><a href="#services">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="/partner">Be a Partner</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
+    <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
+  </div>
+</footer>
 
-app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint non trovato',
-    path: req.path 
+<script>
+/* ═══ GRAIN ═══ */
+(function(){const c=document.getElementById('grain'),x=c.getContext('2d');function r(){c.width=window.innerWidth;c.height=window.innerHeight}r();window.addEventListener('resize',r);
+function draw(){const d=x.createImageData(c.width,c.height),p=d.data;for(let i=0;i<p.length;i+=4){const v=Math.random()*255;p[i]=p[i+1]=p[i+2]=v;p[i+3]=15}x.putImageData(d,0,0);requestAnimationFrame(draw)}draw()})();
+
+/* ═══ PARTICLES ═══ */
+(function(){const c=document.getElementById('particles'),x=c.getContext('2d');let W,H;function sz(){W=c.width=c.parentElement.offsetWidth;H=c.height=c.parentElement.offsetHeight}sz();window.addEventListener('resize',sz);
+const pts=[];for(let i=0;i<40;i++)pts.push({x:Math.random()*2000,y:Math.random()*1200,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.5+0.5,o:Math.random()*0.3+0.1});
+function draw(){x.clearRect(0,0,W,H);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(200,169,78,${p.o})`;x.fill()});
+for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+if(d<150){x.beginPath();x.moveTo(pts[i].x,pts[i].y);x.lineTo(pts[j].x,pts[j].y);x.strokeStyle=`rgba(200,169,78,${0.03*(1-d/150)})`;x.stroke()}}
+requestAnimationFrame(draw)}draw()})();
+
+/* ═══ CURSOR ═══ */
+const cD=document.getElementById('cDot'),cR=document.getElementById('cRing'),gl=document.getElementById('glow');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cD.style.left=mx-2.5+'px';cD.style.top=my-2.5+'px';gl.style.left=mx+'px';gl.style.top=my+'px'});
+(function anim(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;cR.style.left=rx-20+'px';cR.style.top=ry-20+'px';requestAnimationFrame(anim)})();
+document.querySelectorAll('a,button,.gcard,.stat-card,.hiw-card,.why-card,.faq-q,.plat-box,.svc-block').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cR.classList.add('active'));el.addEventListener('mouseleave',()=>cR.classList.remove('active'))});
+
+/* ═══ 3D TILT ═══ */
+document.querySelectorAll('.gcard,.stat-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    card.style.setProperty('--mx',(x*100)+'%');card.style.setProperty('--my',(y*100)+'%');
+    const tX=(y-0.5)*6,tY=(x-0.5)*-6;
+    card.style.transform=`perspective(800px) rotateX(${tX}deg) rotateY(${tY}deg) translateY(-8px)`;
   });
+  card.addEventListener('mouseleave',()=>{card.style.transform='';});
 });
 
-// ============================================
-// AVVIO SERVER
-// ============================================
+/* ═══ NAV ═══ */
+window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
 
-app.listen(port, () => {
-  console.log('=================================');
-  console.log('🚀 TierAlba API Server');
-  console.log('=================================');
-  console.log(`✅ Server avviato su porta ${port}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 URL: http://localhost:${port}`);
-  console.log('=================================');
-});
+/* ═══ MOBILE MENU ═══ */
+function closeMob(){document.getElementById('mobMenu').classList.remove('open')}
 
-// Gestione graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM ricevuto. Chiusura graceful...');
-  pool.end(() => {
-    console.log('Pool database chiuso');
-    process.exit(0);
-  });
-});
+/* ═══ SERVICE TABS ═══ */
+function swSvc(id,b){document.querySelectorAll('.svc-btn').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));b.classList.add('on');document.getElementById('p-'+id).classList.add('on')}
+
+/* ═══ HOW IT WORKS TABS ═══ */
+function swHiw(id,b){document.querySelectorAll('.hiw-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.hiw-pnl').forEach(p=>p.classList.remove('on'));b.classList.add('on');document.getElementById('hiw-'+id).classList.add('on')}
+
+/* ═══ SCROLL ARROWS ═══ */
+function sScr(id,d){const el=document.getElementById(id);if(!el)return;const c=el.querySelector(':scope>*');el.scrollBy({left:d*(c?c.offsetWidth+20:320),behavior:'smooth'})}
+
+/* ═══ BILLING ═══ */
+const pr={std:{m:{p:'€49',s:'/mo',sv:'',l:'#'},y:{p:'€399',s:'/yr',sv:'Save €189',l:'#'}},pro:{m:{p:'€89',s:'/mo',sv:'',l:'#'},y:{p:'€749',s:'/yr',sv:'Save €319',l:'#'}}};
+function swBill(b,p,t){b.parentElement.querySelectorAll('.bill-b').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const d=pr[p][t];document.getElementById(p+'-p').innerHTML=d.p+'<span>'+d.s+'</span>';document.getElementById(p+'-s').textContent=d.sv||'\u00A0';document.getElementById(p+'-b').href=d.l}
+
+/* ═══ REVEAL ═══ */
+const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('v')})},{threshold:0.06,rootMargin:'0px 0px -20px 0px'});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+
+/* ═══ COUNTERS ═══ */
+let counted=false;
+new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting&&!counted){counted=true;
+document.querySelectorAll('.stat-val').forEach(el=>{
+  const t=+el.dataset.t,s=el.dataset.s||'';let c=0;const dur=60;const inc=t/dur;
+  (function up(){c+=inc;if(c>=t){el.textContent=t+s;return}el.textContent=Math.round(c)+s;requestAnimationFrame(up)})()})}})},{threshold:.3}).observe(document.querySelector('.stats-sec'));
+
+/* ═══ CAROUSEL ═══ */
+(function(){const imgs=document.querySelectorAll('#sImg img'),dc=document.getElementById('sDots');let i=0;
+  imgs.forEach((_,j)=>{const d=document.createElement('span');d.className='sd'+(j===0?' on':'');d.onclick=()=>go(j);dc.appendChild(d)});
+  function go(j){imgs.forEach((m,k)=>m.classList.toggle('on',k===j));dc.querySelectorAll('.sd').forEach((d,k)=>d.classList.toggle('on',k===j));i=j}
+  setInterval(()=>go((i+1)%imgs.length),4000)})();
+
+/* ═══ SMOOTH SCROLL ═══ */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+</script>
+</body>
+</html>
