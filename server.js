@@ -196,6 +196,10 @@ app.get('/partner', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'partner.html'));
 });
 
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'about.html'));
+});
+
 // Serve frontend static files (CSS, JS, images, other HTML)
 app.use(express.static(path.join(__dirname, 'public')));
 
