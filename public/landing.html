@@ -21,19 +21,16 @@
 }
 html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body.light{--bg:#f6f3ec;--surface:rgba(255,255,255,0.6);--surface-solid:#fff;--surface-2:#eeebe3;--surface-3:#e3dfd5;--border:rgba(0,0,0,0.05);--border-h:rgba(160,133,48,0.15);--text:#18170f;--text-2:#6b6555;--text-3:#a09880;--gold:#9e8430;--gold-l:#c8a94e;--gold-d:rgba(158,132,48,0.06);--gold-glow:rgba(158,132,48,0.08)}
 ::selection{background:rgba(200,169,78,0.25)}
 a{text-decoration:none;color:inherit}
 
 /* ═══ GRAIN OVERLAY ═══ */
 #grain{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:0.35}
-body.light #grain{opacity:0.15}
 
 /* ═══ GLOW CURSOR ═══ */
 #glow{position:fixed;width:500px;height:500px;border-radius:50%;pointer-events:none;z-index:1;
   background:radial-gradient(circle,rgba(200,169,78,0.04) 0%,transparent 70%);
   transform:translate(-50%,-50%);transition:opacity 0.4s}
-body.light #glow{background:radial-gradient(circle,rgba(158,132,48,0.03) 0%,transparent 70%)}
 .cursor-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:10001;transition:transform 0.08s;mix-blend-mode:exclusion}
 .cursor-ring{width:40px;height:40px;border:1.5px solid rgba(200,169,78,0.3);border-radius:50%;position:fixed;pointer-events:none;z-index:10001;transition:all 0.18s ease-out}
 .cursor-ring.active{transform:scale(1.6);border-color:var(--gold);background:rgba(200,169,78,0.04)}
@@ -56,24 +53,21 @@ body.light #glow{background:radial-gradient(circle,rgba(158,132,48,0.03) 0%,tran
   display:flex;align-items:center;justify-content:space-between;
   background:rgba(6,7,10,0.6);backdrop-filter:blur(32px) saturate(1.5);
   border-bottom:1px solid var(--border);transition:all 0.5s var(--ease)}
-body.light .nav{background:rgba(246,243,236,0.8)}
 .nav.scrolled{height:60px;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
 .nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px;letter-spacing:-0.3px}
+.nav-logo .logo-text{display:inline}
 .nav-mark{width:38px;height:38px;background:linear-gradient(145deg,var(--gold),#b59840,var(--gold-l));border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#06070a;
   box-shadow:0 4px 24px rgba(200,169,78,0.3),inset 0 1px 0 rgba(255,255,255,0.2);transition:all 0.4s var(--ease-back)}
 .nav-mark:hover{transform:rotate(-8deg) scale(1.1)}
-.nav-mid{display:flex;gap:36px}
-.nav-mid a{font-size:13px;font-weight:500;color:var(--text-2);letter-spacing:0.5px;text-transform:uppercase;
-  transition:color 0.3s;position:relative;padding:4px 0}
+.nav-mid{display:flex;gap:28px}
+.nav-mid a{font-size:12px;font-weight:500;color:var(--text-2);letter-spacing:0.5px;text-transform:uppercase;
+  transition:color 0.3s;position:relative;padding:4px 0;white-space:nowrap}
 .nav-mid a::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--gold);
   transform:scaleX(0);transition:transform 0.4s var(--ease);transform-origin:right}
 .nav-mid a:hover{color:var(--text)}
 .nav-mid a:hover::after{transform:scaleX(1);transform-origin:left}
 .nav-end{display:flex;align-items:center;gap:14px}
-.icon-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;
-  color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;font-size:15px}
-.icon-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d)}
 .nav-cta{padding:10px 28px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b59840);
   color:#06070a;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;
   transition:all 0.4s var(--ease);border:none;cursor:pointer;box-shadow:0 2px 16px rgba(200,169,78,0.2);
@@ -82,7 +76,33 @@ body.light .nav{background:rgba(246,243,236,0.8)}
   transform:translateX(-100%);transition:transform 0.6s}
 .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,169,78,0.35)}
 .nav-cta:hover::before{transform:translateX(100%)}
-.mob-toggle{display:none}
+
+/* Hamburger button */
+.mob-toggle{display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;
+  color:var(--text);cursor:pointer;align-items:center;justify-content:center;font-size:18px;transition:all 0.3s;z-index:1002}
+.mob-toggle:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Fullscreen mobile menu */
+.mob-menu{position:fixed;inset:0;z-index:1001;background:rgba(6,7,10,0.97);backdrop-filter:blur(32px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;transition:all 0.4s var(--ease);pointer-events:none}
+.mob-menu.open{opacity:1;visibility:visible;pointer-events:all}
+.mob-menu-close{position:absolute;top:20px;right:20px;width:44px;height:44px;border-radius:12px;
+  border:1px solid var(--border);background:transparent;color:var(--text);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;transition:all 0.3s}
+.mob-menu-close:hover{border-color:var(--gold);color:var(--gold)}
+.mob-menu-links{display:flex;flex-direction:column;align-items:center;gap:0}
+.mob-menu-links a{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--text-2);
+  padding:16px 0;transition:all 0.3s;position:relative;letter-spacing:-0.5px}
+.mob-menu-links a:hover,.mob-menu-links a:active{color:var(--gold)}
+.mob-menu-links a::after{content:'';position:absolute;bottom:12px;left:50%;transform:translateX(-50%) scaleX(0);
+  width:40px;height:1px;background:var(--gold);transition:transform 0.3s var(--ease)}
+.mob-menu-links a:hover::after{transform:translateX(-50%) scaleX(1)}
+.mob-menu-cta{margin-top:32px;padding:16px 48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
+  font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;
+  letter-spacing:1.5px;border:none;cursor:pointer;transition:all 0.3s}
+.mob-menu-cta:hover{transform:scale(1.05);box-shadow:0 8px 30px rgba(200,169,78,0.35)}
 
 /* ═══ HERO ═══ */
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
@@ -175,7 +195,6 @@ body.light .nav{background:rgba(246,243,236,0.8)}
 .partners::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
 .p-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
 .p-track img{height:24px;margin:0 52px;opacity:0.3;filter:brightness(0) invert(1);transition:all 0.4s}
-body.light .p-track img{filter:brightness(0);opacity:0.25}
 .p-track img:hover{opacity:0.6;transform:scale(1.05)}
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
@@ -383,7 +402,13 @@ body.light .p-track img{filter:brightness(0);opacity:0.25}
 
 /* ═══ MOBILE ═══ */
 @media(max-width:768px){
-  .nav{padding:0 20px}.nav-mid{display:none}.mob-toggle{display:flex}
+  .nav{padding:0 16px}
+  .mob-toggle{display:flex;order:1}
+  .nav-logo{order:2;margin:0 auto;position:relative;left:0;transform:none}
+  .nav-logo .logo-text{display:none}
+  .nav-mid{display:none}
+  .nav-end{order:3}
+  .nav-end .nav-cta{padding:8px 20px;font-size:11px}
   .hero{padding:130px 20px 80px}
   .stats-row{grid-template-columns:1fr;gap:12px}
   .hiw-row{grid-template-columns:1fr 1fr;gap:12px}.hiw-card::after{display:none}
@@ -411,14 +436,33 @@ body.light .p-track img{filter:brightness(0);opacity:0.25}
 
 <!-- NAV -->
 <nav class="nav" id="nav">
-  <div class="nav-logo"><div class="nav-mark">T</div>TierAlba</div>
-  <div class="nav-mid"><a href="#pricing">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="#faq">FAQ</a></div>
+  <button class="mob-toggle" onclick="document.getElementById('mobMenu').classList.add('open')">&#9776;</button>
+  <div class="nav-logo"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></div>
+  <div class="nav-mid">
+    <a href="#pricing">Services</a>
+    <a href="#how">How It Works</a>
+    <a href="#why">Why Us</a>
+    <a href="#partner">Be a Partner</a>
+    <a href="#faq">FAQ</a>
+  </div>
   <div class="nav-end">
-    <button class="icon-btn" onclick="document.body.classList.toggle('light')" title="Theme">&#9684;</button>
-    <button class="icon-btn mob-toggle" onclick="document.querySelector('.nav-mid').style.display=document.querySelector('.nav-mid').style.display==='flex'?'none':'flex'">&#9776;</button>
     <a href="/login" class="nav-cta">Dashboard</a>
   </div>
 </nav>
+
+<!-- FULLSCREEN MOBILE MENU -->
+<div class="mob-menu" id="mobMenu">
+  <button class="mob-menu-close" onclick="document.getElementById('mobMenu').classList.remove('open')">&times;</button>
+  <div class="mob-menu-links">
+    <a href="#" onclick="closeMob()">Home</a>
+    <a href="#pricing" onclick="closeMob()">Services</a>
+    <a href="#how" onclick="closeMob()">How It Works</a>
+    <a href="#why" onclick="closeMob()">Why Us</a>
+    <a href="#partner" onclick="closeMob()">Be a Partner</a>
+    <a href="#faq" onclick="closeMob()">FAQ</a>
+  </div>
+  <a href="/login" class="mob-menu-cta">Dashboard</a>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -571,7 +615,7 @@ body.light .p-track img{filter:brightness(0);opacity:0.25}
 <footer class="footer">
   <div class="footer-in">
     <div class="footer-brand"><div class="nav-mark" style="width:28px;height:28px;font-size:12px;border-radius:7px">T</div>TierAlba</div>
-    <div class="footer-links"><a href="#pricing">Services</a><a href="#how">How It Works</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
+    <div class="footer-links"><a href="#pricing">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="#partner">Be a Partner</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
     <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
   </div>
 </footer>
@@ -611,6 +655,9 @@ document.querySelectorAll('.gcard,.stat-card').forEach(card=>{
 
 /* ═══ NAV SCROLL ═══ */
 window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
+
+/* ═══ MOBILE MENU ═══ */
+function closeMob(){document.getElementById('mobMenu').classList.remove('open')}
 
 /* ═══ SERVICE TABS ═══ */
 function swSvc(id,b){document.querySelectorAll('.svc-btn').forEach(t=>t.classList.remove('on'));
