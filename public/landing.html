@@ -210,7 +210,8 @@ a{text-decoration:none;color:inherit}
 .svc-sec{padding:120px 32px}
 .svc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1200px;margin:0 auto}
 .svc-block{padding:48px 36px;border-radius:24px;background:var(--surface);backdrop-filter:blur(16px);
-  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden}
+  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden;
+  display:flex;flex-direction:column}
 .svc-block::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
   background:linear-gradient(90deg,transparent,rgba(200,169,78,0.2),transparent);opacity:0;transition:opacity 0.4s}
 .svc-block:hover{border-color:var(--border-h);transform:translateY(-8px);box-shadow:0 24px 80px rgba(200,169,78,0.06)}
@@ -224,7 +225,7 @@ a{text-decoration:none;color:inherit}
 .svc-block h3{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:12px}
 .svc-block .svc-sub{font-size:15px;color:var(--gold);font-weight:600;margin-bottom:20px}
 .svc-block p{font-size:14px;color:var(--text-2);line-height:1.8;margin-bottom:28px}
-.svc-features{list-style:none;margin-bottom:32px}
+.svc-features{list-style:none;margin-bottom:32px;flex:1}
 .svc-features li{padding:10px 0;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
 .svc-features li:last-child{border:none}
 .svc-features li::before{content:'✓';font-size:11px;font-weight:700;color:var(--green);width:22px;height:22px;
@@ -233,7 +234,7 @@ a{text-decoration:none;color:inherit}
 .svc-cta{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;
   background:var(--gold-d);border:1px solid rgba(200,169,78,0.1);color:var(--gold);
   font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
-  transition:all 0.4s var(--ease);cursor:pointer}
+  transition:all 0.4s var(--ease);cursor:pointer;align-self:flex-start;margin-top:auto}
 .svc-cta:hover{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;border-color:transparent;
   box-shadow:0 8px 32px rgba(200,169,78,0.3);transform:translateY(-2px)}
 .svc-cta .arr{transition:transform 0.3s}
@@ -459,8 +460,9 @@ a{text-decoration:none;color:inherit}
     <a href="#services">Services</a>
     <a href="#how">How It Works</a>
     <a href="#why">Why Us</a>
+    <a href="/about">About Us</a>
     <a href="/partner">Be a Partner</a>
-    <a href="#faq">FAQ</a>
+    <a href="/faq">FAQ</a>
   </div>
   <div class="nav-end">
     <a href="/login" class="nav-cta">Dashboard</a>
@@ -475,8 +477,9 @@ a{text-decoration:none;color:inherit}
     <a href="#services" onclick="closeMob()">Services</a>
     <a href="#how" onclick="closeMob()">How It Works</a>
     <a href="#why" onclick="closeMob()">Why Us</a>
+    <a href="/about" onclick="closeMob()">About Us</a>
     <a href="/partner" onclick="closeMob()">Be a Partner</a>
-    <a href="#faq" onclick="closeMob()">FAQ</a>
+    <a href="/faq" onclick="closeMob()">FAQ</a>
   </div>
   <a href="/login" class="mob-menu-cta">Dashboard</a>
 </div>
@@ -706,14 +709,17 @@ a{text-decoration:none;color:inherit}
 <section class="faq-sec" id="faq">
   <div class="sh rv"><div class="sh-tag">Support</div><h2 class="sh-title">Frequently Asked <span class="g">Questions</span></h2></div>
   <div class="faq-list">
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is the difference between Tier Pass, Tier Manage, and TradesAlba?</span><div class="faq-ic">+</div></div><div class="faq-a"><strong>Tier Pass</strong> passes your prop firm challenge using our Expert Advisor. <strong>Tier Manage</strong> manages your funded account for monthly returns after you're funded. <strong>TradesAlba</strong> is a standalone trading dashboard with signals, journal, risk tools, and broker integration. You can use one, two, or all three.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the Tier Pass EA work?</span><div class="faq-ic">+</div></div><div class="faq-a">We install the EA on your MetaTrader platform during a private Zoom session. It trades your challenge automatically with low-risk strategies. You maintain full access to your account at all times. We use the investor (read-only) password — your master password is never needed.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What's included in the TradesAlba dashboard?</span><div class="faq-ic">+</div></div><div class="faq-a">Standard plan: live trading signals, trading journal with tags and screenshots, risk management tools, position size calculator, and economic calendar. Pro plan adds: TradingView indicators, Expert Advisor access, broker integration (MT4/MT5), and priority 24/7 support.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I need to share my password?</span><div class="faq-ic">+</div></div><div class="faq-a">No. For Tier Pass and Tier Manage, we only use the investor (read-only) password. Your master password is never required. Everything is installed securely via a private Zoom session.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic">+</div></div><div class="faq-a">Any prop firm that allows Expert Advisors on MetaTrader 4 or MetaTrader 5. This includes most major firms in the industry.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your success rate?</span><div class="faq-ic">+</div></div><div class="faq-a">We maintain a 94% pass rate with Tier Pass. Our approach uses consistent, low-risk trading strategies designed to maximize your probability of passing.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the referral program work?</span><div class="faq-ic">+</div></div><div class="faq-a">Sign up for a free account, get your unique referral link from the dashboard, and share it. You earn 15% commission on every subscription your referrals make. Minimum payout is €50, paid via USDT (TRC-20).</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I cancel anytime?</span><div class="faq-ic">+</div></div><div class="faq-a">Yes. All subscriptions (Tier Manage and TradesAlba) can be cancelled anytime from your dashboard. No commitments, no hidden fees. Tier Pass is a one-time purchase.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is Tier Pass and how does it work?</span><div class="faq-ic">+</div></div><div class="faq-a">Tier Pass is our flagship service that helps traders become funded. We provide a proprietary Expert Advisor (EA) that you install on your MetaTrader 4 or 5 platform. The EA trades your prop firm challenge automatically with a 94% success rate. You maintain full access to your account — we never request your login credentials.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic">+</div></div><div class="faq-a">We support 20+ leading prop firms including FTMO, FundedNext, FundingPips, FunderPro, Blueberry Funded, The5%ers, E8 Markets, FXIFY, Goat Funded Trader, OANDA Prop Trader, and many more. Any firm that allows Expert Advisors on MT4 or MT5 is compatible.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What happens if the challenge fails?</span><div class="faq-ic">+</div></div><div class="faq-a">If the challenge fails due to our EA's performance, you receive a full refund of the Tier Pass service fee within 30 days of purchase. The guarantee is void if you change bot parameters, manually open or close trades, or fail to follow our operational instructions.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do you need my account login credentials?</span><div class="faq-ic">+</div></div><div class="faq-a">No — never. We do not access, request, or store your trading account credentials under any circumstances. The EA runs locally on your MetaTrader platform. Your account, your control. For broker sync in the dashboard, we use the investor (read-only) password only.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is Tier Manage?</span><div class="faq-ic">+</div></div><div class="faq-a">After passing your challenge, you can keep our EA active on your funded account to generate consistent profits. We offer three plans: Lite Funded (5% target), Starter Funded (9% target), and Pro Funded (15% target). Drawdown parameters are fully configurable to match your prop firm's rules.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What does TradesAlba include?</span><div class="faq-ic">+</div></div><div class="faq-a">Standard plan includes unlimited daily signals, AI-powered analysis, 1 TradingView indicator, and 24/7 support. Pro plan adds 2 trading software tools for live accounts, 3 TradingView indicators, advanced analytics, and VIP priority support. Both available monthly or annually.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your refund policy?</span><div class="faq-ic">+</div></div><div class="faq-a">Tier Pass: full refund within 30 days if the challenge fails due to our EA (conditions apply). Tier Manage: no refunds, cancel anytime. TradesAlba: 7-day money-back guarantee from the date of subscription, no questions asked.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What payment methods do you accept?</span><div class="faq-ic">+</div></div><div class="faq-a">All payments are processed through Stripe, supporting credit/debit cards (Visa, Mastercard, Amex), Revolut, and Klarna. Cryptocurrency payments are coming soon. Tier Pass is a one-time payment; Tier Manage and TradesAlba are recurring subscriptions.</div></div>
+  </div>
+  <div style="text-align:center;margin-top:48px" class="rv">
+    <a href="/faq" class="btn-p" style="font-size:12px;padding:14px 36px;">View All FAQ &rarr;</a>
   </div>
 </section>
 
@@ -729,7 +735,7 @@ a{text-decoration:none;color:inherit}
 <footer class="footer">
   <div class="footer-in">
     <div class="footer-brand"><div class="nav-mark" style="width:28px;height:28px;font-size:12px;border-radius:7px">T</div>TierAlba</div>
-    <div class="footer-links"><a href="#services">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="/partner">Be a Partner</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
+    <div class="footer-links"><a href="#services">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="/about">About Us</a><a href="/partner">Be a Partner</a><a href="/faq">FAQ</a><a href="/login">Dashboard</a></div>
     <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
   </div>
 </footer>
