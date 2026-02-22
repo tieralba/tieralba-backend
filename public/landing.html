@@ -23,8 +23,9 @@ html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 ::selection{background:rgba(200,169,78,0.25)}
 a{text-decoration:none;color:inherit}
+.g{color:var(--gold)}
 
-/* ═══ GRAIN OVERLAY ═══ */
+/* ═══ GRAIN ═══ */
 #grain{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:0.35}
 
 /* ═══ GLOW CURSOR ═══ */
@@ -36,7 +37,7 @@ a{text-decoration:none;color:inherit}
 .cursor-ring.active{transform:scale(1.6);border-color:var(--gold);background:rgba(200,169,78,0.04)}
 @media(max-width:768px){.cursor-dot,.cursor-ring,#glow{display:none!important}}
 
-/* ═══ FLOATING SHAPES ═══ */
+/* ═══ SHAPES ═══ */
 .shape{position:absolute;pointer-events:none;opacity:0.04;z-index:0}
 .shape-diamond{width:60px;height:60px;border:1.5px solid var(--gold);transform:rotate(45deg);animation:shapeFloat 20s ease-in-out infinite}
 .shape-circle{width:80px;height:80px;border:1.5px solid var(--gold);border-radius:50%;animation:shapeFloat 25s ease-in-out infinite reverse}
@@ -77,12 +78,10 @@ a{text-decoration:none;color:inherit}
 .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,169,78,0.35)}
 .nav-cta:hover::before{transform:translateX(100%)}
 
-/* Hamburger button */
 .mob-toggle{display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;
   color:var(--text);cursor:pointer;align-items:center;justify-content:center;font-size:18px;transition:all 0.3s;z-index:1002}
 .mob-toggle:hover{border-color:var(--gold);color:var(--gold)}
 
-/* Fullscreen mobile menu */
 .mob-menu{position:fixed;inset:0;z-index:1001;background:rgba(6,7,10,0.97);backdrop-filter:blur(32px);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   opacity:0;visibility:hidden;transition:all 0.4s var(--ease);pointer-events:none}
@@ -107,10 +106,8 @@ a{text-decoration:none;color:inherit}
 /* ═══ HERO ═══ */
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
   padding:160px 32px 100px;position:relative;overflow:hidden}
-
-/* Animated gradient mesh */
 .hero-mesh{position:absolute;inset:0;overflow:hidden;z-index:0}
-.mesh-blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.5;mix-blend-mode:normal}
+.mesh-blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.5}
 .mesh-1{width:60vw;height:60vw;max-width:800px;max-height:800px;top:-20%;right:-15%;
   background:radial-gradient(circle,rgba(200,169,78,0.07) 0%,transparent 70%);animation:meshMove1 22s ease-in-out infinite}
 .mesh-2{width:50vw;height:50vw;max-width:600px;max-height:600px;bottom:-15%;left:-10%;
@@ -120,17 +117,12 @@ a{text-decoration:none;color:inherit}
 @keyframes meshMove1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-50px,40px) scale(1.1)}66%{transform:translate(30px,-60px) scale(0.95)}}
 @keyframes meshMove2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,-40px) scale(1.15)}}
 @keyframes meshMove3{0%,100%{transform:translate(0,0)}33%{transform:translate(-30px,50px)}66%{transform:translate(40px,-20px)}}
-
-/* Perspective grid */
 .hero-grid-bg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:200%;pointer-events:none;opacity:0.025;z-index:0;
   height:60vh;overflow:hidden}
 .hero-grid-bg::before{content:'';position:absolute;inset:0;
   background-image:linear-gradient(rgba(200,169,78,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(200,169,78,0.6) 1px,transparent 1px);
   background-size:60px 60px;transform:perspective(400px) rotateX(65deg);transform-origin:center bottom}
-
-/* Particle canvas */
 #particles{position:absolute;inset:0;z-index:0;pointer-events:none}
-
 .hero-content{position:relative;z-index:2}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:10px 24px;border-radius:100px;
   background:linear-gradient(135deg,var(--gold-d),rgba(200,169,78,0.02));border:1px solid rgba(200,169,78,0.08);
@@ -139,26 +131,20 @@ a{text-decoration:none;color:inherit}
 .eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
   box-shadow:0 0 16px rgba(94,224,160,0.6);animation:blink 2.5s infinite}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
-
 .hero h1{font-family:'Playfair Display',serif;font-size:clamp(46px,8.5vw,92px);font-weight:800;
   line-height:0.98;letter-spacing:-3px;margin-bottom:32px;max-width:880px;
   opacity:0;animation:heroIn 1.2s var(--ease) 0.5s forwards}
-.hero h1 .g{color:var(--gold);position:relative;display:inline-block}
 .hero h1 .g::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;
   background:linear-gradient(90deg,var(--gold),transparent);border-radius:2px;
   transform:scaleX(0);animation:lineGrow 0.8s var(--ease) 1.4s forwards;transform-origin:left}
+.hero h1 .g{position:relative;display:inline-block}
 @keyframes lineGrow{to{transform:scaleX(1)}}
-
 .hero-desc{font-size:clamp(16px,2vw,19px);font-weight:400;color:var(--text-2);
-  max-width:560px;margin:0 auto 56px;line-height:1.8;
+  max-width:620px;margin:0 auto 56px;line-height:1.8;
   opacity:0;animation:heroIn 1s var(--ease) 0.7s forwards}
-
 .hero-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
   opacity:0;animation:heroIn 1s var(--ease) 0.9s forwards}
-
 @keyframes heroIn{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
-
-/* Scroll indicator */
 .scroll-ind{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:8px;
   opacity:0;animation:heroIn 1s var(--ease) 1.4s forwards}
@@ -179,11 +165,9 @@ a{text-decoration:none;color:inherit}
 .btn-p:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 12px 48px rgba(200,169,78,0.35);background-position:100% 50%}
 .btn-p:hover::after{transform:translateX(100%)}
 .btn-p:active{transform:translateY(0) scale(0.98)}
-
 .btn-g{padding:18px 48px;border:1px solid var(--border);border-radius:14px;background:transparent;
   color:var(--text-2);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;
-  cursor:pointer;transition:all 0.4s var(--ease);display:inline-flex;align-items:center;gap:10px;
-  backdrop-filter:blur(8px)}
+  cursor:pointer;transition:all 0.4s var(--ease);display:inline-flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
 .btn-g:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-3px);background:var(--gold-d)}
 .btn-g .arr{transition:transform 0.3s var(--ease);display:inline-block}
 .btn-g:hover .arr{transform:translateX(5px)}
@@ -214,21 +198,52 @@ a{text-decoration:none;color:inherit}
 .stat-val{font-family:'JetBrains Mono',monospace;font-size:clamp(42px,6vw,58px);font-weight:700;color:var(--gold);line-height:1;margin-bottom:12px}
 .stat-lbl{font-size:14px;color:var(--text-2);font-weight:500;letter-spacing:0.5px}
 
-/* ═══ SEC HEADER ═══ */
+/* ═══ SECTION HEADER ═══ */
 .sh{text-align:center;margin-bottom:72px}
 .sh-tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:3px;
   margin-bottom:20px;padding:7px 18px;border-radius:8px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.06)}
 .sh-tag::before{content:'';width:4px;height:4px;background:var(--gold);border-radius:50%}
 .sh-title{font-family:'Playfair Display',serif;font-size:clamp(34px,5vw,54px);font-weight:700;letter-spacing:-2px;line-height:1.1;margin-bottom:18px}
-.sh-title .g{color:var(--gold)}
 .sh-sub{font-size:16px;color:var(--text-2);max-width:500px;margin:0 auto;line-height:1.7}
+
+/* ═══ OUR SERVICES (NEW) ═══ */
+.svc-sec{padding:120px 32px}
+.svc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1200px;margin:0 auto}
+.svc-block{padding:48px 36px;border-radius:24px;background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden}
+.svc-block::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,169,78,0.2),transparent);opacity:0;transition:opacity 0.4s}
+.svc-block:hover{border-color:var(--border-h);transform:translateY(-8px);box-shadow:0 24px 80px rgba(200,169,78,0.06)}
+.svc-block:hover::before{opacity:1}
+.svc-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);letter-spacing:2px;margin-bottom:20px}
+.svc-ic{width:64px;height:64px;border-radius:18px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);
+  display:flex;align-items:center;justify-content:center;margin-bottom:28px;transition:all 0.4s}
+.svc-block:hover .svc-ic{background:linear-gradient(135deg,var(--gold),#b59840);box-shadow:0 8px 32px rgba(200,169,78,0.3)}
+.svc-ic svg{width:28px;height:28px;stroke:var(--gold);fill:none;stroke-width:1.5;transition:stroke 0.4s}
+.svc-block:hover .svc-ic svg{stroke:#06070a}
+.svc-block h3{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:12px}
+.svc-block .svc-sub{font-size:15px;color:var(--gold);font-weight:600;margin-bottom:20px}
+.svc-block p{font-size:14px;color:var(--text-2);line-height:1.8;margin-bottom:28px}
+.svc-features{list-style:none;margin-bottom:32px}
+.svc-features li{padding:10px 0;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.svc-features li:last-child{border:none}
+.svc-features li::before{content:'✓';font-size:11px;font-weight:700;color:var(--green);width:22px;height:22px;
+  background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.08);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.svc-cta{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;
+  background:var(--gold-d);border:1px solid rgba(200,169,78,0.1);color:var(--gold);
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  transition:all 0.4s var(--ease);cursor:pointer}
+.svc-cta:hover{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;border-color:transparent;
+  box-shadow:0 8px 32px rgba(200,169,78,0.3);transform:translateY(-2px)}
+.svc-cta .arr{transition:transform 0.3s}
+.svc-cta:hover .arr{transform:translateX(4px)}
 
 /* ═══ PRICING ═══ */
 .pricing-sec{padding:120px 32px;position:relative}
 .pricing-sec .ambient{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:900px;height:900px;border-radius:50%;
   background:radial-gradient(circle,rgba(200,169,78,0.03) 0%,transparent 60%);pointer-events:none}
-
 .svc-sel{display:flex;gap:4px;justify-content:center;margin-bottom:60px;padding:5px;
   background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;
   max-width:500px;margin-left:auto;margin-right:auto;box-shadow:0 4px 24px rgba(0,0,0,0.1)}
@@ -236,11 +251,8 @@ a{text-decoration:none;color:inherit}
   cursor:pointer;transition:all 0.4s var(--ease);background:transparent;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
 .svc-btn.on{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.3)}
 .svc-btn:hover:not(.on){color:var(--text);background:rgba(255,255,255,0.02)}
-
 .pnl{display:none;position:relative}.pnl.on{display:block;animation:pnlUp 0.5s var(--ease)}
 @keyframes pnlUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-/* Scroll wrapper */
 .sw{position:relative}
 .sw::before,.sw::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:3;pointer-events:none}
 .sw::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
@@ -253,8 +265,6 @@ a{text-decoration:none;color:inherit}
   color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.3s var(--ease)}
 .s-arr:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d);transform:scale(1.05)}
 .s-arr:active{transform:scale(0.95)}
-
-/* CARD BASE - glassmorphism 3D tilt */
 .gcard{border-radius:22px;padding:44px 32px;text-align:center;
   background:var(--surface);backdrop-filter:blur(20px);
   border:1px solid var(--border);transition:all 0.5s var(--ease);
@@ -268,8 +278,6 @@ a{text-decoration:none;color:inherit}
 .gcard:hover{border-color:var(--border-h);box-shadow:0 24px 80px rgba(200,169,78,0.08)}
 .gcard:hover::before{opacity:1}
 .gcard:hover .gcard-shine{opacity:1}
-
-/* Tier Pass */
 .tp{min-width:215px}
 .tp-tier{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
 .tp-size{font-family:'Playfair Display',serif;font-size:54px;font-weight:800;margin-bottom:8px;letter-spacing:-3px}
@@ -282,8 +290,6 @@ a{text-decoration:none;color:inherit}
 .card-btn:hover{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
   border-color:transparent;box-shadow:0 4px 24px rgba(200,169,78,0.3);transform:translateY(-2px)}
 .card-btn:hover::after{transform:translateX(100%)}
-
-/* Manage */
 .mg{min-width:320px}
 .mg-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:10px}
 .mg-price{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:700;color:var(--gold);margin-bottom:4px}
@@ -299,8 +305,6 @@ a{text-decoration:none;color:inherit}
 .ft-list li::before{content:'✓';font-size:11px;font-weight:700;color:var(--green);width:22px;height:22px;
   background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.08);border-radius:7px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-/* Trades */
 .ta{min-width:320px}
 .ta-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:16px}
 .bill-row{display:flex;gap:3px;justify-content:center;margin-bottom:20px;background:var(--surface-3);border-radius:10px;padding:3px}
@@ -311,8 +315,16 @@ a{text-decoration:none;color:inherit}
 .ta-price span{font-size:14px;color:var(--text-3);font-weight:400}
 .ta-save{font-size:12px;color:var(--green);font-weight:600;margin-bottom:28px;min-height:18px}
 
-/* ═══ HOW IT WORKS ═══ */
+/* ═══ HOW IT WORKS - TABBED ═══ */
 .hiw-sec{padding:120px 32px;background:var(--surface-solid)}
+.hiw-tabs{display:flex;gap:4px;justify-content:center;margin-bottom:60px;padding:5px;
+  background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;
+  max-width:600px;margin-left:auto;margin-right:auto}
+.hiw-tab{flex:1;padding:14px 20px;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all 0.4s var(--ease);background:transparent;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.hiw-tab.on{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.3)}
+.hiw-tab:hover:not(.on){color:var(--text);background:rgba(255,255,255,0.02)}
+.hiw-pnl{display:none}.hiw-pnl.on{display:block;animation:pnlUp 0.5s var(--ease)}
 .hiw-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1100px;margin:0 auto}
 .hiw-card{padding:36px 24px;border-radius:20px;background:linear-gradient(160deg,var(--surface-2),var(--bg));
   border:1px solid var(--border);transition:all 0.4s var(--ease);position:relative}
@@ -323,7 +335,6 @@ a{text-decoration:none;color:inherit}
 .hiw-card:hover .hiw-n{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 16px rgba(200,169,78,0.2)}
 .hiw-card h3{font-size:17px;font-weight:700;margin-bottom:12px}
 .hiw-card p{font-size:14px;color:var(--text-2);line-height:1.75}
-/* Connector line */
 .hiw-card::after{content:'';position:absolute;top:60px;right:-12px;width:24px;height:1px;
   background:linear-gradient(90deg,rgba(200,169,78,0.15),transparent);pointer-events:none}
 .hiw-card:last-child::after{display:none}
@@ -402,33 +413,39 @@ a{text-decoration:none;color:inherit}
 
 /* ═══ MOBILE ═══ */
 @media(max-width:768px){
-  .nav{padding:0 16px}
-  .mob-toggle{display:flex;order:1}
-  .nav-logo{order:2;margin:0 auto;position:relative;left:0;transform:none}
+  .nav{padding:0 16px;position:fixed}
+  .mob-toggle{display:flex;position:absolute;left:16px}
+  .nav-logo{position:absolute;left:50%;transform:translateX(-50%)}
   .nav-logo .logo-text{display:none}
   .nav-mid{display:none}
-  .nav-end{order:3}
-  .nav-end .nav-cta{padding:8px 20px;font-size:11px}
+  .nav-end{position:absolute;right:16px}
+  .nav-end .nav-cta{padding:8px 18px;font-size:10px;letter-spacing:1px}
   .hero{padding:130px 20px 80px}
   .stats-row{grid-template-columns:1fr;gap:12px}
+  .svc-row{grid-template-columns:1fr;gap:16px}
+  .svc-block{padding:36px 24px}
   .hiw-row{grid-template-columns:1fr 1fr;gap:12px}.hiw-card::after{display:none}
+  .hiw-tabs{max-width:100%}.hiw-tab{padding:12px 6px;font-size:10px;letter-spacing:.3px}
   .why-row{grid-template-columns:1fr 1fr;gap:12px}
   .success-grid{grid-template-columns:1fr;gap:36px}
+  .partner-box{grid-template-columns:1fr;gap:36px}
   .plat-row{flex-direction:column;max-width:240px}
   .svc-sel{max-width:100%}.svc-btn{padding:12px 6px;font-size:11px;letter-spacing:.3px}
   .footer-in{flex-direction:column;align-items:center;text-align:center}
+  .footer-links{flex-wrap:wrap;justify-content:center}
   .scroll-ind{display:none}
   .sw::before,.sw::after{width:40px}
 }
 @media(max-width:480px){
   .hiw-row{grid-template-columns:1fr}
   .why-row{grid-template-columns:1fr}
+  .svc-row{gap:12px}
 }
 </style>
 </head>
 <body>
 
-<!-- Effects layers -->
+<!-- Effects -->
 <canvas id="grain"></canvas>
 <div id="glow"></div>
 <div class="cursor-dot" id="cDot"></div>
@@ -439,10 +456,10 @@ a{text-decoration:none;color:inherit}
   <button class="mob-toggle" onclick="document.getElementById('mobMenu').classList.add('open')">&#9776;</button>
   <div class="nav-logo"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></div>
   <div class="nav-mid">
-    <a href="#pricing">Services</a>
+    <a href="#services">Services</a>
     <a href="#how">How It Works</a>
     <a href="#why">Why Us</a>
-    <a href="#partner">Be a Partner</a>
+    <a href="/partner">Be a Partner</a>
     <a href="#faq">FAQ</a>
   </div>
   <div class="nav-end">
@@ -450,15 +467,15 @@ a{text-decoration:none;color:inherit}
   </div>
 </nav>
 
-<!-- FULLSCREEN MOBILE MENU -->
+<!-- MOBILE MENU -->
 <div class="mob-menu" id="mobMenu">
   <button class="mob-menu-close" onclick="document.getElementById('mobMenu').classList.remove('open')">&times;</button>
   <div class="mob-menu-links">
     <a href="#" onclick="closeMob()">Home</a>
-    <a href="#pricing" onclick="closeMob()">Services</a>
+    <a href="#services" onclick="closeMob()">Services</a>
     <a href="#how" onclick="closeMob()">How It Works</a>
     <a href="#why" onclick="closeMob()">Why Us</a>
-    <a href="#partner" onclick="closeMob()">Be a Partner</a>
+    <a href="/partner" onclick="closeMob()">Be a Partner</a>
     <a href="#faq" onclick="closeMob()">FAQ</a>
   </div>
   <a href="/login" class="mob-menu-cta">Dashboard</a>
@@ -469,7 +486,6 @@ a{text-decoration:none;color:inherit}
   <div class="hero-mesh"><div class="mesh-blob mesh-1"></div><div class="mesh-blob mesh-2"></div><div class="mesh-blob mesh-3"></div></div>
   <div class="hero-grid-bg"></div>
   <canvas id="particles"></canvas>
-  <!-- Floating shapes -->
   <div class="shape shape-diamond" style="top:15%;left:8%"></div>
   <div class="shape shape-circle" style="top:70%;right:6%"></div>
   <div class="shape shape-cross" style="top:25%;right:15%"></div>
@@ -478,9 +494,9 @@ a{text-decoration:none;color:inherit}
   <div class="hero-content">
     <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Trusted by 100+ Traders Worldwide</div>
     <h1>Your Path to<br><span class="g">Funded Success</span></h1>
-    <p class="hero-desc">Professional prop firm challenge passing, account management, and premium trading signals. One platform, every tool you need.</p>
+    <p class="hero-desc">Pass your prop firm challenge with <strong>Tier Pass</strong>, grow your funded account with <strong>Tier Manage</strong>, and trade smarter with the <strong>TradesAlba</strong> dashboard. Three services, one platform.</p>
     <div class="hero-btns">
-      <a href="#pricing" class="btn-p">Explore Services</a>
+      <a href="#services" class="btn-p">Explore Services</a>
       <a href="/login" class="btn-g">Client Dashboard <span class="arr">&rarr;</span></a>
     </div>
   </div>
@@ -506,16 +522,116 @@ a{text-decoration:none;color:inherit}
 <!-- STATS -->
 <section class="stats-sec">
   <div class="stats-row">
-    <div class="stat-card rv"><div class="stat-val" data-t="100" data-s="+">0</div><div class="stat-lbl">Challenges Overcome</div></div>
+    <div class="stat-card rv"><div class="stat-val" data-t="100" data-s="+">0</div><div class="stat-lbl">Challenges Passed</div></div>
     <div class="stat-card rv rv-d1"><div class="stat-val" data-t="94" data-s="%">0</div><div class="stat-lbl">Pass Success Rate</div></div>
     <div class="stat-card rv rv-d2"><div class="stat-val" data-t="40" data-s="+">0</div><div class="stat-lbl">Accounts Managed</div></div>
   </div>
 </section>
 
-<!-- PRICING -->
+<!-- ═══ OUR 3 SERVICES ═══ -->
+<section class="svc-sec" id="services">
+  <div class="sh rv"><div class="sh-tag">Our Services</div><h2 class="sh-title">Three Ways to <span class="g">Succeed</span></h2><p class="sh-sub">Each service is designed for a different stage of your trading journey. Choose one or combine them all.</p></div>
+
+  <div class="svc-row">
+    <!-- TIER PASS -->
+    <div class="svc-block rv">
+      <div class="svc-num">01</div>
+      <div class="svc-ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <h3>Tier Pass</h3>
+      <div class="svc-sub">We pass your challenge for you</div>
+      <p>Our Expert Advisor is installed on your MetaTrader platform and trades your prop firm challenge with professional risk management. You watch, we deliver.</p>
+      <ul class="svc-features">
+        <li>94% pass rate on all challenges</li>
+        <li>Works on any MT4/MT5 prop firm</li>
+        <li>Accounts from 5K to 200K</li>
+        <li>Private Zoom setup session</li>
+        <li>No passwords shared — investor access only</li>
+      </ul>
+      <a href="#pricing" class="svc-cta" onclick="setTimeout(()=>swSvc('tp',document.querySelector('.svc-btn')),300)">View Plans <span class="arr">&rarr;</span></a>
+    </div>
+
+    <!-- TIER MANAGE -->
+    <div class="svc-block rv rv-d1">
+      <div class="svc-num">02</div>
+      <div class="svc-ic"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg></div>
+      <h3>Tier Manage</h3>
+      <div class="svc-sub">We manage your funded account</div>
+      <p>After you receive your funded account, our EA manages it for consistent monthly returns. You keep full access, we handle the trading.</p>
+      <ul class="svc-features">
+        <li>Monthly profit targets 5-15%</li>
+        <li>Strict drawdown management (2-4%)</li>
+        <li>Full account visibility at all times</li>
+        <li>EA software provided &amp; installed</li>
+        <li>24/7 support &amp; private Q&amp;A</li>
+      </ul>
+      <a href="#pricing" class="svc-cta" onclick="setTimeout(()=>swSvc('mg',document.querySelectorAll('.svc-btn')[1]),300)">View Plans <span class="arr">&rarr;</span></a>
+    </div>
+
+    <!-- TRADESALBA -->
+    <div class="svc-block rv rv-d2">
+      <div class="svc-num">03</div>
+      <div class="svc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <h3>TradesAlba</h3>
+      <div class="svc-sub">Your complete trading dashboard</div>
+      <p>A premium all-in-one dashboard to level up your trading. Access live signals, track your performance, manage risk, and connect your broker — all in one place.</p>
+      <ul class="svc-features">
+        <li>Live trading signals from our analysts</li>
+        <li>Trading journal with tags &amp; screenshots</li>
+        <li>Risk management &amp; position calculator</li>
+        <li>TradingView indicators (Pro plan)</li>
+        <li>Broker integration via MetaTrader</li>
+        <li>Economic calendar &amp; market news</li>
+      </ul>
+      <a href="#pricing" class="svc-cta" onclick="setTimeout(()=>swSvc('ta',document.querySelectorAll('.svc-btn')[2]),300)">View Plans <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS — TABBED ═══ -->
+<section class="hiw-sec" id="how">
+  <div class="sh rv"><div class="sh-tag">Process</div><h2 class="sh-title">How It <span class="g">Works</span></h2><p class="sh-sub">Simple steps for each service.</p></div>
+
+  <div class="hiw-tabs rv">
+    <button class="hiw-tab on" onclick="swHiw('tp',this)">Tier Pass</button>
+    <button class="hiw-tab" onclick="swHiw('mg',this)">Tier Manage</button>
+    <button class="hiw-tab" onclick="swHiw('ta',this)">TradesAlba</button>
+  </div>
+
+  <!-- Tier Pass -->
+  <div class="hiw-pnl on" id="hiw-tp">
+    <div class="hiw-row">
+      <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Get a Challenge</h3><p>Have an active prop firm challenge on MT4 or MT5 that allows Expert Advisors.</p></div>
+      <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Choose Your Size</h3><p>Select a Tier Pass plan from 5K to 200K matching your challenge account size.</p></div>
+      <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>Zoom Setup</h3><p>We install the EA on your machine during a private Zoom call. Takes 15 minutes.</p></div>
+      <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Challenge Passed</h3><p>The EA trades your challenge with low-risk strategies. You get your funded account.</p></div>
+    </div>
+  </div>
+
+  <!-- Tier Manage -->
+  <div class="hiw-pnl" id="hiw-mg">
+    <div class="hiw-row">
+      <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Get Funded</h3><p>Pass your challenge (with Tier Pass or on your own) and receive your funded account.</p></div>
+      <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Subscribe</h3><p>Choose Lite, Starter, or Pro based on your profit target and risk preferences.</p></div>
+      <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>EA Installed</h3><p>We install the management EA via Zoom. You keep full access to your account.</p></div>
+      <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Monthly Returns</h3><p>Our EA manages your funded account for consistent monthly profit targets.</p></div>
+    </div>
+  </div>
+
+  <!-- TradesAlba -->
+  <div class="hiw-pnl" id="hiw-ta">
+    <div class="hiw-row">
+      <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Subscribe</h3><p>Choose Standard or Pro plan based on the tools you need.</p></div>
+      <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Access Dashboard</h3><p>Log in and get instant access to signals, journal, risk tools, and more.</p></div>
+      <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>Connect Broker</h3><p>Link your MetaTrader account for automatic trade tracking and analytics.</p></div>
+      <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Trade Smarter</h3><p>Use our signals, indicators, and risk tools to make better trading decisions.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
 <section class="pricing-sec" id="pricing">
   <div class="ambient"></div>
-  <div class="sh rv"><div class="sh-tag">Pricing</div><h2 class="sh-title">Choose Your <span class="g">Service</span></h2><p class="sh-sub">Select the service that matches your trading goals.</p></div>
+  <div class="sh rv"><div class="sh-tag">Pricing</div><h2 class="sh-title">Choose Your <span class="g">Plan</span></h2><p class="sh-sub">Transparent pricing. No hidden fees. Cancel anytime.</p></div>
   <div class="svc-sel rv"><button class="svc-btn on" onclick="swSvc('tp',this)">Tier Pass</button><button class="svc-btn" onclick="swSvc('mg',this)">Tier Manage</button><button class="svc-btn" onclick="swSvc('ta',this)">TradesAlba</button></div>
 
   <div class="pnl on" id="p-tp"><div class="sw"><div class="sc" id="sc-tp">
@@ -534,30 +650,19 @@ a{text-decoration:none;color:inherit}
   </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-mg',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-mg',1)">&rarr;</button></div></div>
 
   <div class="pnl" id="p-ta"><div class="sw"><div class="sc" id="sc-ta" style="justify-content:center">
-    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Standard</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'std','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'std','y')">Yearly</button></div><div class="ta-price" id="std-p">&euro;49<span>/mo</span></div><div class="ta-save" id="std-s">&nbsp;</div><ul class="ft-list"><li>Live trading signals</li><li>Trading journal</li><li>Risk management tools</li><li>Email support</li></ul><a href="#" class="card-btn" id="std-b">Subscribe</a></div>
-    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Pro</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'pro','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'pro','y')">Yearly</button></div><div class="ta-price" id="pro-p">&euro;89<span>/mo</span></div><div class="ta-save" id="pro-s">&nbsp;</div><ul class="ft-list"><li>Everything in Standard</li><li>Expert Advisor access</li><li>TradingView indicators</li><li>Priority 24/7 support</li><li>Broker integration</li></ul><a href="#" class="card-btn" id="pro-b">Subscribe</a></div>
+    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Standard</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'std','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'std','y')">Yearly</button></div><div class="ta-price" id="std-p">&euro;49<span>/mo</span></div><div class="ta-save" id="std-s">&nbsp;</div><ul class="ft-list"><li>Live trading signals</li><li>Trading journal</li><li>Risk management tools</li><li>Economic calendar</li><li>Email support</li></ul><a href="#" class="card-btn" id="std-b">Subscribe</a></div>
+    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Pro</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'pro','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'pro','y')">Yearly</button></div><div class="ta-price" id="pro-p">&euro;89<span>/mo</span></div><div class="ta-save" id="pro-s">&nbsp;</div><ul class="ft-list"><li>Everything in Standard</li><li>Expert Advisor access</li><li>3 TradingView indicators</li><li>Broker integration (MT4/MT5)</li><li>Priority 24/7 support</li></ul><a href="#" class="card-btn" id="pro-b">Subscribe</a></div>
   </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-ta',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-ta',1)">&rarr;</button></div></div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="hiw-sec" id="how">
-  <div class="sh rv"><div class="sh-tag">Process</div><h2 class="sh-title">How It <span class="g">Works</span></h2><p class="sh-sub">Four steps to funded trading.</p></div>
-  <div class="hiw-row">
-    <div class="hiw-card rv"><div class="hiw-n">1</div><h3>Requirements</h3><p>Active prop firm challenge on MT4 or MT5 that allows Expert Advisors.</p></div>
-    <div class="hiw-card rv rv-d1"><div class="hiw-n">2</div><h3>Choose &amp; Purchase</h3><p>Pick Tier Pass, Tier Manage, or TradesAlba based on your goals.</p></div>
-    <div class="hiw-card rv rv-d2"><div class="hiw-n">3</div><h3>Setup via Zoom</h3><p>We install the EA on your machine during a private Zoom call.</p></div>
-    <div class="hiw-card rv rv-d3"><div class="hiw-n">4</div><h3>Start Growing</h3><p>Pass your challenge, get funded, and scale with our services.</p></div>
-  </div>
-</section>
-
-<!-- WHY -->
+<!-- WHY US -->
 <section class="why-sec" id="why">
-  <div class="sh rv"><div class="sh-tag">Advantages</div><h2 class="sh-title">Why <span class="g">TierAlba</span></h2><p class="sh-sub">What sets us apart.</p></div>
+  <div class="sh rv"><div class="sh-tag">Advantages</div><h2 class="sh-title">Why <span class="g">TierAlba</span></h2><p class="sh-sub">What sets us apart from the rest.</p></div>
   <div class="why-row">
-    <div class="why-card rv"><div class="why-ic">&#9733;</div><h3>Proven Results</h3><p>94% pass rate. Consistent, data-driven approach to every challenge.</p></div>
-    <div class="why-card rv rv-d1"><div class="why-ic">&#9830;</div><h3>Best Prices</h3><p>Premium service at competitive prices. No hidden fees, fully transparent.</p></div>
-    <div class="why-card rv rv-d2"><div class="why-ic">&#9650;</div><h3>Scale to 200K</h3><p>Manage accounts from 5K to 200K. We grow together with your capital.</p></div>
-    <div class="why-card rv rv-d3"><div class="why-ic">&#10070;</div><h3>Full Ecosystem</h3><p>Tier Pass, Tier Manage &amp; TradesAlba. One company for every need.</p></div>
+    <div class="why-card rv"><div class="why-ic">&#9733;</div><h3>94% Pass Rate</h3><p>Consistent, data-driven approach. We don't gamble with your challenge — we deliver results.</p></div>
+    <div class="why-card rv rv-d1"><div class="why-ic">&#9830;</div><h3>Best Prices</h3><p>Premium service at competitive prices. No hidden fees. Full transparency on everything.</p></div>
+    <div class="why-card rv rv-d2"><div class="why-ic">&#9650;</div><h3>Scale to 200K</h3><p>From 5K to 200K accounts. We grow alongside your capital and ambitions.</p></div>
+    <div class="why-card rv rv-d3"><div class="why-ic">&#10070;</div><h3>One Ecosystem</h3><p>Pass, manage, and trade — all from one company. No juggling multiple services.</p></div>
   </div>
 </section>
 
@@ -576,9 +681,14 @@ a{text-decoration:none;color:inherit}
       <div class="s-dots" id="sDots"></div>
     </div>
     <div class="success-txt rv">
-      <h3>Professional Prop Firm Services</h3>
-      <p>At TierAlba, we help traders pass challenges and manage funded accounts with precision, discipline, and a tailored approach for every client.</p>
-      <ul class="s-list"><li>94% challenge pass success rate</li><li>Professional account management</li><li>Tailored strategies per trader</li><li>24/7 dedicated support</li></ul>
+      <h3>Proven Results, Real Traders</h3>
+      <p>Over 100 challenges passed and 40+ funded accounts managed. Our clients trust us because we deliver — consistently.</p>
+      <ul class="s-list">
+        <li>Challenges passed within days, not weeks</li>
+        <li>Funded accounts growing every month</li>
+        <li>Full transparency — you see every trade</li>
+        <li>Dedicated support from start to finish</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -586,20 +696,24 @@ a{text-decoration:none;color:inherit}
 <!-- PLATFORMS -->
 <section class="plat-sec">
   <div class="sh rv"><div class="sh-tag">Compatibility</div><h2 class="sh-title">Supported <span class="g">Platforms</span></h2></div>
-  <div class="plat-row rv"><div class="plat-box">MetaTrader 4</div><div class="plat-box">MetaTrader 5</div></div>
+  <div class="plat-row">
+    <div class="plat-box rv">MetaTrader 4</div>
+    <div class="plat-box rv rv-d1">MetaTrader 5</div>
+  </div>
 </section>
 
 <!-- FAQ -->
 <section class="faq-sec" id="faq">
   <div class="sh rv"><div class="sh-tag">Support</div><h2 class="sh-title">Frequently Asked <span class="g">Questions</span></h2></div>
   <div class="faq-list">
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is Tier Pass?</span><div class="faq-ic">+</div></div><div class="faq-a">Tier Pass is our challenge-passing service. Our Expert Advisor connects to your MetaTrader platform and helps you pass your prop firm challenge safely and efficiently.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is Tier Manage?</span><div class="faq-ic">+</div></div><div class="faq-a">Tier Manage is our account management service. After receiving your funded account, our EA manages trades with professional risk management. You maintain full access.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is TradesAlba?</span><div class="faq-ic">+</div></div><div class="faq-a">TradesAlba is our premium trading dashboard with live signals, journal, risk tools, TradingView indicators, and broker integration for tracking performance.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I need to share my password?</span><div class="faq-ic">+</div></div><div class="faq-a">No. We use the investor (read-only) password. The master password is never required. Everything is installed via a private Zoom session.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic">+</div></div><div class="faq-a">Any prop firm that allows Expert Advisors on MetaTrader 4 or 5. This includes most major firms in the industry.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your success rate?</span><div class="faq-ic">+</div></div><div class="faq-a">We maintain a 94% pass rate. We use consistent, low-risk trading to maximize your probability of passing.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I cancel anytime?</span><div class="faq-ic">+</div></div><div class="faq-a">Yes, all subscriptions can be cancelled from your dashboard. No commitments, no hidden fees.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is the difference between Tier Pass, Tier Manage, and TradesAlba?</span><div class="faq-ic">+</div></div><div class="faq-a"><strong>Tier Pass</strong> passes your prop firm challenge using our Expert Advisor. <strong>Tier Manage</strong> manages your funded account for monthly returns after you're funded. <strong>TradesAlba</strong> is a standalone trading dashboard with signals, journal, risk tools, and broker integration. You can use one, two, or all three.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the Tier Pass EA work?</span><div class="faq-ic">+</div></div><div class="faq-a">We install the EA on your MetaTrader platform during a private Zoom session. It trades your challenge automatically with low-risk strategies. You maintain full access to your account at all times. We use the investor (read-only) password — your master password is never needed.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What's included in the TradesAlba dashboard?</span><div class="faq-ic">+</div></div><div class="faq-a">Standard plan: live trading signals, trading journal with tags and screenshots, risk management tools, position size calculator, and economic calendar. Pro plan adds: TradingView indicators, Expert Advisor access, broker integration (MT4/MT5), and priority 24/7 support.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I need to share my password?</span><div class="faq-ic">+</div></div><div class="faq-a">No. For Tier Pass and Tier Manage, we only use the investor (read-only) password. Your master password is never required. Everything is installed securely via a private Zoom session.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic">+</div></div><div class="faq-a">Any prop firm that allows Expert Advisors on MetaTrader 4 or MetaTrader 5. This includes most major firms in the industry.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your success rate?</span><div class="faq-ic">+</div></div><div class="faq-a">We maintain a 94% pass rate with Tier Pass. Our approach uses consistent, low-risk trading strategies designed to maximize your probability of passing.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the referral program work?</span><div class="faq-ic">+</div></div><div class="faq-a">Sign up for a free account, get your unique referral link from the dashboard, and share it. You earn 15% commission on every subscription your referrals make. Minimum payout is €50, paid via USDT (TRC-20).</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I cancel anytime?</span><div class="faq-ic">+</div></div><div class="faq-a">Yes. All subscriptions (Tier Manage and TradesAlba) can be cancelled anytime from your dashboard. No commitments, no hidden fees. Tier Pass is a one-time purchase.</div></div>
   </div>
 </section>
 
@@ -607,7 +721,7 @@ a{text-decoration:none;color:inherit}
 <section class="cta-sec">
   <div class="ambient"></div>
   <h2 class="rv">Ready to Get <span class="g">Funded</span>?</h2>
-  <p class="rv">Join hundreds of traders who trust TierAlba.</p>
+  <p class="rv">Join hundreds of traders who trust TierAlba to pass, manage, and trade.</p>
   <div class="rv"><a href="#pricing" class="btn-p">Get Started Now</a></div>
 </section>
 
@@ -615,13 +729,13 @@ a{text-decoration:none;color:inherit}
 <footer class="footer">
   <div class="footer-in">
     <div class="footer-brand"><div class="nav-mark" style="width:28px;height:28px;font-size:12px;border-radius:7px">T</div>TierAlba</div>
-    <div class="footer-links"><a href="#pricing">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="#partner">Be a Partner</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
+    <div class="footer-links"><a href="#services">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="/partner">Be a Partner</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
     <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
   </div>
 </footer>
 
 <script>
-/* ═══ GRAIN NOISE ═══ */
+/* ═══ GRAIN ═══ */
 (function(){const c=document.getElementById('grain'),x=c.getContext('2d');function r(){c.width=window.innerWidth;c.height=window.innerHeight}r();window.addEventListener('resize',r);
 function draw(){const d=x.createImageData(c.width,c.height),p=d.data;for(let i=0;i<p.length;i+=4){const v=Math.random()*255;p[i]=p[i+1]=p[i+2]=v;p[i+3]=15}x.putImageData(d,0,0);requestAnimationFrame(draw)}draw()})();
 
@@ -639,10 +753,10 @@ const cD=document.getElementById('cDot'),cR=document.getElementById('cRing'),gl=
 let mx=0,my=0,rx=0,ry=0;
 document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cD.style.left=mx-2.5+'px';cD.style.top=my-2.5+'px';gl.style.left=mx+'px';gl.style.top=my+'px'});
 (function anim(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;cR.style.left=rx-20+'px';cR.style.top=ry-20+'px';requestAnimationFrame(anim)})();
-document.querySelectorAll('a,button,.gcard,.stat-card,.hiw-card,.why-card,.faq-q,.plat-box').forEach(el=>{
+document.querySelectorAll('a,button,.gcard,.stat-card,.hiw-card,.why-card,.faq-q,.plat-box,.svc-block').forEach(el=>{
   el.addEventListener('mouseenter',()=>cR.classList.add('active'));el.addEventListener('mouseleave',()=>cR.classList.remove('active'))});
 
-/* ═══ CARD 3D TILT + SHINE ═══ */
+/* ═══ 3D TILT ═══ */
 document.querySelectorAll('.gcard,.stat-card').forEach(card=>{
   card.addEventListener('mousemove',e=>{
     const r=card.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
@@ -653,7 +767,7 @@ document.querySelectorAll('.gcard,.stat-card').forEach(card=>{
   card.addEventListener('mouseleave',()=>{card.style.transform='';});
 });
 
-/* ═══ NAV SCROLL ═══ */
+/* ═══ NAV ═══ */
 window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
 
 /* ═══ MOBILE MENU ═══ */
@@ -662,6 +776,10 @@ function closeMob(){document.getElementById('mobMenu').classList.remove('open')}
 /* ═══ SERVICE TABS ═══ */
 function swSvc(id,b){document.querySelectorAll('.svc-btn').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));b.classList.add('on');document.getElementById('p-'+id).classList.add('on')}
+
+/* ═══ HOW IT WORKS TABS ═══ */
+function swHiw(id,b){document.querySelectorAll('.hiw-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.hiw-pnl').forEach(p=>p.classList.remove('on'));b.classList.add('on');document.getElementById('hiw-'+id).classList.add('on')}
 
 /* ═══ SCROLL ARROWS ═══ */
 function sScr(id,d){const el=document.getElementById(id);if(!el)return;const c=el.querySelector(':scope>*');el.scrollBy({left:d*(c?c.offsetWidth+20:320),behavior:'smooth'})}
