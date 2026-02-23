@@ -204,6 +204,13 @@ app.get('/faq', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'faq.html'));
 });
 
+// Legal pages
+['privacy-policy','terms-of-service','refund-policy','legal-notice','cookie-policy'].forEach(page => {
+  app.get(`/${page}`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', `${page}.html`));
+  });
+});
+
 // Serve frontend static files (CSS, JS, images, other HTML)
 app.use(express.static(path.join(__dirname, 'public')));
 
