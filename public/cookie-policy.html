@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Policy — TierAlba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#06070a;--surface:rgba(14,15,22,0.6);--surface-solid:#0e0f16;--surface-2:#13141c;
+  --border:rgba(255,255,255,0.04);--border-h:rgba(200,169,78,0.15);
+  --gold:#c8a94e;--gold-l:#e8d5a0;--gold-d:rgba(200,169,78,0.06);
+  --text:#ece8de;--text-2:#8e897e;--text-3:#55514a;--green:#5ee0a0;--red:#e87272;
+  --ease:cubic-bezier(.22,1,.36,1)}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(200,169,78,0.25)}
+a{text-decoration:none;color:var(--gold)}a:hover{text-decoration:underline}
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:72px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,7,10,0.6);backdrop-filter:blur(32px) saturate(1.5);border-bottom:1px solid var(--border);transition:all 0.5s var(--ease)}
+.nav.scrolled{height:60px;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none}
+.nav-mark{width:38px;height:38px;background:linear-gradient(145deg,var(--gold),#b59840,var(--gold-l));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.3),inset 0 1px 0 rgba(255,255,255,0.2)}
+.nav-end{display:flex;align-items:center;gap:14px}
+.nav-cta{padding:10px 28px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;transition:all 0.4s var(--ease);text-decoration:none;box-shadow:0 2px 16px rgba(200,169,78,0.2)}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,169,78,0.35);text-decoration:none}
+.nav-back{padding:10px 24px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:12px;font-weight:600;letter-spacing:0.5px;transition:all 0.3s;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.nav-back:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d);text-decoration:none}
+.legal-hero{padding:140px 32px 60px;text-align:center}
+.legal-hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-2px;margin-bottom:12px}
+.legal-hero .updated{font-size:13px;color:var(--text-3)}
+.legal-body{max-width:760px;margin:0 auto;padding:0 32px 120px}
+.legal-body h2{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin:48px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text);letter-spacing:-0.5px}
+.legal-body h3{font-size:17px;font-weight:700;margin:32px 0 12px;color:var(--gold)}
+.legal-body p{font-size:14px;color:var(--text-2);line-height:1.85;margin-bottom:16px}
+.legal-body ul{margin:12px 0 20px 20px;list-style:none}
+.legal-body li{font-size:14px;color:var(--text-2);line-height:1.85;margin-bottom:8px;padding-left:8px;position:relative}
+.legal-body li::before{content:'';position:absolute;left:-16px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.legal-body strong{color:var(--text);font-weight:600}
+.legal-body .note{padding:16px 20px;border-radius:12px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);margin:16px 0;font-size:13px;color:var(--text-2);line-height:1.8}
+.legal-body .cookie-table{width:100%;border-collapse:collapse;margin:20px 0}
+.legal-body .cookie-table th{text-align:left;padding:12px 16px;font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--border);background:var(--surface)}
+.legal-body .cookie-table td{padding:12px 16px;font-size:13px;color:var(--text-2);border-bottom:1px solid var(--border);vertical-align:top}
+.legal-body .cookie-table tr:hover td{background:rgba(200,169,78,0.02)}
+.legal-body .contact-box{padding:24px;border-radius:16px;background:var(--surface);border:1px solid var(--border);margin:24px 0}
+.legal-body .contact-box p{margin-bottom:8px}
+.footer{padding:48px 32px 24px;border-top:1px solid var(--border)}
+.footer-in{max-width:760px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-brand{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap}
+.footer-links a{font-size:12px;color:var(--text-3);transition:color 0.3s;font-weight:500}
+.footer-links a:hover{color:var(--gold);text-decoration:none}
+.footer-copy{width:100%;text-align:center;font-size:11px;color:var(--text-3);margin-top:24px;padding-top:24px;border-top:1px solid var(--border)}
+@media(max-width:768px){.nav{padding:0 16px}.nav-logo span{display:none}.legal-hero{padding:120px 20px 40px}.legal-body{padding:0 20px 80px}.legal-body .cookie-table{font-size:11px}.legal-body .cookie-table th,.legal-body .cookie-table td{padding:8px 10px}.footer-in{flex-direction:column;align-items:center;text-align:center}.footer-links{justify-content:center}}
+</style>
+</head>
+<body>
+<nav class="nav" id="nav">
+  <a href="/" class="nav-logo"><div class="nav-mark">T</div><span>TierAlba</span></a>
+  <div class="nav-end"><a href="/" class="nav-back">&larr; Home</a><a href="/login" class="nav-cta">Dashboard</a></div>
+</nav>
+
+<section class="legal-hero">
+  <h1>Cookie <span style="color:var(--gold)">Policy</span></h1>
+  <div class="updated">Last Updated: March 27, 2025</div>
+</section>
+
+<div class="legal-body">
+
+<p>This Cookie Policy explains how Tier Alba ("we", "us", or "our") uses cookies and similar technologies when you visit our website at tieralba.com. It explains what these technologies are, why we use them, and your rights to control their use.</p>
+
+<h2>1. What Are Cookies?</h2>
+<p>Cookies are small text files that are stored on your device (computer, tablet, or mobile phone) when you visit a website. They are widely used to make websites work efficiently, provide information to website owners, and improve the user experience.</p>
+<p>Cookies can be "persistent" (remaining on your device until deleted or until they expire) or "session" cookies (deleted when you close your browser).</p>
+
+<h2>2. How We Use Cookies</h2>
+<p>We use cookies for the following purposes:</p>
+
+<h3>2.1 Strictly Necessary Cookies</h3>
+<p>These cookies are essential for the operation of our website. They enable core functionalities such as security, network management, and account access. You cannot opt out of these cookies as the website cannot function properly without them.</p>
+
+<h3>2.2 Performance &amp; Analytics Cookies</h3>
+<p>These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This helps us improve the functionality and content of our site.</p>
+
+<h3>2.3 Functionality Cookies</h3>
+<p>These cookies allow our website to remember choices you make (such as your language preference or login details) and provide enhanced, personalized features.</p>
+
+<h3>2.4 Marketing &amp; Advertising Cookies</h3>
+<p>These cookies are used to deliver advertisements that are relevant to you and your interests. They may also be used to limit the number of times you see an advertisement and help measure the effectiveness of advertising campaigns.</p>
+
+<h2>3. Cookies We Use</h2>
+
+<table class="cookie-table">
+  <thead>
+    <tr><th>Cookie</th><th>Type</th><th>Purpose</th><th>Duration</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>ta_cookies</strong></td><td>Necessary</td><td>Stores your cookie consent preference</td><td>Persistent</td></tr>
+    <tr><td><strong>ta_session</strong></td><td>Necessary</td><td>Maintains your authenticated session</td><td>Session</td></tr>
+    <tr><td><strong>ta_token</strong></td><td>Necessary</td><td>JWT authentication token for dashboard access</td><td>24 hours</td></tr>
+    <tr><td><strong>_ga / _gid</strong></td><td>Analytics</td><td>Google Analytics — tracks page views and user behavior</td><td>2 years / 24 hours</td></tr>
+    <tr><td><strong>_gat</strong></td><td>Analytics</td><td>Google Analytics — rate limiting</td><td>1 minute</td></tr>
+    <tr><td><strong>_fbp</strong></td><td>Marketing</td><td>Facebook Pixel — tracks conversions and advertising</td><td>3 months</td></tr>
+    <tr><td><strong>_stripe_mid</strong></td><td>Necessary</td><td>Stripe — fraud prevention during payment processing</td><td>1 year</td></tr>
+    <tr><td><strong>_stripe_sid</strong></td><td>Necessary</td><td>Stripe — session identifier for secure payments</td><td>30 minutes</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Third-Party Cookies</h2>
+<p>Some cookies on our website are placed by third-party services that appear on our pages. We do not control the setting of these cookies. The third parties that may set cookies on our site include:</p>
+<ul>
+  <li><strong>Google Analytics</strong> — for website traffic analysis and user behavior insights</li>
+  <li><strong>Stripe</strong> — for secure payment processing and fraud prevention</li>
+  <li><strong>Facebook / Meta</strong> — for advertising and conversion tracking</li>
+  <li><strong>Trustpilot</strong> — for displaying verified customer reviews</li>
+</ul>
+<p>Each of these third parties has their own privacy and cookie policies, which we encourage you to review.</p>
+
+<h2>5. Managing Your Cookie Preferences</h2>
+<p>You can manage your cookie preferences in several ways:</p>
+
+<h3>5.1 Cookie Banner</h3>
+<p>When you first visit our website, a cookie banner will appear allowing you to accept or decline non-essential cookies. You can change your preference at any time by clicking "Cookie Preferences" in the footer of our website.</p>
+
+<h3>5.2 Browser Settings</h3>
+<p>Most web browsers allow you to control cookies through their settings. You can typically set your browser to block or delete cookies. The method for doing so varies from browser to browser — check your browser's help menu for instructions.</p>
+
+<div class="note"><strong>Please note:</strong> If you choose to block or delete cookies, some features of our website may not function correctly, and your user experience may be affected. Strictly necessary cookies cannot be disabled as they are essential for the website to operate.</div>
+
+<h3>5.3 Opt-Out Links</h3>
+<p>You can opt out of specific third-party tracking:</p>
+<ul>
+  <li><strong>Google Analytics:</strong> Install the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank">Google Analytics Opt-out Browser Add-on</a></li>
+  <li><strong>Facebook:</strong> Adjust your ad preferences in your <a href="https://www.facebook.com/settings/?tab=ads" target="_blank">Facebook Settings</a></li>
+</ul>
+
+<h2>6. Do Not Track Signals</h2>
+<p>Some browsers offer a "Do Not Track" (DNT) feature that signals to websites that you do not wish to be tracked. There is no universally accepted standard for how to respond to DNT signals; however, we respect your privacy preferences where possible.</p>
+
+<h2>7. Updates to This Cookie Policy</h2>
+<p>We may update this Cookie Policy from time to time to reflect changes in technology, legislation, or our data practices. When we make changes, we will update the "Last Updated" date at the top of this page. We encourage you to review this page periodically.</p>
+
+<h2>8. Legal Basis</h2>
+<p>Our use of cookies is governed by the <strong>EU ePrivacy Directive (2002/58/EC)</strong> as implemented into Italian law, and the <strong>General Data Protection Regulation (GDPR — EU Regulation 2016/679)</strong>. We obtain your consent before placing non-essential cookies on your device, as required by applicable law.</p>
+
+<h2>9. Contact Us</h2>
+<div class="contact-box">
+  <p>If you have any questions about our use of cookies, please contact us:</p>
+  <p><strong>Email:</strong> <a href="mailto:info@tieralba.com">info@tieralba.com</a></p>
+  <p><strong>Website:</strong> <a href="https://tieralba.com">tieralba.com</a></p>
+</div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-in">
+    <a href="/" class="footer-brand"><div class="nav-mark" style="width:24px;height:24px;font-size:11px;border-radius:6px">T</div>TierAlba</a>
+    <div class="footer-links">
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/legal-notice">Legal Notice</a>
+      <a href="/cookie-policy">Cookie Policy</a>
+    </div>
+    <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
+</script>
+</body>
+</html>
