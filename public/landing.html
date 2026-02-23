@@ -19,8 +19,8 @@
   --ease:cubic-bezier(.22,1,.36,1);
   --ease-back:cubic-bezier(.34,1.56,.64,1);
 }
-html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html{scroll-behavior:smooth;overflow-x:hidden;width:100%}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;width:100%}
 ::selection{background:rgba(200,169,78,0.25)}
 a{text-decoration:none;color:inherit}
 .g{color:var(--gold)}
@@ -178,8 +178,8 @@ a{text-decoration:none;color:inherit}
 .partners::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
 .partners::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
 .p-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
-.p-track img{height:24px;margin:0 52px;opacity:0.3;filter:brightness(0) invert(1);transition:all 0.4s}
-.p-track img:hover{opacity:0.6;transform:scale(1.05)}
+.p-track img{height:24px;margin:0 52px;opacity:0.45;filter:brightness(0) invert(1);transition:all 0.4s}
+.p-track img:hover{opacity:0.75;transform:scale(1.05)}
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
 /* ═══ STATS ═══ */
@@ -424,12 +424,6 @@ a{text-decoration:none;color:inherit}
 .review-badge{font-size:10px;color:#00b67a;font-weight:600;display:flex;align-items:center;gap:4px;margin-top:2px}
 .review-badge::before{content:'✓';font-size:9px}
 
-@media(max-width:768px){
-  .reviews-header{flex-direction:column;align-items:flex-start}
-  .review-card{width:290px;padding:24px 20px}
-  .reviews-track-wrap::before,.reviews-track-wrap::after{width:40px}
-}
-
 /* ═══ CTA ═══ */
 .cta-sec{padding:160px 32px;text-align:center;position:relative;overflow:hidden}
 .cta-sec .ambient{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;border-radius:50%;
@@ -445,6 +439,24 @@ a{text-decoration:none;color:inherit}
 .footer-links a{font-size:13px;color:var(--text-3);transition:color 0.3s;font-weight:500}
 .footer-links a:hover{color:var(--gold)}
 .footer-copy{width:100%;text-align:center;font-size:12px;color:var(--text-3);margin-top:32px;padding-top:32px;border-top:1px solid var(--border);letter-spacing:0.5px}
+
+/* ═══ COOKIE BANNER ═══ */
+.cookie-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:20px 32px;
+  background:rgba(14,15,22,0.95);backdrop-filter:blur(24px) saturate(1.5);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  transform:translateY(100%);transition:transform 0.6s var(--ease);flex-wrap:wrap}
+.cookie-banner.show{transform:translateY(0)}
+.cookie-text{font-size:13px;color:var(--text-2);line-height:1.6;flex:1;min-width:250px}
+.cookie-text a{color:var(--gold);font-weight:600}
+.cookie-btns{display:flex;gap:10px;flex-shrink:0}
+.cookie-btn{padding:10px 24px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all 0.3s var(--ease);text-transform:uppercase;letter-spacing:1px;border:none}
+.cookie-accept{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
+  box-shadow:0 2px 12px rgba(200,169,78,0.2)}
+.cookie-accept:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(200,169,78,0.3)}
+.cookie-decline{background:transparent;border:1px solid var(--border);color:var(--text-3)}
+.cookie-decline:hover{border-color:var(--text-3);color:var(--text-2)}
 
 /* ═══ REVEAL ═══ */
 .rv{opacity:0;transform:translateY(32px);transition:opacity 0.9s var(--ease),transform 0.9s var(--ease)}
@@ -475,6 +487,12 @@ a{text-decoration:none;color:inherit}
   .footer-links{flex-wrap:wrap;justify-content:center}
   .scroll-ind{display:none}
   .sw::before,.sw::after{width:40px}
+  .cookie-banner{flex-direction:column;padding:16px 20px;gap:14px}
+  .cookie-btns{width:100%}
+  .cookie-btn{flex:1;text-align:center}
+  .reviews-header{flex-direction:column;align-items:flex-start}
+  .review-card{width:290px;padding:24px 20px}
+  .reviews-track-wrap::before,.reviews-track-wrap::after{width:40px}
 }
 @media(max-width:480px){
   .hiw-row{grid-template-columns:1fr}
@@ -494,7 +512,7 @@ a{text-decoration:none;color:inherit}
 <!-- NAV -->
 <nav class="nav" id="nav">
   <button class="mob-toggle" onclick="document.getElementById('mobMenu').classList.add('open')">&#9776;</button>
-  <div class="nav-logo"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></div>
+  <a href="#" class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></a>
   <div class="nav-mid">
     <a href="#services">Services</a>
     <a href="#how">How It Works</a>
@@ -968,6 +986,26 @@ document.querySelectorAll('.stat-val').forEach(el=>{
 
 /* ═══ SMOOTH SCROLL ═══ */
 document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+
+/* ═══ COOKIE BANNER ═══ */
+(function(){
+  const b=document.getElementById('cookieBanner');
+  if(!b)return;
+  if(localStorage.getItem('ta_cookies')){b.remove();return}
+  setTimeout(()=>b.classList.add('show'),1500);
+  document.getElementById('cookieAccept').onclick=()=>{localStorage.setItem('ta_cookies','accepted');b.classList.remove('show');setTimeout(()=>b.remove(),600)};
+  document.getElementById('cookieDecline').onclick=()=>{localStorage.setItem('ta_cookies','declined');b.classList.remove('show');setTimeout(()=>b.remove(),600)};
+})();
 </script>
+
+<!-- COOKIE BANNER -->
+<div class="cookie-banner" id="cookieBanner">
+  <div class="cookie-text">We use cookies to enhance your experience, analyze traffic, and personalize content. By clicking "Accept", you consent to our use of cookies.</div>
+  <div class="cookie-btns">
+    <button class="cookie-btn cookie-decline" id="cookieDecline">Decline</button>
+    <button class="cookie-btn cookie-accept" id="cookieAccept">Accept All</button>
+  </div>
+</div>
+
 </body>
 </html>
