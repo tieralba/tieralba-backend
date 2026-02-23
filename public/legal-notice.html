@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal Notice — TierAlba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#06070a;--surface:rgba(14,15,22,0.6);--surface-solid:#0e0f16;--surface-2:#13141c;
+  --border:rgba(255,255,255,0.04);--border-h:rgba(200,169,78,0.15);
+  --gold:#c8a94e;--gold-l:#e8d5a0;--gold-d:rgba(200,169,78,0.06);
+  --text:#ece8de;--text-2:#8e897e;--text-3:#55514a;--green:#5ee0a0;--red:#e87272;
+  --ease:cubic-bezier(.22,1,.36,1)}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(200,169,78,0.25)}
+a{text-decoration:none;color:var(--gold)}a:hover{text-decoration:underline}
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:72px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,7,10,0.6);backdrop-filter:blur(32px) saturate(1.5);border-bottom:1px solid var(--border);transition:all 0.5s var(--ease)}
+.nav.scrolled{height:60px;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none}
+.nav-mark{width:38px;height:38px;background:linear-gradient(145deg,var(--gold),#b59840,var(--gold-l));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.3),inset 0 1px 0 rgba(255,255,255,0.2)}
+.nav-end{display:flex;align-items:center;gap:14px}
+.nav-cta{padding:10px 28px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;transition:all 0.4s var(--ease);text-decoration:none;box-shadow:0 2px 16px rgba(200,169,78,0.2)}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,169,78,0.35);text-decoration:none}
+.nav-back{padding:10px 24px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:12px;font-weight:600;letter-spacing:0.5px;transition:all 0.3s;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.nav-back:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d);text-decoration:none}
+.legal-hero{padding:140px 32px 60px;text-align:center}
+.legal-hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-2px;margin-bottom:12px}
+.legal-hero .updated{font-size:13px;color:var(--text-3)}
+.legal-body{max-width:760px;margin:0 auto;padding:0 32px 120px}
+.legal-body h2{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin:48px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text);letter-spacing:-0.5px}
+.legal-body h3{font-size:17px;font-weight:700;margin:32px 0 12px;color:var(--gold)}
+.legal-body p{font-size:14px;color:var(--text-2);line-height:1.85;margin-bottom:16px}
+.legal-body ul{margin:12px 0 20px 20px;list-style:none}
+.legal-body li{font-size:14px;color:var(--text-2);line-height:1.85;margin-bottom:8px;padding-left:8px;position:relative}
+.legal-body li::before{content:'';position:absolute;left:-16px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.legal-body strong{color:var(--text);font-weight:600}
+.legal-body .note{padding:16px 20px;border-radius:12px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);margin:16px 0;font-size:13px;color:var(--text-2);line-height:1.8}
+.legal-body .warning{padding:16px 20px;border-radius:12px;background:rgba(232,114,114,0.06);border:1px solid rgba(232,114,114,0.1);margin:16px 0;font-size:13px;color:var(--red);line-height:1.8}
+.legal-body .contact-box{padding:24px;border-radius:16px;background:var(--surface);border:1px solid var(--border);margin:24px 0}
+.legal-body .contact-box p{margin-bottom:8px}
+.legal-body .info-grid{display:grid;grid-template-columns:140px 1fr;gap:8px 20px;margin:16px 0 24px}
+.legal-body .info-grid dt{font-size:13px;color:var(--text-3);font-weight:600}
+.legal-body .info-grid dd{font-size:14px;color:var(--text-2)}
+.footer{padding:48px 32px 24px;border-top:1px solid var(--border)}
+.footer-in{max-width:760px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-brand{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap}
+.footer-links a{font-size:12px;color:var(--text-3);transition:color 0.3s;font-weight:500}
+.footer-links a:hover{color:var(--gold);text-decoration:none}
+.footer-copy{width:100%;text-align:center;font-size:11px;color:var(--text-3);margin-top:24px;padding-top:24px;border-top:1px solid var(--border)}
+@media(max-width:768px){.nav{padding:0 16px}.nav-logo span{display:none}.legal-hero{padding:120px 20px 40px}.legal-body{padding:0 20px 80px}.legal-body .info-grid{grid-template-columns:1fr}.footer-in{flex-direction:column;align-items:center;text-align:center}.footer-links{justify-content:center}}
+</style>
+</head>
+<body>
+<nav class="nav" id="nav">
+  <a href="/" class="nav-logo"><div class="nav-mark">T</div><span>TierAlba</span></a>
+  <div class="nav-end"><a href="/" class="nav-back">&larr; Home</a><a href="/login" class="nav-cta">Dashboard</a></div>
+</nav>
+
+<section class="legal-hero">
+  <h1>Legal <span style="color:var(--gold)">Notice</span></h1>
+  <div class="updated">Last Updated: March 27, 2025</div>
+</section>
+
+<div class="legal-body">
+
+<p>Welcome to the Tier Alba website. By accessing and using our website, you agree to comply with the following terms and conditions. Please read this Legal Notice carefully before using our services.</p>
+
+<h2>1. Company Information</h2>
+<dl class="info-grid">
+  <dt>Company Name</dt><dd>Tier Alba</dd>
+  <dt>Email</dt><dd><a href="mailto:info@tieralba.com">info@tieralba.com</a></dd>
+  <dt>Phone</dt><dd><a href="tel:+447400757815">+44 7400 757815</a></dd>
+  <dt>Website</dt><dd><a href="https://tieralba.com">tieralba.com</a></dd>
+  <dt>Country</dt><dd>Italy</dd>
+</dl>
+
+<h2>2. Nature of Services</h2>
+<p>Tier Alba provides digital trading tools, software (Expert Advisors), trading signals, and account management services. All services and content provided by Tier Alba are intended for <strong>educational and informational purposes only</strong> and do not constitute financial, investment, legal, or tax advice.</p>
+<div class="warning"><strong>Risk Warning:</strong> Trading in financial markets carries a high level of risk and may not be suitable for all investors. You could lose some or all of your invested capital. You should not invest money that you cannot afford to lose.</div>
+
+<h2>3. Intellectual Property</h2>
+<p>All content, software, tools, graphics, logos, trademarks, and materials published on this website are the exclusive property of Tier Alba and are protected by applicable intellectual property laws. Reproduction, distribution, modification, or use of any content without prior written permission from Tier Alba is strictly prohibited and may result in legal action.</p>
+
+<h2>4. Personal Data Collection</h2>
+<p>We collect personal data such as your name, email address, phone number, and payment information in order to provide our services and for marketing purposes. By providing your information, you consent to the use of your data as described in our <a href="/privacy-policy">Privacy Policy</a>.</p>
+<p>Your personal data is processed in compliance with the <strong>General Data Protection Regulation (GDPR — EU Regulation 2016/679)</strong> and applicable Italian data protection legislation.</p>
+
+<h2>5. Cookies</h2>
+<p>Our website uses cookies to enhance user experience, analyze website traffic, and provide personalized content. Cookies are small data files stored on your device. You can manage your cookie preferences through your browser settings or by using the cookie preference option in the footer of our website.</p>
+<p>For detailed information on the cookies we use, please refer to our <a href="/cookie-policy">Cookie Policy</a>.</p>
+
+<h2>6. Limitation of Liability</h2>
+<p>To the maximum extent permitted by law, Tier Alba shall not be liable for any direct, indirect, incidental, special, or consequential damages arising from the use of our website, software, signals, or services. This includes, but is not limited to, damages related to:</p>
+<ul>
+  <li>Loss of profits, revenue, or anticipated savings</li>
+  <li>Loss of data or information</li>
+  <li>Trading losses of any kind</li>
+  <li>Business interruption</li>
+  <li>Any other financial or intangible losses</li>
+</ul>
+<p>This limitation applies even if Tier Alba has been advised of the possibility of such damages. Past performance does not guarantee future results.</p>
+
+<h2>7. Third-Party Links</h2>
+<p>Our website may contain links to third-party websites. Tier Alba assumes no responsibility for the content, privacy practices, or availability of external websites. Accessing third-party links is at your own risk, and we encourage you to review their terms and policies.</p>
+
+<h2>8. Applicable Law and Jurisdiction</h2>
+<p>This Legal Notice and any disputes arising from the use of this website or our services are governed by and construed in accordance with <strong>Italian law</strong>. Any legal proceedings shall be subject to the exclusive jurisdiction of the competent Italian courts.</p>
+
+<h2>9. User Rights (GDPR)</h2>
+<p>Under the GDPR and Italian data protection legislation, you have the following rights regarding your personal data:</p>
+<ul>
+  <li><strong>Right of Access</strong> — obtain information about the processing of your personal data and a copy of such data</li>
+  <li><strong>Right to Rectification</strong> — request correction of inaccurate or incomplete personal data</li>
+  <li><strong>Right to Erasure</strong> — request deletion of your personal data (the "right to be forgotten")</li>
+  <li><strong>Right to Restriction</strong> — request restriction of processing of your personal data</li>
+  <li><strong>Right to Data Portability</strong> — receive your personal data in a structured, commonly used format</li>
+  <li><strong>Right to Object</strong> — object to the processing of your data, including for direct marketing purposes</li>
+  <li><strong>Right to Lodge a Complaint</strong> — file a complaint with the Italian Data Protection Authority (<em>Garante per la protezione dei dati personali</em>)</li>
+</ul>
+<p>To exercise any of these rights, please contact us at <a href="mailto:info@tieralba.com">info@tieralba.com</a>.</p>
+
+<h2>10. Disclaimer of Financial Advice</h2>
+<div class="note">Tier Alba is not a registered financial advisor, broker, or dealer. The information and tools provided through our website and services do not constitute personalized financial advice. All trading decisions are made at the user's own risk and discretion. You should seek independent professional advice before making any financial decisions.</div>
+
+<h2>11. Changes to This Legal Notice</h2>
+<p>We reserve the right to modify this Legal Notice at any time. Changes will take effect immediately upon posting on our website. The "Last Updated" date at the top of this page reflects the most recent revision. We encourage you to review this notice periodically for any updates.</p>
+
+<h2>12. Contact</h2>
+<div class="contact-box">
+  <p>For any questions or concerns regarding this Legal Notice, please contact us:</p>
+  <p><strong>Email:</strong> <a href="mailto:info@tieralba.com">info@tieralba.com</a></p>
+  <p><strong>Phone:</strong> <a href="tel:+447400757815">+44 7400 757815</a></p>
+</div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-in">
+    <a href="/" class="footer-brand"><div class="nav-mark" style="width:24px;height:24px;font-size:11px;border-radius:6px">T</div>TierAlba</a>
+    <div class="footer-links">
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/legal-notice">Legal Notice</a>
+    </div>
+    <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
+</script>
+</body>
+</html>
