@@ -94,6 +94,16 @@ a{text-decoration:none;color:var(--gold)}
 .pw-strength{height:3px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden}
 .pw-strength-bar{height:100%;border-radius:2px;width:0;transition:all 0.4s var(--ease)}
 
+.phone-row{display:flex;gap:8px}
+.phone-prefix{width:120px;flex-shrink:0;padding:14px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;transition:all 0.3s var(--ease);outline:none;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2355514a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center}
+.phone-prefix:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,78,0.08)}
+.phone-prefix option{background:var(--bg);color:var(--text)}
+.phone-row input{flex:1}
+
 .divider{display:flex;align-items:center;gap:16px;margin:28px 0}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .divider span{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-weight:600}
@@ -235,40 +245,98 @@ a{text-decoration:none;color:var(--gold)}
 
       <div class="field">
         <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" placeholder="+39 xxx xxx xxxx">
-        <div class="error-text">Please enter a valid phone number</div>
+        <div class="phone-row">
+          <select id="phonePrefix" class="phone-prefix" required>
+            <option value="+39">🇮🇹 +39</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+34">🇪🇸 +34</option>
+            <option value="+31">🇳🇱 +31</option>
+            <option value="+32">🇧🇪 +32</option>
+            <option value="+43">🇦🇹 +43</option>
+            <option value="+41">🇨🇭 +41</option>
+            <option value="+351">🇵🇹 +351</option>
+            <option value="+46">🇸🇪 +46</option>
+            <option value="+47">🇳🇴 +47</option>
+            <option value="+45">🇩🇰 +45</option>
+            <option value="+358">🇫🇮 +358</option>
+            <option value="+353">🇮🇪 +353</option>
+            <option value="+48">🇵🇱 +48</option>
+            <option value="+420">🇨🇿 +420</option>
+            <option value="+40">🇷🇴 +40</option>
+            <option value="+30">🇬🇷 +30</option>
+            <option value="+385">🇭🇷 +385</option>
+            <option value="+36">🇭🇺 +36</option>
+            <option value="+359">🇧🇬 +359</option>
+            <option value="+421">🇸🇰 +421</option>
+            <option value="+386">🇸🇮 +386</option>
+            <option value="+370">🇱🇹 +370</option>
+            <option value="+371">🇱🇻 +371</option>
+            <option value="+372">🇪🇪 +372</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+1">🇨🇦 +1</option>
+            <option value="+61">🇦🇺 +61</option>
+            <option value="+64">🇳🇿 +64</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+966">🇸🇦 +966</option>
+            <option value="+91">🇮🇳 +91</option>
+            <option value="+55">🇧🇷 +55</option>
+            <option value="+52">🇲🇽 +52</option>
+            <option value="+81">🇯🇵 +81</option>
+            <option value="+82">🇰🇷 +82</option>
+            <option value="+65">🇸🇬 +65</option>
+            <option value="+355">🇦🇱 +355</option>
+            <option value="+383">🇽🇰 +383</option>
+            <option value="+381">🇷🇸 +381</option>
+            <option value="+389">🇲🇰 +389</option>
+            <option value="+387">🇧🇦 +387</option>
+            <option value="+382">🇲🇪 +382</option>
+            <option value="+90">🇹🇷 +90</option>
+            <option value="+27">🇿🇦 +27</option>
+            <option value="+234">🇳🇬 +234</option>
+          </select>
+          <input type="tel" id="phone" placeholder="xxx xxx xxxx" required>
+        </div>
+        <div class="error-text">Phone number is required</div>
+      </div>
+
+      <div class="field">
+        <label for="country">Country</label>
+        <select id="country" required>
+          <option value="">Select country</option>
+          <option value="IT">Italy</option><option value="GB">United Kingdom</option><option value="DE">Germany</option>
+          <option value="FR">France</option><option value="ES">Spain</option><option value="NL">Netherlands</option>
+          <option value="BE">Belgium</option><option value="AT">Austria</option><option value="CH">Switzerland</option>
+          <option value="PT">Portugal</option><option value="SE">Sweden</option><option value="NO">Norway</option>
+          <option value="DK">Denmark</option><option value="FI">Finland</option><option value="IE">Ireland</option>
+          <option value="PL">Poland</option><option value="CZ">Czech Republic</option><option value="RO">Romania</option>
+          <option value="GR">Greece</option><option value="HR">Croatia</option><option value="HU">Hungary</option>
+          <option value="BG">Bulgaria</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option>
+          <option value="LT">Lithuania</option><option value="LV">Latvia</option><option value="EE">Estonia</option>
+          <option value="US">United States</option><option value="CA">Canada</option><option value="AU">Australia</option>
+          <option value="NZ">New Zealand</option><option value="AE">UAE</option><option value="SA">Saudi Arabia</option>
+          <option value="IN">India</option><option value="BR">Brazil</option><option value="MX">Mexico</option>
+          <option value="JP">Japan</option><option value="KR">South Korea</option><option value="SG">Singapore</option>
+          <option value="AL">Albania</option><option value="XK">Kosovo</option><option value="RS">Serbia</option>
+          <option value="MK">North Macedonia</option><option value="BA">Bosnia</option><option value="ME">Montenegro</option>
+          <option value="TR">Turkey</option><option value="ZA">South Africa</option><option value="NG">Nigeria</option>
+          <option value="OTHER">Other</option>
+        </select>
+        <div class="error-text">Please select a country</div>
       </div>
 
       <div class="field-row">
-        <div class="field">
-          <label for="country">Country</label>
-          <select id="country" required>
-            <option value="">Select country</option>
-            <option value="IT">Italy</option><option value="GB">United Kingdom</option><option value="DE">Germany</option>
-            <option value="FR">France</option><option value="ES">Spain</option><option value="NL">Netherlands</option>
-            <option value="BE">Belgium</option><option value="AT">Austria</option><option value="CH">Switzerland</option>
-            <option value="PT">Portugal</option><option value="SE">Sweden</option><option value="NO">Norway</option>
-            <option value="DK">Denmark</option><option value="FI">Finland</option><option value="IE">Ireland</option>
-            <option value="PL">Poland</option><option value="CZ">Czech Republic</option><option value="RO">Romania</option>
-            <option value="GR">Greece</option><option value="HR">Croatia</option><option value="HU">Hungary</option>
-            <option value="BG">Bulgaria</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option>
-            <option value="LT">Lithuania</option><option value="LV">Latvia</option><option value="EE">Estonia</option>
-            <option value="US">United States</option><option value="CA">Canada</option><option value="AU">Australia</option>
-            <option value="NZ">New Zealand</option><option value="AE">UAE</option><option value="SA">Saudi Arabia</option>
-            <option value="IN">India</option><option value="BR">Brazil</option><option value="MX">Mexico</option>
-            <option value="JP">Japan</option><option value="KR">South Korea</option><option value="SG">Singapore</option>
-            <option value="AL">Albania</option><option value="XK">Kosovo</option><option value="RS">Serbia</option>
-            <option value="MK">North Macedonia</option><option value="BA">Bosnia</option><option value="ME">Montenegro</option>
-            <option value="TR">Turkey</option><option value="ZA">South Africa</option><option value="NG">Nigeria</option>
-            <option value="OTHER">Other</option>
-          </select>
-          <div class="error-text">Please select a country</div>
-        </div>
         <div class="field">
           <label for="password">Password</label>
           <input type="password" id="password" placeholder="Min. 8 characters" required>
           <div class="pw-strength"><div class="pw-strength-bar" id="pwBar"></div></div>
           <div class="error-text">Min. 8 characters required</div>
+        </div>
+        <div class="field">
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" placeholder="Repeat password" required>
+          <div class="error-text">Passwords do not match</div>
         </div>
       </div>
 
@@ -347,6 +415,25 @@ document.title = `Checkout — ${product.name} | TierAlba`;
 const featList = document.getElementById('orderFeatures');
 featList.innerHTML = product.features.map(f => `<li>${f}</li>`).join('');
 
+/* ═══ COUNTRY → PHONE PREFIX SYNC ═══ */
+const countryPrefixMap = {
+  'IT':'+39','GB':'+44','DE':'+49','FR':'+33','ES':'+34','NL':'+31','BE':'+32','AT':'+43','CH':'+41',
+  'PT':'+351','SE':'+46','NO':'+47','DK':'+45','FI':'+358','IE':'+353','PL':'+48','CZ':'+420','RO':'+40',
+  'GR':'+30','HR':'+385','HU':'+36','BG':'+359','SK':'+421','SI':'+386','LT':'+370','LV':'+371','EE':'+372',
+  'US':'+1','CA':'+1','AU':'+61','NZ':'+64','AE':'+971','SA':'+966','IN':'+91','BR':'+55','MX':'+52',
+  'JP':'+81','KR':'+82','SG':'+65','AL':'+355','XK':'+383','RS':'+381','MK':'+389','BA':'+387','ME':'+382',
+  'TR':'+90','ZA':'+27','NG':'+234'
+};
+document.getElementById('country').addEventListener('change', function() {
+  const prefix = countryPrefixMap[this.value];
+  if (prefix) {
+    const sel = document.getElementById('phonePrefix');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === prefix) { sel.selectedIndex = i; break; }
+    }
+  }
+});
+
 /* ═══ PASSWORD STRENGTH ═══ */
 document.getElementById('password').addEventListener('input', function() {
   const bar = document.getElementById('pwBar');
@@ -375,9 +462,12 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
   const firstName = document.getElementById('firstName').value.trim();
   const lastName = document.getElementById('lastName').value.trim();
   const email = document.getElementById('email').value.trim();
-  const phone = document.getElementById('phone').value.trim();
+  const phonePrefix = document.getElementById('phonePrefix').value;
+  const phoneNum = document.getElementById('phone').value.trim();
+  const phone = phoneNum ? `${phonePrefix} ${phoneNum}` : '';
   const country = document.getElementById('country').value;
   const password = document.getElementById('password').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
   const agreeTerms = document.getElementById('agreeTerms').checked;
   const agreeRisk = document.getElementById('agreeRisk').checked;
   const agreeMarketing = document.getElementById('agreeMarketing').checked;
@@ -387,8 +477,10 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
   if(!firstName){ document.getElementById('firstName').closest('.field').classList.add('error'); hasError=true; }
   if(!lastName){ document.getElementById('lastName').closest('.field').classList.add('error'); hasError=true; }
   if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ document.getElementById('email').closest('.field').classList.add('error'); hasError=true; }
+  if(!phoneNum){ document.getElementById('phone').closest('.field').classList.add('error'); hasError=true; }
   if(!country){ document.getElementById('country').closest('.field').classList.add('error'); hasError=true; }
   if(!password || password.length < 8){ document.getElementById('password').closest('.field').classList.add('error'); hasError=true; }
+  if(password !== confirmPassword){ document.getElementById('confirmPassword').closest('.field').classList.add('error'); hasError=true; }
   
   if(!agreeTerms || !agreeRisk){
     errDiv.textContent = 'You must accept the Terms of Service and risk disclaimer to continue.';
