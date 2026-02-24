@@ -2891,7 +2891,7 @@
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
             toast('success', 'Upgrade Complete', 'Your plan has been upgraded!');
-            window.history.replaceState({}, '', 'index.html');
+            window.history.replaceState({}, '', '/dashboard');
         }
     }
 
@@ -3368,11 +3368,21 @@
         const res = await apiCall('/api/broker/sync', { method: 'POST' });
         if (res?.success) {
             toast('success', 'Synced', `${res.synced} trades imported. Equity: €${(res.account?.equity || 0).toFixed(2)}`);
-            // Reload dashboard data
+            // Full dashboard reload after sync
             const stats = await apiCall('/api/stats');
             if (stats) { updateStats(stats); updatePerf(stats); updateRiskGuardian(stats); }
             const equity = await apiCall('/api/equity-history?days=30');
             if (equity?.history) drawEquityChart(equity.history);
+            const trades = await apiCall('/api/trades?limit=200');
+            if (trades?.trades) {
+                drawMonthlyChart(trades.trades);
+                drawAnalytics(trades.trades, stats);
+                drawDrawdown(trades.trades);
+                renderTradeList(trades.trades);
+                drawDailyPL(trades.trades);
+            }
+            // Refresh broker cards and bot status
+            updateBotStatus();
         } else {
             toast('error', 'Sync Failed', res?.error || 'Could not sync data. Account may still be deploying, try again in 1 minute.');
         }
@@ -3387,7 +3397,12 @@
     // COPY FUNCTIONS
     // ══════════════════════════════════════════════
     function copyReferral() {
-        navigator.clipboard.writeText('TIER-XR4K9M').then(() => toast('success', 'Copied', 'Referral code copied!'));
+        const code = document.getElementById('refCodeDisplay').textContent;
+        if (code && code !== '—') {
+            navigator.clipboard.writeText(code).then(() => toast('success', 'Copied', 'Referral code copied!'));
+        } else {
+            toast('error', 'Error', 'Referral code not loaded yet');
+        }
     }
 
     // ══════════════════════════════════════════════
@@ -4676,6 +4691,8 @@
             const trades = await apiCall('/api/trades?limit=200');
             if (trades?.trades) {
                 renderTradeList(trades.trades);
+                drawMonthlyChart(trades.trades);
+                drawDailyPL(trades.trades);
             }
 
             // Equity (from DB snapshots)
