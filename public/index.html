@@ -1996,17 +1996,6 @@
             </div>
 
             <!-- Panic Button -->
-            <div class="card">
-                <div class="card-header"><span class="card-title">Emergency Control</span></div>
-                <div style="text-align:center;padding:1.5rem 0;">
-                    <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Close all trades and stop the EA immediately</p>
-                    <button class="panic-btn" onclick="panicButton()">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:8px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        PANIC — CLOSE ALL
-                    </button>
-                    <p style="color:var(--text-3);margin-top:1rem;font-size:12px;">This action is irreversible. All open trades will be closed at market price.</p>
-                </div>
-            </div>
         </div>
 
         <!-- ═══════ PERFORMANCE ═══════ -->
@@ -3610,29 +3599,6 @@
         } else {
             toast('error', 'Error', res?.error || 'Failed to reset data');
         }
-    }
-
-    async function panicButton() {
-        if (!confirm('⚠️ WARNING!\n\nThis will attempt to CLOSE ALL open trades.\n\nAre you sure?')) return;
-        if (!confirm('Final confirmation: do you really want to close everything?')) return;
-        
-        toast('error', 'PANIC ACTIVATED', 'Sending close-all command to broker...');
-        
-        try {
-            const res = await apiCall('/api/broker/close-all', { method: 'POST' });
-            if (res?.success) {
-                toast('success', 'Done', 'Close-all command sent. ' + (res.closed || 0) + ' trade(s) closing.');
-            } else {
-                toast('error', 'Error', res?.error || 'Failed to close trades. Check your broker connection.');
-            }
-        } catch (err) {
-            toast('error', 'Error', 'Could not reach the server. Try closing trades directly in MetaTrader.');
-        }
-        
-        // Update UI
-        document.getElementById('botOpenTrades').textContent = '0';
-        document.getElementById('rgOpenTrades').textContent = '0';
-        updateBotStatus();
     }
 
     // ══════════════════════════════════════════════
