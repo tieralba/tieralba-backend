@@ -184,11 +184,83 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                   [commission, referrer.rows[0].id]
                 );
                 console.log(`💰 Referral commission: €${commission} credited`);
+                
+                // Notify referrer about commission earned
+                try {
+                  if (resend) {
+                    const referrerData = await pool.query('SELECT email, referral_balance FROM users WHERE id = $1', [referrer.rows[0].id]);
+                    if (referrerData.rows[0]) {
+                      const newBalance = parseFloat(referrerData.rows[0].referral_balance) || 0;
+                      await resend.emails.send({
+                        from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+                        to: referrerData.rows[0].email,
+                        subject: `TierAlba — You Earned €${commission.toFixed(2)} Commission! 💰`,
+                        html: `
+                          <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                            <div style="background:linear-gradient(135deg,#2a6b4a,#5ee0a0);padding:32px;text-align:center;">
+                              <h1 style="color:#0a0b0f;margin:0;font-size:28px;">You Earned a Commission!</h1>
+                            </div>
+                            <div style="padding:40px 32px;color:#ece8de;">
+                              <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Great news! Someone you referred just made a purchase.</p>
+                              <div style="background:rgba(94,224,160,0.08);border:1px solid rgba(94,224,160,0.15);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+                                <div style="font-size:42px;font-weight:700;color:#5ee0a0;">+€${commission.toFixed(2)}</div>
+                                <div style="font-size:14px;color:#8e897e;margin-top:8px;">New balance: €${newBalance.toFixed(2)}</div>
+                              </div>
+                              ${newBalance >= 50 ? '<p style="font-size:16px;line-height:1.8;margin-bottom:24px;color:#5ee0a0;font-weight:600;">✅ Your balance is above €50 — you can request a payout!</p>' : `<p style="font-size:16px;line-height:1.8;margin-bottom:24px;">€${(50 - newBalance).toFixed(2)} more until you can request a payout (min €50).</p>`}
+                              <div style="text-align:center;margin:32px 0;">
+                                <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">View Dashboard</a>
+                              </div>
+                            </div>
+                            <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                              <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                            </div>
+                          </div>`
+                      });
+                    }
+                  }
+                } catch (notifErr) {
+                  console.error('Referral notification email error (non-fatal):', notifErr.message);
+                }
               }
             }
           }
         } catch (refErr) {
           console.error('Referral commission error:', refErr);
+        }
+
+        // ─── PURCHASE CONFIRMATION EMAIL ───
+        try {
+          if (resend && customerEmail) {
+            const serviceNames = { tierpass: 'Tier Pass', tiermanage: 'Tier Manage', tradesalba: 'TradesAlba' };
+            const serviceName = serviceNames[service] || service;
+            await resend.emails.send({
+              from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+              to: customerEmail,
+              subject: `TierAlba — Your ${serviceName} is Active! 🎉`,
+              html: `
+                <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                  <div style="background:linear-gradient(135deg,#c8a94e,#b59840);padding:40px 32px;text-align:center;">
+                    <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Thank You for Your Purchase!</h1>
+                  </div>
+                  <div style="padding:40px 32px;color:#ece8de;">
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi there,</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Your <strong style="color:#c8a94e;">${serviceName} — ${planLabel}</strong> has been activated successfully.</p>
+                    ${service === 'tierpass' || service === 'tiermanage' ? '<p style="font-size:16px;line-height:1.8;margin-bottom:24px;">📅 <strong>Next step:</strong> Book your private Zoom setup session. Our team will install the EA on your MetaTrader platform. Reply to this email or contact us at support@tieralba.com to schedule.</p>' : ''}
+                    ${service === 'tradesalba' ? '<p style="font-size:16px;line-height:1.8;margin-bottom:24px;">🚀 <strong>Next step:</strong> Log in to your dashboard to access signals, journal, risk tools, and more.</p>' : ''}
+                    <div style="text-align:center;margin:32px 0;">
+                      <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">Go to Dashboard</a>
+                    </div>
+                    <p style="font-size:14px;color:#8e897e;line-height:1.7;">If you have any questions, reply to this email or contact support@tieralba.com</p>
+                  </div>
+                  <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                    <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                  </div>
+                </div>`
+            });
+            console.log(`📧 Purchase confirmation email sent to ${customerEmail}`);
+          }
+        } catch (emailErr) {
+          console.error('Purchase email error (non-fatal):', emailErr.message);
         }
         break;
       }
@@ -215,7 +287,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           `UPDATE users SET plan = 'free', 
            active_services = active_services - 'tradesalba'
            WHERE stripe_subscription_id = $1
-           RETURNING id`,
+           RETURNING id, email`,
           [sub.id]
         );
         // Deactivate all license keys for this user
@@ -225,8 +297,125 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             [downgraded.rows[0].id]
           );
           console.log(`🔑 License keys deactivated for user ${downgraded.rows[0].id}`);
+          
+          // Send cancellation email
+          try {
+            if (resend && downgraded.rows[0].email) {
+              await resend.emails.send({
+                from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+                to: downgraded.rows[0].email,
+                subject: 'TierAlba — Your Subscription Has Been Cancelled',
+                html: `
+                  <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
+                      <h1 style="color:#ece8de;margin:0;font-size:26px;">We're Sorry to See You Go</h1>
+                    </div>
+                    <div style="padding:40px 32px;color:#ece8de;">
+                      <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Your TierAlba subscription has been cancelled. Your access to premium features and EA licenses has been deactivated.</p>
+                      <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">If this was a mistake or you'd like to reactivate, you can re-subscribe anytime from your dashboard.</p>
+                      <div style="text-align:center;margin:32px 0;">
+                        <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">Reactivate Subscription</a>
+                      </div>
+                      <p style="font-size:14px;color:#8e897e;line-height:1.7;">We'd love your feedback — reply to this email and let us know what we could improve.</p>
+                    </div>
+                    <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                      <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                    </div>
+                  </div>`
+              });
+              console.log(`📧 Cancellation email sent to ${downgraded.rows[0].email}`);
+            }
+          } catch (emailErr) {
+            console.error('Cancellation email error (non-fatal):', emailErr.message);
+          }
         }
         console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
+        break;
+      }
+
+      // ─── ABANDONED CHECKOUT ───
+      case 'checkout.session.expired': {
+        const expired = event.data.object;
+        const abandonedEmail = expired.customer_email || expired.customer_details?.email;
+        const abandonedMeta = expired.metadata || {};
+        
+        if (abandonedEmail && resend) {
+          try {
+            const serviceNames = { tierpass: 'Tier Pass', tiermanage: 'Tier Manage', tradesalba: 'TradesAlba' };
+            const serviceName = serviceNames[abandonedMeta.service] || 'your selected plan';
+            const planName = abandonedMeta.planLabel || '';
+            
+            await resend.emails.send({
+              from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+              to: abandonedEmail,
+              subject: 'TierAlba — You Left Something Behind',
+              html: `
+                <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                  <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <h1 style="color:#c8a94e;margin:0;font-size:28px;">Still Thinking?</h1>
+                  </div>
+                  <div style="padding:40px 32px;color:#ece8de;">
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi there,</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">We noticed you didn't complete your <strong style="color:#c8a94e;">${serviceName} ${planName}</strong> checkout. No worries — your spot is still available.</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Here's what you'll get:</p>
+                    <ul style="font-size:15px;color:#8e897e;line-height:2;padding-left:20px;margin-bottom:32px;">
+                      <li>94% challenge pass rate with Tier Pass</li>
+                      <li>Professional funded account management</li>
+                      <li>Premium trading dashboard with live signals</li>
+                      <li>7-day money-back guarantee</li>
+                    </ul>
+                    <div style="text-align:center;margin:32px 0;">
+                      <a href="https://tieralba.com/checkout?plan=${abandonedMeta.productKey || ''}" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">Complete Your Purchase</a>
+                    </div>
+                    <p style="font-size:14px;color:#8e897e;line-height:1.7;">Questions? Reply to this email — we're here to help.</p>
+                  </div>
+                  <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                    <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                  </div>
+                </div>`
+            });
+            console.log(`📧 Abandoned checkout email sent to ${abandonedEmail}`);
+          } catch (emailErr) {
+            console.error('Abandoned checkout email error (non-fatal):', emailErr.message);
+          }
+        }
+        break;
+      }
+
+      // ─── PAYMENT FAILED ───
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        const failedEmail = invoice.customer_email;
+        
+        if (failedEmail && resend) {
+          try {
+            await resend.emails.send({
+              from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+              to: failedEmail,
+              subject: 'TierAlba — Payment Failed — Action Required',
+              html: `
+                <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                  <div style="background:#e87272;padding:32px;text-align:center;">
+                    <h1 style="color:#fff;margin:0;font-size:24px;">⚠ Payment Failed</h1>
+                  </div>
+                  <div style="padding:40px 32px;color:#ece8de;">
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Your latest payment for TierAlba could not be processed. This may be due to insufficient funds, an expired card, or a bank decline.</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;"><strong style="color:#e87272;">If not resolved, your subscription will be cancelled</strong> and you will lose access to premium features and EA licenses.</p>
+                    <div style="text-align:center;margin:32px 0;">
+                      <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">Update Payment Method</a>
+                    </div>
+                    <p style="font-size:14px;color:#8e897e;line-height:1.7;">Need help? Contact support@tieralba.com</p>
+                  </div>
+                  <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                    <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                  </div>
+                </div>`
+            });
+            console.log(`📧 Payment failed email sent to ${failedEmail}`);
+          } catch (emailErr) {
+            console.error('Payment failed email error (non-fatal):', emailErr.message);
+          }
+        }
         break;
       }
     }
@@ -741,10 +930,63 @@ app.get('/api/auth/verify', async (req, res) => {
           <div style="font-size:48px;margin-bottom:16px;">✅</div>
           <h1 style="color:#c8aa6e;">Email Verified!</h1>
           <p style="color:#9b978f;">Your email <strong>${result.rows[0].email}</strong> has been verified successfully.</p>
-          <a href="/login.html" style="display:inline-block;margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:8px;">Go to Dashboard</a>
+          <a href="/login" style="display:inline-block;margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:8px;">Go to Dashboard</a>
         </div>
       </body></html>
     `);
+    
+    // Send welcome onboarding email
+    try {
+      if (resend) {
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          to: result.rows[0].email,
+          subject: 'Welcome to TierAlba — Here\'s How to Get Started 🚀',
+          html: `
+            <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+              <div style="background:linear-gradient(135deg,#c8a94e,#b59840);padding:40px 32px;text-align:center;">
+                <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Welcome to TierAlba!</h1>
+                <p style="color:rgba(10,11,15,0.7);margin:8px 0 0;font-size:15px;">Your email is verified. Let's get you started.</p>
+              </div>
+              <div style="padding:40px 32px;color:#ece8de;">
+                <h2 style="font-size:20px;margin-bottom:24px;color:#c8a94e;">3 Ways We Can Help You:</h2>
+                
+                <div style="background:rgba(200,169,78,0.06);border:1px solid rgba(200,169,78,0.1);border-radius:12px;padding:20px;margin-bottom:16px;">
+                  <h3 style="margin:0 0 8px;font-size:16px;">⚡ Tier Pass — Challenge Passing</h3>
+                  <p style="margin:0;font-size:14px;color:#8e897e;line-height:1.6;">Our EA passes your prop firm challenge. 94% success rate. One-time payment.</p>
+                </div>
+                
+                <div style="background:rgba(200,169,78,0.06);border:1px solid rgba(200,169,78,0.1);border-radius:12px;padding:20px;margin-bottom:16px;">
+                  <h3 style="margin:0 0 8px;font-size:16px;">📈 Tier Manage — Account Management</h3>
+                  <p style="margin:0;font-size:14px;color:#8e897e;line-height:1.6;">We manage your funded account for consistent monthly returns.</p>
+                </div>
+                
+                <div style="background:rgba(200,169,78,0.06);border:1px solid rgba(200,169,78,0.1);border-radius:12px;padding:20px;margin-bottom:24px;">
+                  <h3 style="margin:0 0 8px;font-size:16px;">📊 TradesAlba — Trading Dashboard</h3>
+                  <p style="margin:0;font-size:14px;color:#8e897e;line-height:1.6;">Live signals, journal, risk tools, TradingView indicators, and broker integration.</p>
+                </div>
+
+                <div style="text-align:center;margin:32px 0;">
+                  <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">Explore Your Dashboard</a>
+                </div>
+
+                <div style="background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.1);border-radius:12px;padding:20px;margin-top:24px;">
+                  <h3 style="margin:0 0 8px;font-size:15px;color:#5ee0a0;">💰 Earn 15% — Referral Program</h3>
+                  <p style="margin:0;font-size:13px;color:#8e897e;line-height:1.6;">Share your referral link and earn 15% commission on every purchase. Find your link in the dashboard.</p>
+                </div>
+
+                <p style="font-size:14px;color:#8e897e;line-height:1.7;margin-top:24px;">Questions? Reply to this email — we're here to help.</p>
+              </div>
+              <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+              </div>
+            </div>`
+        });
+        console.log(`📧 Welcome onboarding email sent to ${result.rows[0].email}`);
+      }
+    } catch (welcomeErr) {
+      console.error('Welcome email error (non-fatal):', welcomeErr.message);
+    }
   } catch (error) {
     console.error('Verification error:', error);
     res.status(500).send('Verification failed');
@@ -1427,41 +1669,6 @@ app.post('/api/broker/reset-data', authenticateToken, async (req, res) => {
 });
 
 // PANIC: Close all open trades
-app.post('/api/broker/close-all', authenticateToken, async (req, res) => {
-  try {
-    // Get active broker connection
-    const conn = await pool.query(
-      'SELECT * FROM broker_connections WHERE user_id = $1 AND is_active = true LIMIT 1',
-      [req.userId]
-    );
-
-    if (conn.rows.length === 0) {
-      return res.status(400).json({ error: 'No active broker connection' });
-    }
-
-    // Close all open trades in database (mark as closed at current time)
-    const result = await pool.query(
-      `UPDATE trades SET closed_at = NOW(), exit_price = entry_price, profit = 0 
-       WHERE user_id = $1 AND closed_at IS NULL 
-       RETURNING id`,
-      [req.userId]
-    );
-
-    const closedCount = result.rowCount || 0;
-
-    // Note: In production with MetaApi, you would also call:
-    // metaApi.closeAllPositions(accountId)
-    // For now we just update the database
-
-    console.log(`PANIC: User ${req.userId} closed ${closedCount} trades`);
-    res.json({ success: true, closed: closedCount, message: 'All trades marked as closed' });
-
-  } catch (error) {
-    console.error('Close-all error:', error);
-    res.status(500).json({ error: 'Failed to close trades' });
-  }
-});
-
 // ============================================
 // ENDPOINT: REFERRAL SYSTEM
 // ============================================
@@ -1553,6 +1760,56 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
     await pool.query('UPDATE users SET referral_balance = 0 WHERE id = $1', [req.userId]);
 
     res.json({ success: true, amount: balance, message: 'Payout request submitted! We will process it within 48 hours.' });
+    
+    // Send payout request confirmation + admin notification
+    try {
+      if (resend) {
+        const userData = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+        if (userData.rows[0]) {
+          // User confirmation
+          await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+            to: userData.rows[0].email,
+            subject: `TierAlba — Payout Request Received (€${balance.toFixed(2)})`,
+            html: `
+              <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <h1 style="color:#5ee0a0;margin:0;font-size:26px;">Payout Request Received</h1>
+                </div>
+                <div style="padding:40px 32px;color:#ece8de;">
+                  <div style="background:rgba(94,224,160,0.08);border:1px solid rgba(94,224,160,0.15);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+                    <div style="font-size:36px;font-weight:700;color:#5ee0a0;">€${balance.toFixed(2)}</div>
+                    <div style="font-size:13px;color:#8e897e;margin-top:8px;">→ USDT (TRC-20)</div>
+                  </div>
+                  <p style="font-size:15px;line-height:1.8;color:#8e897e;margin-bottom:8px;"><strong style="color:#ece8de;">Wallet:</strong> ${wallet}</p>
+                  <p style="font-size:15px;line-height:1.8;color:#8e897e;margin-bottom:24px;"><strong style="color:#ece8de;">Status:</strong> <span style="color:#c8a94e;">Processing (within 48h)</span></p>
+                  <p style="font-size:14px;color:#8e897e;line-height:1.7;">You'll receive a confirmation once the transfer is complete.</p>
+                </div>
+                <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                  <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                </div>
+              </div>`
+          });
+          
+          // Admin notification
+          const adminEmail = process.env.ADMIN_EMAIL || 'support@tieralba.com';
+          await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+            to: adminEmail,
+            subject: `[ADMIN] Payout Request: €${balance.toFixed(2)} → ${wallet}`,
+            html: `<div style="font-family:monospace;padding:20px;background:#111;color:#eee;border-radius:8px;">
+              <h2>New Payout Request</h2>
+              <p><strong>User:</strong> ${userData.rows[0].email}</p>
+              <p><strong>Amount:</strong> €${balance.toFixed(2)}</p>
+              <p><strong>Wallet:</strong> ${wallet}</p>
+              <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+            </div>`
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error('Payout email error (non-fatal):', emailErr.message);
+    }
   } catch (error) {
     console.error('Payout error:', error);
     res.status(500).json({ error: 'Server error' });
