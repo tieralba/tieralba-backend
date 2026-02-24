@@ -1155,13 +1155,17 @@ app.post('/api/broker/connect', authenticateToken, async (req, res) => {
       headers: { 'auth-token': metaApiToken }
     });
 
-    // Deactivate old connections
+    // Deactivate old connections and CLEAR old data
     const existing = await pool.query(
       'SELECT id FROM broker_connections WHERE user_id = $1 AND is_active = true',
       [userId]
     );
     if (existing.rows.length > 0) {
       await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [userId]);
+      // Clear old broker data so new account starts fresh
+      await pool.query('DELETE FROM trades WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM equity_snapshots WHERE user_id = $1', [userId]);
+      console.log(`🧹 Cleared old trades & equity data for user ${userId} (new broker connected)`);
     }
     
     // Save new connection with MetaApi account ID
