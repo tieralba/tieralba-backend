@@ -4698,8 +4698,10 @@
     async function autoSync() {
         try {
             const res = await apiCall('/api/broker/sync', { method: 'POST' });
-            if (res?.success) {
+            if (res?.success && res.synced > 0) {
                 console.log(`🔄 Auto-sync: ${res.synced} trades synced`);
+                // Refresh entire UI after new data arrives
+                refreshDashboard();
             }
         } catch (e) { /* silent */ }
     }
@@ -4720,6 +4722,8 @@
             if (trades?.trades) {
                 renderTradeList(trades.trades);
                 drawMonthlyChart(trades.trades);
+                drawAnalytics(trades.trades, stats);
+                drawDrawdown(trades.trades);
                 drawDailyPL(trades.trades);
             }
 
