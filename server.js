@@ -1401,9 +1401,28 @@ app.get('/api/broker/connections', authenticateToken, async (req, res) => {
 app.post('/api/broker/disconnect', authenticateToken, async (req, res) => {
   try {
     await pool.query('UPDATE broker_connections SET is_active = false WHERE user_id = $1', [req.userId]);
+    // Clear trade data from old broker
+    await pool.query('DELETE FROM trades WHERE user_id = $1', [req.userId]);
+    await pool.query('DELETE FROM equity_snapshots WHERE user_id = $1', [req.userId]);
+    console.log(`🧹 Broker disconnected + data cleared for user ${req.userId}`);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to disconnect' });
+  }
+});
+
+// Reset broker data — clears old trades/equity and forces re-sync from current broker
+app.post('/api/broker/reset-data', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    // Clear all old data
+    const delTrades = await pool.query('DELETE FROM trades WHERE user_id = $1', [userId]);
+    const delEquity = await pool.query('DELETE FROM equity_snapshots WHERE user_id = $1', [userId]);
+    console.log(`🧹 Reset data for user ${userId}: ${delTrades.rowCount} trades, ${delEquity.rowCount} equity snapshots deleted`);
+    res.json({ success: true, message: `Cleared ${delTrades.rowCount} trades and ${delEquity.rowCount} equity snapshots. Sync now to load fresh data.` });
+  } catch (error) {
+    console.error('Reset data error:', error);
+    res.status(500).json({ error: 'Failed to reset data' });
   }
 });
 
