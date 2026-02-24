@@ -92,54 +92,103 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        const customerEmail = session.customer_email || session.customer_details?.email;
+        const customerEmail = (session.customer_email || session.customer_details?.email || '').toLowerCase();
         const customerId = session.customer;
         const subscriptionId = session.subscription;
+        const metadata = session.metadata || {};
+        const productKey = metadata.productKey;
+        const service = metadata.service;
+        const planLabel = metadata.planLabel;
+        const userId = metadata.userId;
         
-        // Get subscription to determine plan
-        let plan = 'standard';
-        let amount = 0;
-        if (subscriptionId) {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
-          const priceId = sub.items.data[0]?.price?.id;
-          amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
-          // Map price IDs to plans
-          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
-          if (proPriceIds.includes(priceId)) plan = 'pro';
-        }
+        console.log(`✅ Payment completed: ${customerEmail} → ${service}/${planLabel} (key: ${productKey})`);
         
-        // Update user
-        if (customerEmail) {
-          await pool.query(
-            'UPDATE users SET plan = $1, stripe_customer_id = $2, stripe_subscription_id = $3 WHERE LOWER(email) = LOWER($4)',
-            [plan, customerId, subscriptionId, customerEmail]
-          );
-          console.log(`✅ User ${customerEmail} upgraded to ${plan}`);
+        if (!customerEmail) break;
 
-          // Credit referral commission
-          try {
-            const buyer = await pool.query('SELECT id, referred_by FROM users WHERE LOWER(email) = LOWER($1)', [customerEmail]);
-            if (buyer.rows[0]?.referred_by) {
-              const referrer = await pool.query('SELECT id FROM users WHERE referral_code = $1', [buyer.rows[0].referred_by]);
-              if (referrer.rows.length > 0) {
-                const commissionRate = 15;
-                const saleAmount = amount || (plan === 'pro' ? 89.99 : 49.99);
-                const commission = parseFloat((saleAmount * commissionRate / 100).toFixed(2));
-                
+        if (service === 'tradesalba') {
+          // ─── TRADESALBA: subscription-based ───
+          // Determine plan from priceId
+          let taPlan = 'standard';
+          if (subscriptionId) {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const priceId = sub.items.data[0]?.price?.id;
+            const proPriceIds = [
+              'price_1Sx9bMRo0AfnvbiMVTcum8SM', // Pro Monthly
+              'price_1Sx9qRRo0AfnvbiMwhCq3fPx'  // Pro Yearly
+            ];
+            if (proPriceIds.includes(priceId)) taPlan = 'pro';
+          }
+          
+          await pool.query(
+            `UPDATE users SET 
+              plan = $1, 
+              stripe_customer_id = $2, 
+              stripe_subscription_id = $3,
+              active_services = COALESCE(active_services, '{}'::jsonb) || $4::jsonb
+            WHERE LOWER(email) = LOWER($5)`,
+            [taPlan, customerId, subscriptionId, JSON.stringify({ tradesalba: { plan: taPlan, status: 'active', activated_at: new Date().toISOString(), product_key: productKey } }), customerEmail]
+          );
+          console.log(`📊 TradesAlba ${taPlan} activated for ${customerEmail}`);
+          
+        } else if (service === 'tierpass') {
+          // ─── TIER PASS: one-time, immediate access ───
+          await pool.query(
+            `UPDATE users SET 
+              stripe_customer_id = COALESCE($1, stripe_customer_id),
+              active_services = COALESCE(active_services, '{}'::jsonb) || $2::jsonb
+            WHERE LOWER(email) = LOWER($3)`,
+            [customerId, JSON.stringify({ tierpass: { plan: planLabel, status: 'active', activated_at: new Date().toISOString(), product_key: productKey } }), customerEmail]
+          );
+          console.log(`🏆 Tier Pass ${planLabel} activated for ${customerEmail}`);
+          
+        } else if (service === 'tiermanage') {
+          // ─── TIER MANAGE: one-time, immediate access ───
+          await pool.query(
+            `UPDATE users SET 
+              stripe_customer_id = COALESCE($1, stripe_customer_id),
+              active_services = COALESCE(active_services, '{}'::jsonb) || $2::jsonb
+            WHERE LOWER(email) = LOWER($3)`,
+            [customerId, JSON.stringify({ tiermanage: { plan: planLabel, status: 'active', activated_at: new Date().toISOString(), product_key: productKey } }), customerEmail]
+          );
+          console.log(`📈 Tier Manage ${planLabel} activated for ${customerEmail}`);
+        }
+
+        // ─── RECORD PURCHASE ───
+        const amount = session.amount_total ? session.amount_total / 100 : 0;
+        try {
+          await pool.query(
+            `INSERT INTO purchases (user_id, email, service, plan_label, product_key, amount, stripe_session_id, stripe_customer_id, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'completed')`,
+            [userId || null, customerEmail, service, planLabel, productKey, amount, session.id, customerId]
+          );
+        } catch (purchaseErr) {
+          console.error('Purchase record error (non-fatal):', purchaseErr.message);
+        }
+
+        // ─── REFERRAL COMMISSION ───
+        try {
+          const buyer = await pool.query('SELECT id, referred_by FROM users WHERE LOWER(email) = LOWER($1)', [customerEmail]);
+          if (buyer.rows[0]?.referred_by) {
+            const referrer = await pool.query('SELECT id FROM users WHERE referral_code = $1', [buyer.rows[0].referred_by]);
+            if (referrer.rows.length > 0) {
+              const commissionRate = 15;
+              const saleAmount = amount || 0;
+              const commission = parseFloat((saleAmount * commissionRate / 100).toFixed(2));
+              if (commission > 0) {
                 await pool.query(
                   'INSERT INTO referral_commissions (referrer_id, referred_id, referred_email, plan_purchased, sale_amount, commission_rate, commission_amount) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                  [referrer.rows[0].id, buyer.rows[0].id, customerEmail, plan, saleAmount, commissionRate, commission]
+                  [referrer.rows[0].id, buyer.rows[0].id, customerEmail, `${service}:${planLabel}`, saleAmount, commissionRate, commission]
                 );
                 await pool.query(
                   'UPDATE users SET referral_balance = referral_balance + $1, referral_total_earned = referral_total_earned + $1 WHERE id = $2',
                   [commission, referrer.rows[0].id]
                 );
-                console.log(`💰 Referral commission: €${commission} credited to referrer`);
+                console.log(`💰 Referral commission: €${commission} credited`);
               }
             }
-          } catch (refErr) {
-            console.error('Referral commission error:', refErr);
           }
+        } catch (refErr) {
+          console.error('Referral commission error:', refErr);
         }
         break;
       }
@@ -149,7 +198,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         const status = sub.status;
         if (status === 'active') {
           const priceId = sub.items.data[0]?.price?.id;
-          const proPriceIds = (process.env.STRIPE_PRO_PRICE_IDS || '').split(',');
+          const proPriceIds = ['price_1Sx9bMRo0AfnvbiMVTcum8SM', 'price_1Sx9qRRo0AfnvbiMwhCq3fPx'];
           const plan = proPriceIds.includes(priceId) ? 'pro' : 'standard';
           await pool.query(
             'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
@@ -162,8 +211,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
         await pool.query(
-          'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
-          ['free', sub.id]
+          `UPDATE users SET plan = 'free', 
+           active_services = active_services - 'tradesalba'
+           WHERE stripe_subscription_id = $1`,
+          [sub.id]
         );
         console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
         break;
@@ -211,8 +262,164 @@ app.get('/faq', (req, res) => {
   });
 });
 
+// Checkout page
+app.get('/checkout', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
+});
+
+// Checkout success page
+app.get('/checkout-success', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'checkout-success.html'));
+});
+
 // Serve frontend static files (CSS, JS, images, other HTML)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ============================================
+// PRODUCT CATALOG — maps productKey to Stripe priceId and service type
+// ============================================
+const PRODUCT_CATALOG = {
+  // TIER PASS (one-time) — service: tierpass, access: ea_license
+  'tierpass-5k':    { priceId:'price_1T4QOGRo0AfnvbiMs6bhWvFT', mode:'payment', service:'tierpass', planLabel:'Bronze 5K', price:59 },
+  'tierpass-10k':   { priceId:'price_1T46xCRo0AfnvbiMLk7ymv3u', mode:'payment', service:'tierpass', planLabel:'Silver 10K', price:99 },
+  'tierpass-25k':   { priceId:'price_1T4QPURo0AfnvbiMgqgCy4vL', mode:'payment', service:'tierpass', planLabel:'Gold 25K', price:149 },
+  'tierpass-50k':   { priceId:'price_1T4QQPRo0AfnvbiMlZh4ItLs', mode:'payment', service:'tierpass', planLabel:'Platinum 50K', price:199 },
+  'tierpass-100k':  { priceId:'price_1T4QRHRo0AfnvbiMR4tk1UrV', mode:'payment', service:'tierpass', planLabel:'Emerald 100K', price:249 },
+  'tierpass-200k':  { priceId:'price_1T4QS8Ro0AfnvbiMFB2JFCxF', mode:'payment', service:'tierpass', planLabel:'Diamond 200K', price:349 },
+  // TIER MANAGE (one-time) — service: tiermanage
+  'tiermanage-lite':    { priceId:'price_1T4QTTRo0AfnvbiMVkaj2o2t', mode:'payment', service:'tiermanage', planLabel:'Lite Funded', price:89 },
+  'tiermanage-starter': { priceId:'price_1T4QUHRo0AfnvbiMWSUhvetr', mode:'payment', service:'tiermanage', planLabel:'Starter Funded', price:149 },
+  'tiermanage-pro':     { priceId:'price_1T4QVERo0AfnvbiM4bChqkQH', mode:'payment', service:'tiermanage', planLabel:'Pro Funded', price:299 },
+  // TRADESALBA (subscription) — service: tradesalba
+  'tradesalba-standard-m': { priceId:'price_1Sx9ZARo0AfnvbiMbWiYdZ0n', mode:'subscription', service:'tradesalba', planLabel:'Standard Monthly', price:49, taPlan:'standard' },
+  'tradesalba-standard-y': { priceId:'price_1Sx9hbRo0AfnvbiMmM69HQ6c', mode:'subscription', service:'tradesalba', planLabel:'Standard Yearly', price:399, taPlan:'standard' },
+  'tradesalba-pro-m':      { priceId:'price_1Sx9bMRo0AfnvbiMVTcum8SM', mode:'subscription', service:'tradesalba', planLabel:'Pro Monthly', price:89, taPlan:'pro' },
+  'tradesalba-pro-y':      { priceId:'price_1Sx9qRRo0AfnvbiMwhCq3fPx', mode:'subscription', service:'tradesalba', planLabel:'Pro Yearly', price:699, taPlan:'pro' },
+};
+
+// Reverse lookup: priceId → product info
+const PRICE_TO_PRODUCT = {};
+Object.entries(PRODUCT_CATALOG).forEach(([key, val]) => {
+  PRICE_TO_PRODUCT[val.priceId] = { ...val, productKey: key };
+});
+
+// ============================================
+// CHECKOUT API — Register + Create Stripe Session
+// ============================================
+app.post('/api/checkout', async (req, res) => {
+  if (!stripe) return res.status(400).json({ error: 'Payment system not configured' });
+  
+  try {
+    const { firstName, lastName, email, phone, country, password, marketing_consent, productKey, priceId, mode } = req.body;
+    
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    if (!productKey || !PRODUCT_CATALOG[productKey]) {
+      return res.status(400).json({ error: 'Invalid product selected' });
+    }
+    
+    const product = PRODUCT_CATALOG[productKey];
+    const emailLower = email.toLowerCase().trim();
+    
+    // Check if user already exists
+    const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [emailLower]);
+    
+    let userId;
+    
+    if (existingUser.rows.length > 0) {
+      // User exists — verify password to allow re-purchase
+      const userCheck = await pool.query('SELECT id, password_hash FROM users WHERE LOWER(email) = $1', [emailLower]);
+      const validPw = await bcrypt.compare(password, userCheck.rows[0].password_hash);
+      if (!validPw) {
+        return res.status(400).json({ error: 'An account with this email already exists. Please use the correct password or log in first.' });
+      }
+      userId = userCheck.rows[0].id;
+    } else {
+      // Create new user account
+      const passwordHash = await bcrypt.hash(password, 10);
+      const crypto = require('crypto');
+      const verifyToken = crypto.randomBytes(32).toString('hex');
+      const userName = `${firstName} ${lastName}`.trim();
+      
+      const result = await pool.query(
+        `INSERT INTO users (email, password_hash, name, first_name, last_name, country, phone, verify_token, email_verified, marketing_consent, plan)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+        [emailLower, passwordHash, userName, firstName, lastName, country||null, phone||null, verifyToken, false, marketing_consent||false, 'free']
+      );
+      userId = result.rows[0].id;
+      
+      // Send verification email (non-blocking)
+      if (resend) {
+        const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
+        const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyToken}`;
+        resend.emails.send({
+          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          to: [emailLower],
+          subject: 'Welcome to TierAlba — Verify Your Email',
+          html: `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
+            <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <h1 style="margin:0;font-size:24px;color:#c8aa6e;">TierAlba</h1>
+            </div>
+            <div style="padding:40px;">
+              <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Welcome, ${firstName}!</h2>
+              <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 24px;">Thank you for purchasing <strong style="color:#c8aa6e;">${product.planLabel}</strong>. Your account is ready.</p>
+              <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 32px;">Please verify your email to unlock all features:</p>
+              <div style="text-align:center;margin:0 0 32px;">
+                <a href="${verifyUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;text-transform:uppercase;letter-spacing:1.2px;">Verify Email</a>
+              </div>
+            </div></div>`
+        }).catch(err => console.error('Email send error:', err));
+      }
+    }
+    
+    // Create Stripe checkout session
+    const baseUrl = process.env.APP_URL || req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app';
+    
+    const sessionConfig = {
+      payment_method_types: ['card'],
+      customer_email: emailLower,
+      line_items: [{ price: product.priceId, quantity: 1 }],
+      success_url: `${baseUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/checkout?plan=${productKey}&cancelled=true`,
+      metadata: {
+        userId: userId.toString(),
+        productKey: productKey,
+        service: product.service,
+        planLabel: product.planLabel
+      }
+    };
+    
+    // Set mode based on product type
+    if (product.mode === 'subscription') {
+      sessionConfig.mode = 'subscription';
+    } else {
+      sessionConfig.mode = 'payment';
+    }
+    
+    // For Klarna support (EU)
+    if (product.mode === 'payment') {
+      sessionConfig.payment_method_types = ['card', 'klarna'];
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    
+    console.log(`🛒 Checkout created: ${emailLower} → ${product.planLabel} (${product.service})`);
+    
+    res.json({ url: session.url });
+    
+  } catch (error) {
+    console.error('Checkout error:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'An account with this email already exists.' });
+    }
+    res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
+  }
+});
 
 // Trust proxy (Railway runs behind a proxy)
 app.set('trust proxy', 1);
