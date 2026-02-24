@@ -2095,6 +2095,7 @@
                     </div>
                     <div style="text-align:center;">
                         <button class="btn-primary" onclick="syncBrokerData()" style="margin-right:8px;">Sync Now</button>
+                        <button class="btn-logout" onclick="resetBrokerData()" style="margin-right:8px;background:rgba(200,169,78,0.1);color:var(--gold);border-color:rgba(200,169,78,0.15);">Reset Data</button>
                         <button class="btn-logout" onclick="disconnectBroker()">Disconnect</button>
                     </div>
                 </div>
@@ -3585,11 +3586,27 @@
     }
 
     async function disconnectBroker() {
-        if (!confirm('Disconnect your trading account?')) return;
-        // Just deactivate in our DB
+        if (!confirm('Disconnect your trading account? This will also clear all trade data.')) return;
         await apiCall('/api/broker/disconnect', { method: 'POST' });
-        toast('info', 'Disconnected', 'Broker account disconnected');
+        toast('info', 'Disconnected', 'Broker account disconnected and data cleared');
         updateBotStatus();
+        // Reset dashboard stats to zero
+        updateStats({equity:0,totalProfit:0,winRate:0,profitFactor:0,totalTrades:0,openTrades:0,bestTrade:0,worstTrade:0,todayProfit:0,winningTrades:0,losingTrades:0});
+        updatePerf({totalTrades:0,winningTrades:0,losingTrades:0,winRate:0,profitFactor:0,avgProfit:0,bestTrade:0,worstTrade:0});
+    }
+
+    async function resetBrokerData() {
+        if (!confirm('Reset all trade data? This will clear old trades and equity history. You can then sync to reload fresh data from your current broker.')) return;
+        const res = await apiCall('/api/broker/reset-data', { method: 'POST' });
+        if (res?.success) {
+            toast('success', 'Data Reset', res.message || 'Old data cleared. Syncing fresh data...');
+            // Reset UI
+            updateStats({equity:0,totalProfit:0,winRate:0,profitFactor:0,totalTrades:0,openTrades:0,bestTrade:0,worstTrade:0,todayProfit:0,winningTrades:0,losingTrades:0});
+            // Auto sync fresh data
+            await syncBrokerData();
+        } else {
+            toast('error', 'Error', res?.error || 'Failed to reset data');
+        }
     }
 
     async function panicButton() {
