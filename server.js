@@ -1138,10 +1138,15 @@ app.post('/api/broker/connect', authenticateToken, async (req, res) => {
     const metaAccount = await metaApiRes.json();
     
     if (metaAccount.error || !metaAccount.id) {
-      console.error('MetaApi error:', metaAccount);
-      return res.status(400).json({ 
-        error: metaAccount.message || 'Failed to connect. Check your credentials and broker server name.' 
-      });
+      console.error('MetaApi error:', JSON.stringify(metaAccount));
+      console.error('Sent data:', { login: accountNumber, server: brokerName, platform: platform.toLowerCase() });
+      
+      let errorMsg = metaAccount.message || 'Failed to connect.';
+      // Make error more helpful
+      if (errorMsg.includes('Invalid account') || errorMsg.includes('Account disabled') || errorMsg.includes('authenticate')) {
+        errorMsg = `Connection failed. Please verify: 1) Account number "${accountNumber}" is correct, 2) Server name "${brokerName}" matches exactly what appears in your MetaTrader terminal (File → Login → Server field), 3) You are using the Investor/Viewer password (not the master password), 4) Platform (${platform.toUpperCase()}) matches your account type.`;
+      }
+      return res.status(400).json({ error: errorMsg });
     }
 
     // Deploy the account
