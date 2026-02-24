@@ -210,12 +210,22 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
-        await pool.query(
+        // Downgrade plan to free
+        const downgraded = await pool.query(
           `UPDATE users SET plan = 'free', 
            active_services = active_services - 'tradesalba'
-           WHERE stripe_subscription_id = $1`,
+           WHERE stripe_subscription_id = $1
+           RETURNING id`,
           [sub.id]
         );
+        // Deactivate all license keys for this user
+        if (downgraded.rows.length > 0) {
+          await pool.query(
+            'UPDATE ea_licenses SET is_active = false WHERE user_id = $1',
+            [downgraded.rows[0].id]
+          );
+          console.log(`🔑 License keys deactivated for user ${downgraded.rows[0].id}`);
+        }
         console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
         break;
       }
