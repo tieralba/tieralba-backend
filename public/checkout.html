@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — TierAlba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#06070a;--bg-2:#0a0b10;--surface:rgba(14,15,22,0.6);--surface-solid:#0e0f16;
+  --border:rgba(255,255,255,0.04);--border-h:rgba(200,169,78,0.15);
+  --gold:#c8a94e;--gold-l:#e8d5a0;--gold-d:rgba(200,169,78,0.06);
+  --text:#ece8de;--text-2:#8e897e;--text-3:#55514a;--green:#5ee0a0;--red:#e87272;
+  --ease:cubic-bezier(.22,1,.36,1)}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+::selection{background:rgba(200,169,78,0.25)}
+a{text-decoration:none;color:var(--gold)}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(6,7,10,0.8);backdrop-filter:blur(32px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;color:var(--text);text-decoration:none}
+.nav-mark{width:34px;height:34px;background:linear-gradient(145deg,var(--gold),#b59840,var(--gold-l));border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:#06070a;
+  box-shadow:0 4px 24px rgba(200,169,78,0.3)}
+.nav-secure{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);font-weight:500}
+.nav-secure svg{width:14px;height:14px;stroke:var(--green);fill:none;stroke-width:2}
+
+/* LAYOUT */
+.checkout-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;padding-top:64px}
+
+/* LEFT — ORDER SUMMARY */
+.checkout-left{background:var(--bg-2);padding:64px 56px;display:flex;flex-direction:column;border-right:1px solid var(--border);position:relative}
+.checkout-left::after{content:'';position:absolute;top:0;right:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,rgba(200,169,78,0.08),transparent)}
+
+.back-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-3);margin-bottom:40px;transition:color 0.3s}
+.back-link:hover{color:var(--gold)}
+.back-link svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+
+.order-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:12px}
+.order-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:800;letter-spacing:-1px;margin-bottom:8px}
+.order-sub{font-size:14px;color:var(--text-2);margin-bottom:40px}
+
+.order-card{padding:28px;border-radius:16px;background:var(--surface);border:1px solid var(--border);margin-bottom:24px}
+.order-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.order-service{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold)}
+.order-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--gold-d);color:var(--gold);border:1px solid rgba(200,169,78,0.1)}
+.order-plan{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:4px}
+.order-desc{font-size:13px;color:var(--text-3);margin-bottom:20px}
+.order-features{list-style:none}
+.order-features li{font-size:13px;color:var(--text-2);padding:8px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.order-features li:last-child{border:none}
+.order-features li::before{content:'✓';font-size:10px;font-weight:700;color:var(--green);width:20px;height:20px;
+  background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.08);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.order-total{padding:24px 28px;border-radius:16px;background:var(--surface);border:1px solid var(--border);margin-top:auto}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.total-row.main{padding:16px 0 0;margin-top:12px;border-top:1px solid var(--border)}
+.total-label{font-size:14px;color:var(--text-2)}
+.total-val{font-size:14px;color:var(--text-2)}
+.total-row.main .total-label{font-size:16px;font-weight:700;color:var(--text)}
+.total-row.main .total-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--gold)}
+
+.trust-row{display:flex;gap:20px;margin-top:28px}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3);font-weight:500}
+.trust-item svg{width:14px;height:14px;stroke:var(--green);fill:none;stroke-width:2}
+
+/* RIGHT — FORM */
+.checkout-right{padding:64px 56px;display:flex;flex-direction:column}
+.form-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-1px;margin-bottom:8px}
+.form-sub{font-size:14px;color:var(--text-2);margin-bottom:36px}
+.form-sub a{color:var(--gold);font-weight:600}
+
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.field input,.field select{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;transition:all 0.3s var(--ease);outline:none}
+.field input::placeholder{color:var(--text-3)}
+.field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,78,0.08)}
+.field select{appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2355514a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center}
+.field select option{background:var(--bg);color:var(--text)}
+.field .error-text{font-size:11px;color:var(--red);margin-top:4px;display:none}
+.field.error input,.field.error select{border-color:var(--red)}
+.field.error .error-text{display:block}
+
+.pw-strength{height:3px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden}
+.pw-strength-bar{height:100%;border-radius:2px;width:0;transition:all 0.4s var(--ease)}
+
+.divider{display:flex;align-items:center;gap:16px;margin:28px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+
+.checkbox-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.checkbox-row input[type="checkbox"]{width:18px;height:18px;border-radius:5px;border:1px solid var(--border);background:var(--surface);
+  appearance:none;cursor:pointer;flex-shrink:0;margin-top:2px;transition:all 0.3s;position:relative}
+.checkbox-row input[type="checkbox"]:checked{background:var(--gold);border-color:var(--gold)}
+.checkbox-row input[type="checkbox"]:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:11px;font-weight:700;color:#06070a}
+.checkbox-row label{font-size:13px;color:var(--text-2);line-height:1.5;cursor:pointer}
+.checkbox-row label a{color:var(--gold);font-weight:600}
+
+.submit-btn{width:100%;padding:16px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+  cursor:pointer;transition:all 0.4s var(--ease);margin-top:24px;position:relative;overflow:hidden}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(200,169,78,0.35)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+.submit-btn .spinner{display:none;width:20px;height:20px;border:2px solid rgba(6,7,10,0.2);border-top:2px solid #06070a;
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto}
+.submit-btn.loading span{display:none}
+.submit-btn.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.stripe-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:11px;color:var(--text-3)}
+.stripe-badge svg{height:16px;opacity:0.4}
+
+.form-error{padding:14px 18px;border-radius:10px;background:rgba(232,114,114,0.08);border:1px solid rgba(232,114,114,0.15);
+  font-size:13px;color:var(--red);margin-bottom:20px;display:none}
+.form-error.show{display:block}
+
+/* MOBILE */
+@media(max-width:900px){
+  .checkout-wrap{grid-template-columns:1fr;min-height:auto}
+  .checkout-left{padding:32px 24px;border-right:none;border-bottom:1px solid var(--border)}
+  .checkout-left::after{display:none}
+  .checkout-right{padding:32px 24px}
+  .nav{padding:0 20px}
+  .order-title{font-size:26px}
+  .form-title{font-size:24px}
+  .field-row{grid-template-columns:1fr}
+  .trust-row{flex-wrap:wrap;gap:12px}
+}
+@media(max-width:480px){
+  .checkout-left{padding:24px 16px}
+  .checkout-right{padding:24px 16px}
+  .order-card{padding:20px}
+  .order-total{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nav-logo"><div class="nav-mark">T</div>TierAlba</a>
+  <div class="nav-secure">
+    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    Secure Checkout
+  </div>
+</nav>
+
+<div class="checkout-wrap">
+
+  <!-- LEFT — ORDER SUMMARY -->
+  <div class="checkout-left">
+    <a href="/" class="back-link"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> Back to TierAlba</a>
+
+    <div class="order-tag" id="orderTag">Tier Pass</div>
+    <h1 class="order-title" id="orderTitle">Bronze 5K</h1>
+    <p class="order-sub" id="orderSub">Pass your prop firm challenge with our Expert Advisor</p>
+
+    <div class="order-card">
+      <div class="order-card-top">
+        <div class="order-service" id="orderService">Tier Pass</div>
+        <div class="order-badge" id="orderBadge">One-time</div>
+      </div>
+      <div class="order-plan" id="orderPlan">Bronze — 5K Account</div>
+      <div class="order-desc" id="orderDesc">Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.</div>
+      <ul class="order-features" id="orderFeatures">
+        <li>94% success rate</li>
+        <li>Supported platforms: MT4 &amp; MT5</li>
+        <li>Private Zoom setup session</li>
+        <li>Full account access</li>
+        <li>24/7 support</li>
+      </ul>
+    </div>
+
+    <div class="order-total">
+      <div class="total-row">
+        <span class="total-label" id="totalItemLabel">Tier Pass — Bronze 5K</span>
+        <span class="total-val" id="totalItemVal">€59</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Processing fee</span>
+        <span class="total-val">€0</span>
+      </div>
+      <div class="total-row main">
+        <span class="total-label">Total</span>
+        <span class="total-val" id="totalPrice">€59</span>
+      </div>
+    </div>
+
+    <div class="trust-row">
+      <div class="trust-item"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> SSL Encrypted</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Secure Payment</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Money-back Guarantee</div>
+    </div>
+  </div>
+
+  <!-- RIGHT — FORM -->
+  <div class="checkout-right">
+    <h2 class="form-title">Create Your Account</h2>
+    <p class="form-sub">Already have an account? <a href="/login" id="loginLink">Log in</a></p>
+
+    <div class="form-error" id="formError"></div>
+
+    <form id="checkoutForm" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" placeholder="John" required>
+          <div class="error-text">First name is required</div>
+        </div>
+        <div class="field">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" placeholder="Doe" required>
+          <div class="error-text">Last name is required</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="john@example.com" required>
+        <div class="error-text">Please enter a valid email</div>
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="+39 xxx xxx xxxx">
+        <div class="error-text">Please enter a valid phone number</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="country">Country</label>
+          <select id="country" required>
+            <option value="">Select country</option>
+            <option value="IT">Italy</option><option value="GB">United Kingdom</option><option value="DE">Germany</option>
+            <option value="FR">France</option><option value="ES">Spain</option><option value="NL">Netherlands</option>
+            <option value="BE">Belgium</option><option value="AT">Austria</option><option value="CH">Switzerland</option>
+            <option value="PT">Portugal</option><option value="SE">Sweden</option><option value="NO">Norway</option>
+            <option value="DK">Denmark</option><option value="FI">Finland</option><option value="IE">Ireland</option>
+            <option value="PL">Poland</option><option value="CZ">Czech Republic</option><option value="RO">Romania</option>
+            <option value="GR">Greece</option><option value="HR">Croatia</option><option value="HU">Hungary</option>
+            <option value="BG">Bulgaria</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option>
+            <option value="LT">Lithuania</option><option value="LV">Latvia</option><option value="EE">Estonia</option>
+            <option value="US">United States</option><option value="CA">Canada</option><option value="AU">Australia</option>
+            <option value="NZ">New Zealand</option><option value="AE">UAE</option><option value="SA">Saudi Arabia</option>
+            <option value="IN">India</option><option value="BR">Brazil</option><option value="MX">Mexico</option>
+            <option value="JP">Japan</option><option value="KR">South Korea</option><option value="SG">Singapore</option>
+            <option value="AL">Albania</option><option value="XK">Kosovo</option><option value="RS">Serbia</option>
+            <option value="MK">North Macedonia</option><option value="BA">Bosnia</option><option value="ME">Montenegro</option>
+            <option value="TR">Turkey</option><option value="ZA">South Africa</option><option value="NG">Nigeria</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <div class="error-text">Please select a country</div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Min. 8 characters" required>
+          <div class="pw-strength"><div class="pw-strength-bar" id="pwBar"></div></div>
+          <div class="error-text">Min. 8 characters required</div>
+        </div>
+      </div>
+
+      <div class="divider"><span>Agreements</span></div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="agreeTerms" required>
+        <label for="agreeTerms">I agree to the <a href="/terms-of-service" target="_blank">Terms of Service</a>, <a href="/privacy-policy" target="_blank">Privacy Policy</a>, and <a href="/refund-policy" target="_blank">Refund Policy</a></label>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="agreeRisk">
+        <label for="agreeRisk">I understand that trading involves significant risk and past performance does not guarantee future results</label>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="agreeMarketing">
+        <label for="agreeMarketing">I'd like to receive trading tips and updates via email (optional)</label>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span>Create Account &amp; Pay <span id="btnPrice">€59</span></span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+
+    <div class="stripe-badge">
+      <svg viewBox="0 0 60 25" fill="currentColor"><path d="M5 0C2.24 0 0 2.24 0 5v15c0 2.76 2.24 5 5 5h50c2.76 0 5-2.24 5-5V5c0-2.76-2.24-5-5-5H5zm3.5 15.06c0 .66-.47 1.2-1.05 1.2-.58 0-1.05-.54-1.05-1.2V9.94c0-.66.47-1.2 1.05-1.2.58 0 1.05.54 1.05 1.2v5.12zm15.3-3.8c-.15.12-.39.18-.72.18h-.78v-1.81h.78c.33 0 .57.06.72.19.15.13.22.32.22.57v.3c0 .25-.07.44-.22.57zm1.9.72c.26-.34.4-.77.4-1.29v-.3c0-.75-.23-1.33-.68-1.75-.45-.42-1.1-.63-1.94-.63h-2.58v7.05h1.6v-2.5h.72l1.12 2.5h1.82l-1.36-2.74c.38-.08.68-.22.9-.34zM22.5 15.06h-1.6V8.01h1.6v7.05zm5.3-5.85h-1.9v1.55h1.78v1.2h-1.78v1.9h1.9v1.2h-3.5V8.01h3.5v1.2zm5.1.22c-.18-.14-.44-.22-.78-.22h-.72v1.77h.72c.34 0 .6-.07.78-.21.18-.14.26-.35.26-.62v-.1c0-.27-.08-.48-.26-.62z"/></svg>
+      Payments secured by Stripe
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ PRODUCT CATALOG ═══ */
+const PRODUCTS = {
+  // TIER PASS (one-time)
+  'tierpass-5k':    { service:'Tier Pass', plan:'Bronze — 5K Account', name:'Bronze 5K', price:59, badge:'One-time', mode:'payment', priceId:'price_1T4QOGRo0AfnvbiMs6bhWvFT', desc:'Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.', sub:'Pass your prop firm challenge with our Expert Advisor', features:['94% success rate','Supported platforms: MT4 & MT5','Private Zoom setup session','Full account access','24/7 support'], tierpass:true },
+  'tierpass-10k':   { service:'Tier Pass', plan:'Silver — 10K Account', name:'Silver 10K', price:99, badge:'One-time', mode:'payment', priceId:'price_1T46xCRo0AfnvbiMLk7ymv3u', desc:'Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.', sub:'Pass your prop firm challenge with our Expert Advisor', features:['94% success rate','Supported platforms: MT4 & MT5','Private Zoom setup session','Full account access','24/7 support'], tierpass:true },
+  'tierpass-25k':   { service:'Tier Pass', plan:'Gold — 25K Account', name:'Gold 25K', price:149, badge:'One-time', mode:'payment', priceId:'price_1T4QPURo0AfnvbiMgqgCy4vL', desc:'Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.', sub:'Pass your prop firm challenge with our Expert Advisor', features:['94% success rate','Supported platforms: MT4 & MT5','Private Zoom setup session','Full account access','24/7 support'], tierpass:true },
+  'tierpass-50k':   { service:'Tier Pass', plan:'Platinum — 50K Account', name:'Platinum 50K', price:199, badge:'One-time', mode:'payment', priceId:'price_1T4QQPRo0AfnvbiMlZh4ItLs', desc:'Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.', sub:'Pass your prop firm challenge with our Expert Advisor', features:['94% success rate','Supported platforms: MT4 & MT5','Private Zoom setup session','Full account access','24/7 support'], tierpass:true },
+  'tierpass-100k':  { service:'Tier Pass', plan:'Emerald — 100K Account', name:'Emerald 100K', price:249, badge:'One-time', mode:'payment', priceId:'price_1T4QRHRo0AfnvbiMR4tk1UrV', desc:'Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.', sub:'Pass your prop firm challenge with our Expert Advisor', features:['94% success rate','Supported platforms: MT4 & MT5','Private Zoom setup session','Full account access','24/7 support'], tierpass:true },
+  'tierpass-200k':  { service:'Tier Pass', plan:'Diamond — 200K Account', name:'Diamond 200K', price:349, badge:'One-time', mode:'payment', priceId:'price_1T4QS8Ro0AfnvbiMFB2JFCxF', desc:'Expert Advisor installed on your MT4/MT5 platform to pass your prop firm challenge automatically.', sub:'Pass your prop firm challenge with our Expert Advisor', features:['94% success rate','Supported platforms: MT4 & MT5','Private Zoom setup session','Full account access','24/7 support'], tierpass:true },
+
+  // TIER MANAGE (one-time)
+  'tiermanage-lite':    { service:'Tier Manage', plan:'Lite Funded', name:'Lite Funded', price:89, badge:'One-time', mode:'payment', priceId:'price_1T4QTTRo0AfnvbiMVkaj2o2t', desc:'Our EA continues trading your funded account with a 5% profit target and strict drawdown management.', sub:'Professional management for your funded account', features:['Profit target 5%','Max drawdown 4%','Full account access','EA software provided','Private Q&A','24/7 support'], tiermanage:true },
+  'tiermanage-starter': { service:'Tier Manage', plan:'Starter Funded', name:'Starter Funded', price:149, badge:'One-time', mode:'payment', priceId:'price_1T4QUHRo0AfnvbiMWSUhvetr', desc:'Our EA continues trading your funded account with a 9% profit target and strict drawdown management.', sub:'Professional management for your funded account', features:['Profit target 9%','Max drawdown 3%','Full account access','EA software provided','Private Q&A','24/7 support'], tiermanage:true },
+  'tiermanage-pro':     { service:'Tier Manage', plan:'Pro Funded', name:'Pro Funded', price:299, badge:'One-time', mode:'payment', priceId:'price_1T4QVERo0AfnvbiM4bChqkQH', desc:'Our EA continues trading your funded account with a 15% profit target and strict drawdown management.', sub:'Professional management for your funded account', features:['Profit target 15%','Max drawdown 2%','Full account access','EA software provided','Private Q&A','24/7 support'], tiermanage:true },
+
+  // TRADESALBA (subscription)
+  'tradesalba-standard-m': { service:'TradesAlba', plan:'Standard — Monthly', name:'Standard Monthly', price:49, badge:'Monthly', mode:'subscription', priceId:'price_1Sx9ZARo0AfnvbiMbWiYdZ0n', desc:'Access live trading signals, journal, risk management tools, and economic calendar.', sub:'Your complete trading dashboard', features:['Unlimited daily signals','AI-powered analysis','1 TradingView indicator','Trading journal','Risk management tools','24/7 support'], tradesalba:'standard' },
+  'tradesalba-standard-y': { service:'TradesAlba', plan:'Standard — Yearly', name:'Standard Yearly', price:399, badge:'Yearly — Save 32%', mode:'subscription', priceId:'price_1Sx9hbRo0AfnvbiMmM69HQ6c', desc:'Access live trading signals, journal, risk management tools, and economic calendar.', sub:'Your complete trading dashboard', features:['Unlimited daily signals','AI-powered analysis','1 TradingView indicator','Trading journal','Risk management tools','24/7 support'], tradesalba:'standard' },
+  'tradesalba-pro-m':      { service:'TradesAlba', plan:'Pro — Monthly', name:'Pro Monthly', price:89, badge:'Monthly', mode:'subscription', priceId:'price_1Sx9bMRo0AfnvbiMVTcum8SM', desc:'Everything in Standard plus Expert Advisor access, 3 TradingView indicators, and VIP support.', sub:'Your complete trading dashboard — Pro', features:['Everything in Standard','2 trading software tools','3 TradingView indicators','Advanced analytics','Broker integration (MT4/MT5)','VIP priority support'], tradesalba:'pro' },
+  'tradesalba-pro-y':      { service:'TradesAlba', plan:'Pro — Yearly', name:'Pro Yearly', price:699, badge:'Yearly — Save 34%', mode:'subscription', priceId:'price_1Sx9qRRo0AfnvbiMwhCq3fPx', desc:'Everything in Standard plus Expert Advisor access, 3 TradingView indicators, and VIP support.', sub:'Your complete trading dashboard — Pro', features:['Everything in Standard','2 trading software tools','3 TradingView indicators','Advanced analytics','Broker integration (MT4/MT5)','VIP priority support'], tradesalba:'pro' },
+};
+
+/* ═══ LOAD PRODUCT FROM URL ═══ */
+const params = new URLSearchParams(window.location.search);
+const productKey = params.get('plan') || 'tierpass-5k';
+const product = PRODUCTS[productKey] || PRODUCTS['tierpass-5k'];
+
+// Populate page
+document.getElementById('orderTag').textContent = product.service;
+document.getElementById('orderTitle').textContent = product.name;
+document.getElementById('orderSub').textContent = product.sub;
+document.getElementById('orderService').textContent = product.service;
+document.getElementById('orderBadge').textContent = product.badge;
+document.getElementById('orderPlan').textContent = product.plan;
+document.getElementById('orderDesc').textContent = product.desc;
+document.getElementById('totalItemLabel').textContent = `${product.service} — ${product.name}`;
+document.getElementById('totalItemVal').textContent = `€${product.price}`;
+document.getElementById('totalPrice').textContent = `€${product.price}`;
+document.getElementById('btnPrice').textContent = `€${product.price}`;
+document.title = `Checkout — ${product.name} | TierAlba`;
+
+const featList = document.getElementById('orderFeatures');
+featList.innerHTML = product.features.map(f => `<li>${f}</li>`).join('');
+
+/* ═══ PASSWORD STRENGTH ═══ */
+document.getElementById('password').addEventListener('input', function() {
+  const bar = document.getElementById('pwBar');
+  const l = this.value.length;
+  let w=0, c='var(--red)';
+  if(l>=8){w=33;c='var(--red)'}
+  if(l>=8 && /[A-Z]/.test(this.value) && /[0-9]/.test(this.value)){w=66;c='var(--gold)'}
+  if(l>=10 && /[A-Z]/.test(this.value) && /[0-9]/.test(this.value) && /[^A-Za-z0-9]/.test(this.value)){w=100;c='var(--green)'}
+  if(l===0) w=0;
+  bar.style.width = w+'%';
+  bar.style.background = c;
+});
+
+/* ═══ FORM SUBMISSION ═══ */
+document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const btn = document.getElementById('submitBtn');
+  const errDiv = document.getElementById('formError');
+  
+  // Clear errors
+  document.querySelectorAll('.field.error').forEach(f => f.classList.remove('error'));
+  errDiv.classList.remove('show');
+  
+  // Validate
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const country = document.getElementById('country').value;
+  const password = document.getElementById('password').value;
+  const agreeTerms = document.getElementById('agreeTerms').checked;
+  const agreeRisk = document.getElementById('agreeRisk').checked;
+  const agreeMarketing = document.getElementById('agreeMarketing').checked;
+  
+  let hasError = false;
+  
+  if(!firstName){ document.getElementById('firstName').closest('.field').classList.add('error'); hasError=true; }
+  if(!lastName){ document.getElementById('lastName').closest('.field').classList.add('error'); hasError=true; }
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ document.getElementById('email').closest('.field').classList.add('error'); hasError=true; }
+  if(!country){ document.getElementById('country').closest('.field').classList.add('error'); hasError=true; }
+  if(!password || password.length < 8){ document.getElementById('password').closest('.field').classList.add('error'); hasError=true; }
+  
+  if(!agreeTerms || !agreeRisk){
+    errDiv.textContent = 'You must accept the Terms of Service and risk disclaimer to continue.';
+    errDiv.classList.add('show');
+    hasError = true;
+  }
+  
+  if(hasError) return;
+  
+  // Submit
+  btn.classList.add('loading');
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName, lastName, email, phone, country, password,
+        marketing_consent: agreeMarketing,
+        productKey,
+        priceId: product.priceId,
+        mode: product.mode
+      })
+    });
+    
+    const data = await res.json();
+    
+    if(!res.ok){
+      errDiv.textContent = data.error || 'Something went wrong. Please try again.';
+      errDiv.classList.add('show');
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      return;
+    }
+    
+    // Redirect to Stripe
+    if(data.url){
+      window.location.href = data.url;
+    }
+  } catch(err) {
+    errDiv.textContent = 'Connection error. Please check your internet and try again.';
+    errDiv.classList.add('show');
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
