@@ -3436,10 +3436,13 @@
 
     function updateRiskGuardian(stats) {
         const s = stats || {};
-        const capital = riskSettings.capital;
-        const targetAmt = capital * (riskSettings.target / 100);
         const totalProfit = s.totalProfit || 0;
         const equity = s.equity || 0;
+        
+        // Use real equity as capital when broker is connected, otherwise use manual setting
+        const realCapital = equity > 0 ? equity : riskSettings.capital;
+        const capital = realCapital;
+        const targetAmt = capital * (riskSettings.target / 100);
 
         // Account Overview — show/hide based on broker connection
         apiCall('/api/broker/connections').then(data => {
@@ -3454,9 +3457,9 @@
                 accBadge.textContent = 'CONNECTED';
                 accBadge.className = 'dd-status-badge';
 
-                // Use real equity from stats
-                document.getElementById('rgBalance').textContent = fmt(capital);
-                document.getElementById('rgEquity').textContent = equity > 0 ? fmt(equity) : fmt(capital + totalProfit);
+                // Use real equity from broker
+                document.getElementById('rgBalance').textContent = equity > 0 ? fmt(equity) : fmt(riskSettings.capital);
+                document.getElementById('rgEquity').textContent = equity > 0 ? fmt(equity) : fmt(riskSettings.capital + totalProfit);
 
                 // Today P&L from today's trades
                 const todayPL = s.todayProfit || 0;
