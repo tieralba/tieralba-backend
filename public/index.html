@@ -2713,7 +2713,8 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Broker Server</label>
-                <input type="text" class="form-input" id="modalBrokerName" placeholder="e.g. ICMarketsSC-Demo, FTMODemo-Server">
+                <input type="text" class="form-input" id="modalBrokerName" placeholder="e.g. AquaFunded-Live, FTMODemo-Server">
+                <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Find this in MetaTrader: File → Login to Trade Account → Server field. Must match exactly.</div>
                 <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Find this in MetaTrader → File → Login → Server name</div>
             </div>
             <button class="btn-primary" onclick="connectBroker()" id="connectBrokerBtn" style="width:100%;">Connect Account</button>
@@ -3359,6 +3360,16 @@
             updateBotStatus();
         } else {
             toast('error', 'Connection Failed', res?.error || 'Check your credentials and broker server name');
+            if (res?.error && res.error.length > 100) {
+                // Show detailed error in a more readable way
+                const errDiv = document.getElementById('brokerErrorDetail');
+                if (errDiv) errDiv.remove();
+                const div = document.createElement('div');
+                div.id = 'brokerErrorDetail';
+                div.style.cssText = 'margin-top:12px;padding:12px 16px;background:rgba(232,114,114,0.08);border:1px solid rgba(232,114,114,0.15);border-radius:10px;font-size:13px;color:var(--red);line-height:1.6;';
+                div.textContent = res.error;
+                document.getElementById('connectBrokerBtn').parentElement.appendChild(div);
+            }
         }
         btn.disabled = false; btn.textContent = 'Connect Account';
     }
