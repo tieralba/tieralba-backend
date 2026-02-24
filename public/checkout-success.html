@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Successful — TierAlba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#06070a;--gold:#c8a94e;--gold-l:#e8d5a0;--gold-d:rgba(200,169,78,0.06);
+  --text:#ece8de;--text-2:#8e897e;--text-3:#55514a;--green:#5ee0a0;--border:rgba(255,255,255,0.04);
+  --ease:cubic-bezier(.22,1,.36,1)}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:32px}
+.success-card{text-align:center;max-width:520px}
+.check-circle{width:80px;height:80px;border-radius:50%;background:rgba(94,224,160,0.06);border:2px solid rgba(94,224,160,0.15);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 32px;animation:scaleIn 0.6s var(--ease)}
+.check-circle svg{width:40px;height:40px;stroke:var(--green);fill:none;stroke-width:2}
+@keyframes scaleIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+h1{font-family:'Playfair Display',serif;font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:12px}
+h1 span{color:var(--gold)}
+p{font-size:15px;color:var(--text-2);line-height:1.7;margin-bottom:32px}
+.steps{text-align:left;margin-bottom:40px}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border:none}
+.step-n{width:32px;height:32px;border-radius:10px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.1);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold);flex-shrink:0}
+.step-text{font-size:14px;color:var(--text-2);line-height:1.6}
+.step-text strong{color:var(--text)}
+.btn-row{display:flex;gap:12px;justify-content:center}
+.btn{padding:14px 32px;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all 0.4s var(--ease);text-decoration:none;border:none}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;box-shadow:0 4px 24px rgba(200,169,78,0.25)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(200,169,78,0.4)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-2)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d)}
+.auto-redirect{font-size:12px;color:var(--text-3);margin-top:24px}
+</style>
+</head>
+<body>
+<div class="success-card">
+  <div class="check-circle">
+    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  </div>
+  <h1>Payment <span>Successful</span></h1>
+  <p>Your account has been created and your service is now active. Here's what happens next:</p>
+  
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-text"><strong>Check your email</strong> — We've sent you a verification link and your login details.</div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-text"><strong>Log in to your dashboard</strong> — Access your trading tools, signals, and account management.</div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-text"><strong>We'll contact you</strong> — Our team will reach out within 24h to set up your EA and get you started.</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <a href="/login" class="btn btn-gold">Go to Dashboard</a>
+    <a href="/" class="btn btn-ghost">Back to Home</a>
+  </div>
+  
+  <div class="auto-redirect">Redirecting to login in <span id="countdown">10</span>s...</div>
+</div>
+
+<script>
+let c = 10;
+const el = document.getElementById('countdown');
+const timer = setInterval(() => {
+  c--;
+  el.textContent = c;
+  if (c <= 0) { clearInterval(timer); window.location.href = '/login'; }
+}, 1000);
+</script>
+</body>
+</html>
