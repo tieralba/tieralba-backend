@@ -1501,6 +1501,13 @@
                         <span>Settings</span>
                     </a>
                 </li>
+                <li class="nav-section-label" id="adminNavLabel" style="display:none;">Admin</li>
+                <li class="nav-item" id="adminNavItem" style="display:none;">
+                    <a class="nav-link" data-section="admin">
+                        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                        <span>Admin Panel</span>
+                    </a>
+                </li>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -1996,17 +2003,6 @@
             </div>
 
             <!-- Panic Button -->
-            <div class="card">
-                <div class="card-header"><span class="card-title">Emergency Control</span></div>
-                <div style="text-align:center;padding:1.5rem 0;">
-                    <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">Close all trades and stop the EA immediately</p>
-                    <button class="panic-btn" onclick="panicButton()">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:8px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        PANIC — CLOSE ALL
-                    </button>
-                    <p style="color:var(--text-3);margin-top:1rem;font-size:12px;">This action is irreversible. All open trades will be closed at market price.</p>
-                </div>
-            </div>
         </div>
 
         <!-- ═══════ PERFORMANCE ═══════ -->
@@ -2095,6 +2091,7 @@
                     </div>
                     <div style="text-align:center;">
                         <button class="btn-primary" onclick="syncBrokerData()" style="margin-right:8px;">Sync Now</button>
+                        <button class="btn-logout" onclick="resetBrokerData()" style="margin-right:8px;background:rgba(200,169,78,0.1);color:var(--gold);border-color:rgba(200,169,78,0.15);">Reset Data</button>
                         <button class="btn-logout" onclick="disconnectBroker()">Disconnect</button>
                     </div>
                 </div>
@@ -2628,11 +2625,11 @@
                             <div style="font-size:11px;color:var(--text-3);">@tieralba</div>
                         </div>
                     </a>
-                    <a href="mailto:support@tieralba.com" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="/cdn-cgi/l/email-protection#275452575748555367534e4255464b45460944484a" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <div>
                             <div style="font-size:13px;font-weight:600;color:var(--text);">Email</div>
-                            <div style="font-size:11px;color:var(--text-3);">support@tieralba.com</div>
+                            <div style="font-size:11px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="5f2c2a2f2f302d2b1f2b363a2d3e333d3e713c3032">[email&#160;protected]</span></div>
                         </div>
                     </a>
                 </div>
@@ -2663,10 +2660,10 @@
                         <span style="font-size:13px;font-weight:600;color:var(--text);">WhatsApp</span>
                         <span style="font-size:10px;color:var(--text-3);">Direct message</span>
                     </a>
-                    <a href="mailto:support@tieralba.com" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="/cdn-cgi/l/email-protection#3b484e4b4b54494f7b4f525e495a57595a15585456" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <span style="font-size:13px;font-weight:600;color:var(--text);">Email</span>
-                        <span style="font-size:10px;color:var(--text-3);">support@tieralba.com</span>
+                        <span style="font-size:10px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="2f5c5a5f5f405d5b6f5b464a5d4e434d4e014c4042">[email&#160;protected]</span></span>
                     </a>
                 </div>
             </div>
@@ -2695,6 +2692,180 @@
                 <div id="supportStatus" style="margin-top:10px;"></div>
             </div>
         </div>
+
+        <!-- ═══════ ADMIN PANEL ═══════ -->
+        <div id="admin" class="section">
+            <!-- Stats Row -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+                <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="adminTotalUsers">—</div></div>
+                <div class="stat-card"><div class="stat-label">Active Services</div><div class="stat-value" id="adminActiveServices">—</div></div>
+                <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="adminTotalRevenue">—</div></div>
+                <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value" id="adminMonthRevenue">—</div></div>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Client Management</span>
+                    <button class="btn-primary" onclick="loadAdminUsers()" style="font-size:12px;padding:6px 14px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Refresh
+                    </button>
+                </div>
+                <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+                    <input type="text" class="form-input" id="adminSearch" placeholder="Search by name or email..." style="flex:1;min-width:200px;" oninput="filterAdminUsers()">
+                    <select class="form-input" id="adminFilterService" style="width:160px;cursor:pointer;" onchange="filterAdminUsers()">
+                        <option value="">All Services</option>
+                        <option value="tierpass">Tier Pass</option>
+                        <option value="tiermanage">Tier Manage</option>
+                        <option value="tradesalba">TradesAlba</option>
+                    </select>
+                    <select class="form-input" id="adminFilterStatus" style="width:140px;cursor:pointer;" onchange="filterAdminUsers()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="expired">Expired</option>
+                        <option value="free">Free (No Service)</option>
+                    </select>
+                </div>
+
+                <!-- Users Table -->
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;" id="adminUsersTable">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">User</th>
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Plan</th>
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Services</th>
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Joined</th>
+                                <th style="text-align:center;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUsersBody">
+                            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3);">Loading clients...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Purchases -->
+            <div class="card">
+                <div class="card-header"><span class="card-title">Recent Purchases</span></div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;" id="adminPurchasesTable">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Date</th>
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Client</th>
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Service</th>
+                                <th style="text-align:left;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Plan</th>
+                                <th style="text-align:right;padding:10px 12px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminPurchasesBody">
+                            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3);">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Edit Service Modal -->
+        <div class="modal-overlay" id="adminServiceModal" style="display:none;">
+            <div class="modal" style="max-width:480px;">
+                <div class="modal-header">
+                    <div class="modal-title" id="adminModalTitle">Edit Services</div>
+                    <button class="modal-close" onclick="document.getElementById('adminServiceModal').style.display='none'">&times;</button>
+                </div>
+                <div id="adminModalUserInfo" style="padding:12px 16px;background:var(--surface-2);border-radius:var(--radius);margin-bottom:16px;font-size:13px;">
+                    <div style="font-weight:600;" id="adminModalUserName">—</div>
+                    <div style="color:var(--text-3);font-size:12px;" id="adminModalUserEmail">—</div>
+                </div>
+
+                <!-- Tier Pass -->
+                <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-weight:600;font-size:13px;">Tier Pass</div>
+                        <div id="adminTpStatus" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-3);">Inactive</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select class="form-input" id="adminTpPlan" style="flex:1;font-size:12px;padding:8px 10px;">
+                            <option value="">No plan</option>
+                            <option value="Bronze 5K">Bronze 5K</option>
+                            <option value="Silver 10K">Silver 10K</option>
+                            <option value="Gold 25K">Gold 25K</option>
+                            <option value="Platinum 50K">Platinum 50K</option>
+                            <option value="Emerald 100K">Emerald 100K</option>
+                            <option value="Diamond 200K">Diamond 200K</option>
+                        </select>
+                        <select class="form-input" id="adminTpStat" style="width:110px;font-size:12px;padding:8px 10px;">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tier Manage -->
+                <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-weight:600;font-size:13px;">Tier Manage</div>
+                        <div id="adminTmStatus" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-3);">Inactive</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select class="form-input" id="adminTmPlan" style="flex:1;font-size:12px;padding:8px 10px;">
+                            <option value="">No plan</option>
+                            <option value="Lite Funded">Lite Funded</option>
+                            <option value="Starter Funded">Starter Funded</option>
+                            <option value="Pro Funded">Pro Funded</option>
+                        </select>
+                        <select class="form-input" id="adminTmStat" style="width:110px;font-size:12px;padding:8px 10px;">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- TradesAlba -->
+                <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-weight:600;font-size:13px;">TradesAlba</div>
+                        <div id="adminTaStatus" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-3);">Inactive</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select class="form-input" id="adminTaPlan" style="flex:1;font-size:12px;padding:8px 10px;">
+                            <option value="">No plan</option>
+                            <option value="standard">Standard</option>
+                            <option value="pro">Pro</option>
+                        </select>
+                        <select class="form-input" id="adminTaStat" style="width:110px;font-size:12px;padding:8px 10px;">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dashboard Plan -->
+                <div style="padding:14px 0;margin-bottom:16px;">
+                    <div style="font-weight:600;font-size:13px;margin-bottom:8px;">Dashboard Plan</div>
+                    <select class="form-input" id="adminDashPlan" style="font-size:12px;padding:8px 10px;">
+                        <option value="free">Free</option>
+                        <option value="standard">Standard</option>
+                        <option value="pro">Pro</option>
+                    </select>
+                    <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Controls which dashboard sections the user can access.</div>
+                </div>
+
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-primary" onclick="saveAdminServices()" style="flex:1;">Save Changes</button>
+                    <button class="btn-primary" onclick="document.getElementById('adminServiceModal').style.display='none'" style="flex:1;background:var(--surface-2);color:var(--text-2);">Cancel</button>
+                </div>
+                <div id="adminSaveStatus" style="margin-top:10px;font-size:12px;text-align:center;"></div>
+            </div>
+        </div>
+
     </main>
     <div class="modal-overlay" id="brokerModal">
         <div class="modal">
@@ -2713,14 +2884,15 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Broker Server</label>
-                <input type="text" class="form-input" id="modalBrokerName" placeholder="e.g. ICMarketsSC-Demo, FTMODemo-Server">
+                <input type="text" class="form-input" id="modalBrokerName" placeholder="e.g. AquaFunded-Live, FTMODemo-Server">
+                <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Find this in MetaTrader: File → Login to Trade Account → Server field. Must match exactly.</div>
                 <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Find this in MetaTrader → File → Login → Server name</div>
             </div>
             <button class="btn-primary" onclick="connectBroker()" id="connectBrokerBtn" style="width:100%;">Connect Account</button>
         </div>
     </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     // ══════════════════════════════════════════════
     // CONFIG
     // ══════════════════════════════════════════════
@@ -2785,10 +2957,7 @@
             if (target === 'experts') loadLicenseKeys();
             if (target === 'settings') loadSettingsData();
             if (target === 'journal') loadJournal();
-            if (target === 'signals') loadSignals();
-            if (target === 'brokers') updateBotStatus();
-            if (target === 'referral') loadReferralData();
-            if (target === 'refund') loadRefundHistory();
+            if (target === 'admin') loadAdminUsers();
         });
     });
 
@@ -2846,6 +3015,7 @@
             document.getElementById('userName').textContent = user.name || user.email?.split('@')[0] || 'Utente';
             document.getElementById('userEmail').textContent = user.email || '';
             document.getElementById('settingsEmail').textContent = user.email || '—';
+            checkAdminAccess(user.email);
         }
 
         // Verify token
@@ -2895,7 +3065,7 @@
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
             toast('success', 'Upgrade Complete', 'Your plan has been upgraded!');
-            window.history.replaceState({}, '', 'index.html');
+            window.history.replaceState({}, '', '/dashboard');
         }
     }
 
@@ -3363,6 +3533,16 @@
             updateBotStatus();
         } else {
             toast('error', 'Connection Failed', res?.error || 'Check your credentials and broker server name');
+            if (res?.error && res.error.length > 100) {
+                // Show detailed error in a more readable way
+                const errDiv = document.getElementById('brokerErrorDetail');
+                if (errDiv) errDiv.remove();
+                const div = document.createElement('div');
+                div.id = 'brokerErrorDetail';
+                div.style.cssText = 'margin-top:12px;padding:12px 16px;background:rgba(232,114,114,0.08);border:1px solid rgba(232,114,114,0.15);border-radius:10px;font-size:13px;color:var(--red);line-height:1.6;';
+                div.textContent = res.error;
+                document.getElementById('connectBrokerBtn').parentElement.appendChild(div);
+            }
         }
         btn.disabled = false; btn.textContent = 'Connect Account';
     }
@@ -3379,13 +3559,13 @@
             if (equity?.history) drawEquityChart(equity.history);
             const trades = await apiCall('/api/trades?limit=200');
             if (trades?.trades) {
-                renderTradeList(trades.trades);
                 drawMonthlyChart(trades.trades);
-                drawDailyPL(trades.trades);
                 drawAnalytics(trades.trades, stats);
                 drawDrawdown(trades.trades);
+                renderTradeList(trades.trades);
+                drawDailyPL(trades.trades);
             }
-            // Refresh broker connection status
+            // Refresh broker cards and bot status
             updateBotStatus();
         } else {
             toast('error', 'Sync Failed', res?.error || 'Could not sync data. Account may still be deploying, try again in 1 minute.');
@@ -3401,7 +3581,12 @@
     // COPY FUNCTIONS
     // ══════════════════════════════════════════════
     function copyReferral() {
-        navigator.clipboard.writeText('TIER-XR4K9M').then(() => toast('success', 'Copied', 'Referral code copied!'));
+        const code = document.getElementById('refCodeDisplay').textContent;
+        if (code && code !== '—') {
+            navigator.clipboard.writeText(code).then(() => toast('success', 'Copied', 'Referral code copied!'));
+        } else {
+            toast('error', 'Error', 'Referral code not loaded yet');
+        }
     }
 
     // ══════════════════════════════════════════════
@@ -3423,10 +3608,13 @@
 
     function updateRiskGuardian(stats) {
         const s = stats || {};
-        const capital = riskSettings.capital;
-        const targetAmt = capital * (riskSettings.target / 100);
         const totalProfit = s.totalProfit || 0;
         const equity = s.equity || 0;
+        
+        // Use real equity as capital when broker is connected, otherwise use manual setting
+        const realCapital = equity > 0 ? equity : riskSettings.capital;
+        const capital = realCapital;
+        const targetAmt = capital * (riskSettings.target / 100);
 
         // Account Overview — show/hide based on broker connection
         apiCall('/api/broker/connections').then(data => {
@@ -3441,9 +3629,9 @@
                 accBadge.textContent = 'CONNECTED';
                 accBadge.className = 'dd-status-badge';
 
-                // Use real equity from stats
-                document.getElementById('rgBalance').textContent = fmt(capital);
-                document.getElementById('rgEquity').textContent = equity > 0 ? fmt(equity) : fmt(capital + totalProfit);
+                // Use real equity from broker
+                document.getElementById('rgBalance').textContent = equity > 0 ? fmt(equity) : fmt(riskSettings.capital);
+                document.getElementById('rgEquity').textContent = equity > 0 ? fmt(equity) : fmt(riskSettings.capital + totalProfit);
 
                 // Today P&L from today's trades
                 const todayPL = s.todayProfit || 0;
@@ -3573,43 +3761,36 @@
     }
 
     async function disconnectBroker() {
-        if (!confirm('Disconnect your trading account?')) return;
-        // Just deactivate in our DB
+        if (!confirm('Disconnect your trading account? This will also clear all trade data.')) return;
         await apiCall('/api/broker/disconnect', { method: 'POST' });
-        toast('info', 'Disconnected', 'Broker account disconnected');
+        toast('info', 'Disconnected', 'Broker account disconnected and data cleared');
         updateBotStatus();
+        // Reset dashboard stats to zero
+        updateStats({equity:0,totalProfit:0,winRate:0,profitFactor:0,totalTrades:0,openTrades:0,bestTrade:0,worstTrade:0,todayProfit:0,winningTrades:0,losingTrades:0});
+        updatePerf({totalTrades:0,winningTrades:0,losingTrades:0,winRate:0,profitFactor:0,avgProfit:0,bestTrade:0,worstTrade:0});
     }
 
-    async function panicButton() {
-        if (!confirm('⚠️ WARNING!\n\nThis will attempt to CLOSE ALL open trades.\n\nAre you sure?')) return;
-        if (!confirm('Final confirmation: do you really want to close everything?')) return;
-        
-        toast('error', 'PANIC ACTIVATED', 'Sending close-all command to broker...');
-        
-        try {
-            const res = await apiCall('/api/broker/close-all', { method: 'POST' });
-            if (res?.success) {
-                toast('success', 'Done', 'Close-all command sent. ' + (res.closed || 0) + ' trade(s) closing.');
-            } else {
-                toast('error', 'Error', res?.error || 'Failed to close trades. Check your broker connection.');
-            }
-        } catch (err) {
-            toast('error', 'Error', 'Could not reach the server. Try closing trades directly in MetaTrader.');
+    async function resetBrokerData() {
+        if (!confirm('Reset all trade data? This will clear old trades and equity history. You can then sync to reload fresh data from your current broker.')) return;
+        const res = await apiCall('/api/broker/reset-data', { method: 'POST' });
+        if (res?.success) {
+            toast('success', 'Data Reset', res.message || 'Old data cleared. Syncing fresh data...');
+            // Reset UI
+            updateStats({equity:0,totalProfit:0,winRate:0,profitFactor:0,totalTrades:0,openTrades:0,bestTrade:0,worstTrade:0,todayProfit:0,winningTrades:0,losingTrades:0});
+            // Auto sync fresh data
+            await syncBrokerData();
+        } else {
+            toast('error', 'Error', res?.error || 'Failed to reset data');
         }
-        
-        // Update UI
-        document.getElementById('botOpenTrades').textContent = '0';
-        document.getElementById('rgOpenTrades').textContent = '0';
-        updateBotStatus();
     }
 
     // ══════════════════════════════════════════════
     // PLAN GATING
     // ══════════════════════════════════════════════
     const planAccess = {
-        free: ['overview', 'calculator', 'calendar', 'referral', 'refund', 'settings', 'support'],
-        standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support'],
-        pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support']
+        free: ['overview', 'calculator', 'calendar', 'referral', 'refund', 'settings', 'support', 'admin'],
+        standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support', 'admin'],
+        pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support', 'admin']
     };
 
     let userPlan = 'free';
@@ -4486,7 +4667,7 @@
         document.getElementById('refTotalEarned').textContent = '€' + (res.total_earned || 0).toFixed(2);
         document.getElementById('refTotalReferrals').textContent = res.total_referrals || 0;
         document.getElementById('refCodeDisplay').textContent = res.referral_code || '—';
-        document.getElementById('refLinkInput').value = baseUrl + '/login.html?ref=' + (res.referral_code || '');
+        document.getElementById('refLinkInput').value = baseUrl + '/login?ref=' + (res.referral_code || '');
         if (res.usdt_wallet) document.getElementById('refWallet').value = res.usdt_wallet;
 
         document.getElementById('refBalanceNote').textContent = res.balance >= 50 ? 'Ready for payout!' : 'Min. €50 for payout';
@@ -4669,39 +4850,36 @@
     async function autoSync() {
         try {
             const res = await apiCall('/api/broker/sync', { method: 'POST' });
-            if (res?.success) {
+            if (res?.success && res.synced > 0) {
                 console.log(`🔄 Auto-sync: ${res.synced} trades synced`);
+                // Refresh entire UI after new data arrives
+                refreshDashboard();
             }
         } catch (e) { /* silent */ }
     }
 
-    // Light refresh - stats only (fast, every 10s)
+    // Light refresh from DB only (fast, every 10s)
     async function refreshDashboard() {
         try {
+            // Stats (from DB, instant)
             const stats = await apiCall('/api/stats');
             if (stats) {
                 updateStats(stats);
                 updatePerf(stats);
                 updateRiskGuardian(stats);
             }
+
+            // Trades (from DB, instant)
             const trades = await apiCall('/api/trades?limit=200');
             if (trades?.trades) {
                 renderTradeList(trades.trades);
-            }
-        } catch (e) { /* silent */ }
-    }
-
-    // Heavy refresh - all charts (every 30s)
-    async function refreshCharts() {
-        try {
-            const stats = await apiCall('/api/stats');
-            const trades = await apiCall('/api/trades?limit=200');
-            if (trades?.trades) {
-                drawDailyPL(trades.trades);
                 drawMonthlyChart(trades.trades);
                 drawAnalytics(trades.trades, stats);
                 drawDrawdown(trades.trades);
+                drawDailyPL(trades.trades);
             }
+
+            // Equity (from DB snapshots)
             const activeDays = document.querySelector('.chart-range-btn.active');
             const days = activeDays ? parseInt(activeDays.textContent) || 30 : 30;
             const equity = await apiCall('/api/equity-history?days=' + days);
@@ -4709,14 +4887,203 @@
         } catch (e) { /* silent */ }
     }
 
+    // ══════════════════════════════════════════════
+    // ADMIN PANEL
+    // ══════════════════════════════════════════════
+    const ADMIN_EMAILS = ['info@tieralba.com']; // Add your admin emails here
+    let adminUsersCache = [];
+    let currentEditUserId = null;
+
+    function checkAdminAccess(email) {
+        if (ADMIN_EMAILS.includes(email?.toLowerCase())) {
+            document.getElementById('adminNavLabel').style.display = '';
+            document.getElementById('adminNavItem').style.display = '';
+        }
+    }
+
+    async function adminApiCall(endpoint, options = {}) {
+        const token = getToken();
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        try {
+            const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+            if (res.status === 401 || res.status === 403) { toast('error', 'Unauthorized', 'Admin access required'); return null; }
+            return await res.json();
+        } catch (err) {
+            console.error(`Admin API error: ${endpoint}`, err);
+            return null;
+        }
+    }
+
+    async function loadAdminUsers() {
+        const data = await adminApiCall('/api/admin/clients');
+        if (!data?.users) return;
+        adminUsersCache = data.users;
+
+        // Stats
+        document.getElementById('adminTotalUsers').textContent = data.stats?.total_users || data.users.length;
+        document.getElementById('adminActiveServices').textContent = data.stats?.active_services || '—';
+        document.getElementById('adminTotalRevenue').textContent = `€${data.stats?.total_revenue || 0}`;
+        document.getElementById('adminMonthRevenue').textContent = `€${data.stats?.month_revenue || 0}`;
+
+        renderAdminUsers(data.users);
+        
+        // Load purchases
+        const purchases = await adminApiCall('/api/admin/purchases');
+        if (purchases?.purchases) renderAdminPurchases(purchases.purchases);
+    }
+
+    function renderAdminUsers(users) {
+        const tbody = document.getElementById('adminUsersBody');
+        if (!users.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3);">No clients found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map(u => {
+            const services = u.active_services || {};
+            const badges = [];
+            if (services.tierpass?.status === 'active') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(200,169,78,0.1);color:var(--gold);margin-right:4px;">TP: ${services.tierpass.plan || '—'}</span>`);
+            if (services.tierpass?.status === 'completed') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(94,224,160,0.1);color:#5ee0a0;margin-right:4px;">TP ✓</span>`);
+            if (services.tiermanage?.status === 'active') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(100,180,255,0.1);color:#64b4ff;margin-right:4px;">TM: ${services.tiermanage.plan || '—'}</span>`);
+            if (services.tiermanage?.status === 'completed') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(94,224,160,0.1);color:#5ee0a0;margin-right:4px;">TM ✓</span>`);
+            if (services.tradesalba?.status === 'active') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(168,130,255,0.1);color:#a882ff;margin-right:4px;">TA: ${services.tradesalba.plan || '—'}</span>`);
+            const serviceHtml = badges.length ? badges.join('') : '<span style="color:var(--text-3);font-size:11px;">No service</span>';
+            const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '—';
+            
+            return `<tr style="border-bottom:1px solid var(--border);transition:background 0.2s;" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:10px 12px;">
+                    <div style="font-weight:600;font-size:13px;">${u.name || '—'}</div>
+                    <div style="font-size:11px;color:var(--text-3);">${u.email}</div>
+                </td>
+                <td style="padding:10px 12px;">
+                    <span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;
+                        background:${u.plan === 'pro' ? 'rgba(200,169,78,0.12)' : u.plan === 'standard' ? 'rgba(94,224,160,0.08)' : 'var(--surface-2)'};
+                        color:${u.plan === 'pro' ? 'var(--gold)' : u.plan === 'standard' ? '#5ee0a0' : 'var(--text-3)'};">
+                        ${(u.plan || 'free').charAt(0).toUpperCase() + (u.plan || 'free').slice(1)}
+                    </span>
+                </td>
+                <td style="padding:10px 12px;">${serviceHtml}</td>
+                <td style="padding:10px 12px;font-size:12px;color:var(--text-2);">${joined}</td>
+                <td style="padding:10px 12px;text-align:center;">
+                    <button onclick="openAdminEdit(${u.id})" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">
+                        Edit
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderAdminPurchases(purchases) {
+        const tbody = document.getElementById('adminPurchasesBody');
+        if (!purchases.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3);">No purchases yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = purchases.slice(0, 20).map(p => {
+            const date = p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+            const sColor = p.service === 'tierpass' ? 'var(--gold)' : p.service === 'tiermanage' ? '#64b4ff' : '#a882ff';
+            return `<tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:10px 12px;font-size:12px;color:var(--text-2);">${date}</td>
+                <td style="padding:10px 12px;font-size:13px;font-weight:500;">${p.email || '—'}</td>
+                <td style="padding:10px 12px;"><span style="color:${sColor};font-weight:600;font-size:12px;">${p.service || '—'}</span></td>
+                <td style="padding:10px 12px;font-size:12px;color:var(--text-2);">${p.plan_label || '—'}</td>
+                <td style="padding:10px 12px;text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);">€${p.amount || 0}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function filterAdminUsers() {
+        const q = document.getElementById('adminSearch').value.toLowerCase();
+        const service = document.getElementById('adminFilterService').value;
+        const status = document.getElementById('adminFilterStatus').value;
+        
+        let filtered = adminUsersCache;
+        if (q) filtered = filtered.filter(u => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+        if (service) filtered = filtered.filter(u => u.active_services?.[service]);
+        if (status === 'free') {
+            filtered = filtered.filter(u => !u.active_services || Object.keys(u.active_services).length === 0);
+        } else if (status) {
+            filtered = filtered.filter(u => {
+                const s = u.active_services || {};
+                return Object.values(s).some(v => v.status === status);
+            });
+        }
+        renderAdminUsers(filtered);
+    }
+
+    function openAdminEdit(userId) {
+        const user = adminUsersCache.find(u => u.id === userId);
+        if (!user) return;
+        currentEditUserId = userId;
+        const s = user.active_services || {};
+
+        document.getElementById('adminModalUserName').textContent = user.name || '—';
+        document.getElementById('adminModalUserEmail').textContent = user.email || '—';
+
+        // Tier Pass
+        document.getElementById('adminTpPlan').value = s.tierpass?.plan || '';
+        document.getElementById('adminTpStat').value = s.tierpass?.status || 'active';
+        updateStatusBadge('adminTpStatus', s.tierpass?.status);
+
+        // Tier Manage
+        document.getElementById('adminTmPlan').value = s.tiermanage?.plan || '';
+        document.getElementById('adminTmStat').value = s.tiermanage?.status || 'active';
+        updateStatusBadge('adminTmStatus', s.tiermanage?.status);
+
+        // TradesAlba
+        document.getElementById('adminTaPlan').value = s.tradesalba?.plan || '';
+        document.getElementById('adminTaStat').value = s.tradesalba?.status || 'active';
+        updateStatusBadge('adminTaStatus', s.tradesalba?.status);
+
+        // Dashboard plan
+        document.getElementById('adminDashPlan').value = user.plan || 'free';
+
+        document.getElementById('adminSaveStatus').textContent = '';
+        document.getElementById('adminServiceModal').style.display = 'flex';
+    }
+
+    function updateStatusBadge(id, status) {
+        const el = document.getElementById(id);
+        if (status === 'active') { el.textContent = 'Active'; el.style.background = 'rgba(94,224,160,0.1)'; el.style.color = '#5ee0a0'; }
+        else if (status === 'completed') { el.textContent = 'Completed'; el.style.background = 'rgba(100,180,255,0.1)'; el.style.color = '#64b4ff'; }
+        else if (status === 'expired') { el.textContent = 'Expired'; el.style.background = 'rgba(232,114,114,0.1)'; el.style.color = '#e87272'; }
+        else { el.textContent = 'Inactive'; el.style.background = 'var(--surface-2)'; el.style.color = 'var(--text-3)'; }
+    }
+
+    async function saveAdminServices() {
+        if (!currentEditUserId) return;
+        const services = {};
+
+        const tpPlan = document.getElementById('adminTpPlan').value;
+        if (tpPlan) services.tierpass = { plan: tpPlan, status: document.getElementById('adminTpStat').value, updated_at: new Date().toISOString() };
+
+        const tmPlan = document.getElementById('adminTmPlan').value;
+        if (tmPlan) services.tiermanage = { plan: tmPlan, status: document.getElementById('adminTmStat').value, updated_at: new Date().toISOString() };
+
+        const taPlan = document.getElementById('adminTaPlan').value;
+        if (taPlan) services.tradesalba = { plan: taPlan, status: document.getElementById('adminTaStat').value, updated_at: new Date().toISOString() };
+
+        const dashPlan = document.getElementById('adminDashPlan').value;
+
+        const res = await adminApiCall('/api/admin/update-user', {
+            method: 'POST',
+            body: JSON.stringify({ userId: currentEditUserId, active_services: services, plan: dashPlan })
+        });
+
+        if (res?.success) {
+            document.getElementById('adminSaveStatus').innerHTML = '<span style="color:#5ee0a0;">✓ Changes saved</span>';
+            toast('success', 'Updated', 'Client services updated successfully');
+            setTimeout(() => { document.getElementById('adminServiceModal').style.display = 'none'; loadAdminUsers(); }, 800);
+        } else {
+            document.getElementById('adminSaveStatus').innerHTML = `<span style="color:#e87272;">✗ ${res?.error || 'Failed to save'}</span>`;
+        }
+    }
+
     window.addEventListener('load', () => {
         loadDashboard();
         // Full MetaAPI sync every 60 seconds
         setInterval(autoSync, 60000);
-        // Light stats refresh every 10 seconds
+        // Light DB refresh every 10 seconds
         setInterval(refreshDashboard, 10000);
-        // Heavy charts refresh every 30 seconds
-        setInterval(refreshCharts, 30000);
         // Refresh signals every 60 seconds
         setInterval(loadSignals, 60000);
     });
@@ -4734,11 +5101,5 @@
                 </div>
                 <p style="font-size:15px;margin-bottom:0.5rem;">This feature requires a <strong id="upgradePlanName">Standard</strong> plan.</p>
                 <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
-                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade to Standard — €49.99/mo</button>
-                <button class="btn-primary" onclick="upgradePlan('pro')" style="width:100%;background:linear-gradient(135deg, #2a6b4a, #3a8a5c);">Upgrade to Pro — €89.99/mo</button>
-                <p style="font-size:11px;color:var(--text-3);margin-top:1rem;">7-day money-back guarantee · Cancel anytime</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade
+ to Standard — €49.99/mo</b
