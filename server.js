@@ -886,7 +886,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, name, plan, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, plan, active_services, created_at FROM users WHERE id = $1',
       [req.userId]
     );
     
@@ -2392,6 +2392,108 @@ app.use((req, res) => {
 
 // ============================================
 // AVVIO SERVER
+// ============================================
+// ADMIN PANEL API ENDPOINTS
+// ============================================
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'info@tieralba.com').split(',').map(e => e.trim().toLowerCase());
+
+function isAdmin(email) {
+  return ADMIN_EMAILS.includes(email?.toLowerCase());
+}
+
+// Middleware: verify admin
+async function authenticateAdmin(req, res, next) {
+  // First verify JWT token
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.userId;
+    
+    // Check if user is admin
+    const result = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    if (!isAdmin(result.rows[0].email)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Get all clients with services info
+app.get('/api/admin/clients', authenticateAdmin, async (req, res) => {
+  try {
+    const users = await pool.query(
+      `SELECT id, email, name, plan, active_services, stripe_customer_id, created_at 
+       FROM users ORDER BY created_at DESC`
+    );
+
+    // Stats
+    const totalUsers = users.rows.length;
+    const activeServices = users.rows.filter(u => {
+      const s = u.active_services || {};
+      return Object.values(s).some(v => v.status === 'active');
+    }).length;
+
+    let totalRevenue = 0, monthRevenue = 0;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    try {
+      const rev = await pool.query('SELECT COALESCE(SUM(amount), 0) as total FROM purchases');
+      totalRevenue = parseFloat(rev.rows[0].total || 0).toFixed(0);
+      const monthRev = await pool.query('SELECT COALESCE(SUM(amount), 0) as total FROM purchases WHERE created_at >= $1', [monthStart]);
+      monthRevenue = parseFloat(monthRev.rows[0].total || 0).toFixed(0);
+    } catch (e) { /* purchases table might not exist yet */ }
+
+    res.json({ 
+      users: users.rows,
+      stats: { total_users: totalUsers, active_services: activeServices, total_revenue: totalRevenue, month_revenue: monthRevenue }
+    });
+  } catch (error) {
+    console.error('Admin clients error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get recent purchases
+app.get('/api/admin/purchases', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM purchases ORDER BY created_at DESC LIMIT 50'
+    );
+    res.json({ purchases: result.rows });
+  } catch (error) {
+    // Table might not exist yet
+    res.json({ purchases: [] });
+  }
+});
+
+// Update user services & plan
+app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, active_services, plan } = req.body;
+    if (!userId) return res.status(400).json({ error: 'User ID required' });
+
+    await pool.query(
+      'UPDATE users SET active_services = $1, plan = $2 WHERE id = $3',
+      [JSON.stringify(active_services || {}), plan || 'free', userId]
+    );
+
+    console.log(`🔧 Admin updated user ${userId}: plan=${plan}, services=${JSON.stringify(active_services)}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Admin update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
 // ============================================
 
 app.listen(port, () => {
