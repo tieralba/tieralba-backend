@@ -538,7 +538,7 @@ a{text-decoration:none;color:inherit}
 <!-- NAV -->
 <nav class="nav" id="nav">
   <button class="mob-toggle" onclick="document.getElementById('mobMenu').classList.add('open')">&#9776;</button>
-  <a href="#" class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></a>
+  <a href="#" class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false"><img src="/logo.png" alt="TierAlba" style="width:34px;height:34px;border-radius:8px;object-fit:contain;"><span class="logo-text">TierAlba</span></a>
   <div class="nav-mid">
     <a href="#services">Services</a>
     <a href="#how">How It Works</a>
@@ -934,7 +934,7 @@ a{text-decoration:none;color:inherit}
   <div class="footer-top">
     <!-- BRAND COL -->
     <div class="footer-brand-col">
-      <div class="footer-brand"><div class="nav-mark" style="width:28px;height:28px;font-size:12px;border-radius:7px">T</div>TierAlba</div>
+      <div class="footer-brand"><img src="/logo.png" alt="TierAlba" style="width:28px;height:28px;border-radius:7px;object-fit:contain;">TierAlba</div>
       <p>Professional prop firm services. Passing challenges, managing accounts, and delivering signals since 2024.</p>
       <div class="footer-socials">
         <a href="https://t.me/tieralba" target="_blank" class="footer-social" title="Telegram"><svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.16l-1.97 9.28c-.15.67-.54.83-1.09.52l-3.02-2.22-1.46 1.4c-.16.16-.3.3-.61.3l.22-3.06 5.56-5.02c.24-.22-.05-.33-.37-.13l-6.87 4.33-2.96-.93c-.64-.2-.66-.64.14-.95l11.58-4.47c.53-.2 1-.05.85.95z"/></svg></a>
@@ -969,7 +969,7 @@ a{text-decoration:none;color:inherit}
     <!-- CONTACT COL -->
     <div class="footer-col">
       <h4>Contact</h4>
-      <a href="mailto:info@tieralba.com">info@tieralba.com</a>
+      <a href="/cdn-cgi/l/email-protection#3e575058517e4a575b4c5f525c5f105d5153"><span class="__cf_email__" data-cfemail="0f666169604f7b666a7d6e636d6e216c6062">[email&#160;protected]</span></a>
       <a href="tel:+447400757815">+44 7400 757815</a>
       <a href="https://t.me/tieralba" target="_blank">Telegram</a>
       <a href="https://wa.me/447400757815" target="_blank">WhatsApp</a>
@@ -1011,7 +1011,7 @@ a{text-decoration:none;color:inherit}
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ═══ GRAIN ═══ */
 (function(){const c=document.getElementById('grain'),x=c.getContext('2d');function r(){c.width=window.innerWidth;c.height=window.innerHeight}r();window.addEventListener('resize',r);
 function draw(){const d=x.createImageData(c.width,c.height),p=d.data;for(let i=0;i<p.length;i+=4){const v=Math.random()*255;p[i]=p[i+1]=p[i+2]=v;p[i+3]=15}x.putImageData(d,0,0);requestAnimationFrame(draw)}draw()})();
@@ -1093,10 +1093,4 @@ function resetCookies(){localStorage.removeItem('ta_cookies');const b=document.g
   if(!b)return;
   if(localStorage.getItem('ta_cookies')){b.remove();return}
   setTimeout(()=>b.classList.add('show'),1500);
-  document.getElementById('cookieAccept').onclick=()=>{localStorage.setItem('ta_cookies','accepted');b.classList.remove('show');setTimeout(()=>b.remove(),600)};
-  document.getElementById('cookieDecline').onclick=()=>{localStorage.setItem('ta_cookies','declined');b.classList.remove('show');setTimeout(()=>b.remove(),600)};
-})();
-</script>
-
-</body>
-</html>
+  document.getElementById('cookieAccept').onclick=()=>{localStorage.setItem('ta_cookies','accepted');b.classList.remo
