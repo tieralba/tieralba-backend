@@ -376,6 +376,26 @@ a{text-decoration:none;color:inherit}
   border:1px solid var(--border);font-size:18px;font-weight:700;transition:all 0.4s var(--ease);letter-spacing:-0.3px}
 .plat-box:hover{border-color:var(--border-h);transform:translateY(-4px);box-shadow:0 16px 48px rgba(200,169,78,0.06)}
 
+/* ═══ HERO SPHERE ═══ */
+.hero-sphere{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;height:520px;z-index:0;pointer-events:none;opacity:0;animation:sphereIn 2s var(--ease) 0.3s forwards}
+@keyframes sphereIn{from{opacity:0;transform:translate(-50%,-50%) scale(0.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.hero-sphere canvas{width:100%;height:100%}
+@media(max-width:768px){.hero-sphere{width:340px;height:340px}}
+
+/* ═══ CERTIFICATES CAROUSEL ═══ */
+.certs-sec{padding:80px 0;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.certs-header{text-align:center;padding:0 32px;margin-bottom:48px}
+.certs-track{display:flex;gap:24px;animation:certsScroll 40s linear infinite;width:max-content}
+.certs-track:hover{animation-play-state:paused}
+.cert-card{flex-shrink:0;width:340px;border-radius:16px;overflow:hidden;border:1px solid var(--border);
+  transition:all 0.4s var(--ease);position:relative}
+.cert-card:hover{border-color:var(--border-h);transform:translateY(-6px);box-shadow:0 20px 60px rgba(200,169,78,0.08)}
+.cert-card img{width:100%;height:240px;object-fit:cover;display:block}
+.cert-label{position:absolute;bottom:0;left:0;right:0;padding:12px 16px;
+  background:linear-gradient(transparent,rgba(6,7,10,0.9));font-size:12px;font-weight:600;color:var(--gold);letter-spacing:0.5px}
+@keyframes certsScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@media(max-width:768px){.cert-card{width:280px}.cert-card img{height:190px}}
+
 /* ═══ FAQ ═══ */
 .faq-sec{padding:120px 32px;background:var(--surface-solid)}
 .faq-list{max-width:720px;margin:0 auto}
@@ -490,6 +510,7 @@ a{text-decoration:none;color:inherit}
   <div class="shape shape-circle" style="top:70%;right:6%"></div>
   <div class="shape shape-cross" style="top:25%;right:15%"></div>
   <div class="shape shape-diamond" style="bottom:20%;left:20%"></div>
+  <div class="hero-sphere"><canvas id="sphereCanvas"></canvas></div>
 
   <div class="hero-content">
     <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Trusted by 100+ Traders Worldwide</div>
@@ -666,6 +687,32 @@ a{text-decoration:none;color:inherit}
   </div>
 </section>
 
+<!-- CERTIFICATES CAROUSEL -->
+<section class="certs-sec">
+  <div class="certs-header">
+    <div class="sh rv"><div class="sh-tag">Certificates</div><h2 class="sh-title">Client <span class="g">Achievements</span></h2><p class="sh-sub">Challenge passes, funded accounts, and profit splits — real results.</p></div>
+  </div>
+  <div class="certs-track" id="certsTrack">
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-01-05_01-44-15.jpg?v=1736037864" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Immagine_WhatsApp_2025-10-17_ore_13.43.41_8d502752.jpg?v=1760980646" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-07-15_21-29-18.jpg?v=1752607786" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-07-15_21-30-39.jpg?v=1752607787" alt="FTMO Passed"><div class="cert-label">Passed Verification — FTMO</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-08-31_14-38-10.jpg?v=1756643944" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-09-21_18-00-22.jpg?v=1758490381" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-09-21_18-04-56.jpg?v=1758490387" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-10-20_19-19-47.jpg?v=1760980794" alt="Profit Split"><div class="cert-label">Profit Split $177 — FundedNext</div></div>
+    <!-- Duplicate for infinite scroll -->
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-01-05_01-44-15.jpg?v=1736037864" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/Immagine_WhatsApp_2025-10-17_ore_13.43.41_8d502752.jpg?v=1760980646" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-07-15_21-29-18.jpg?v=1752607786" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-07-15_21-30-39.jpg?v=1752607787" alt="FTMO Passed"><div class="cert-label">Passed Verification — FTMO</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-08-31_14-38-10.jpg?v=1756643944" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-09-21_18-00-22.jpg?v=1758490381" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-09-21_18-04-56.jpg?v=1758490387" alt="Elite Trader"><div class="cert-label">Elite Trader — FundedNext</div></div>
+    <div class="cert-card"><img src="https://cdn.shopify.com/s/files/1/0867/9099/6294/files/photo_2025-10-20_19-19-47.jpg?v=1760980794" alt="Profit Split"><div class="cert-label">Profit Split $177 — FundedNext</div></div>
+  </div>
+</section>
+
 <!-- SUCCESS -->
 <section class="success-sec">
   <div class="sh rv"><div class="sh-tag">Results</div><h2 class="sh-title">The Key to Your <span class="g">Success</span></h2><p class="sh-sub">Real results from real clients.</p></div>
@@ -747,6 +794,44 @@ x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(200,169,78,${p.o}
 for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
 if(d<150){x.beginPath();x.moveTo(pts[i].x,pts[i].y);x.lineTo(pts[j].x,pts[j].y);x.strokeStyle=`rgba(200,169,78,${0.03*(1-d/150)})`;x.stroke()}}
 requestAnimationFrame(draw)}draw()})();
+
+/* ═══ HERO SPHERE — Wireframe orb ═══ */
+(function(){
+  const c=document.getElementById('sphereCanvas');if(!c)return;const gl=c.getContext('2d');
+  const S=520;c.width=S*2;c.height=S*2;c.style.width=S+'px';c.style.height=S+'px';
+  const cx=S,cy=S,R=S*0.72;
+  const rings=14,segs=28;let t=0;
+  function drawSphere(){
+    gl.clearRect(0,0,S*2,S*2);t+=0.004;
+    for(let i=0;i<rings;i++){
+      const a=Math.PI*i/rings;gl.beginPath();
+      for(let j=0;j<=segs;j++){
+        const b=Math.PI*2*j/segs,x3=Math.sin(a)*Math.cos(b),y3=Math.cos(a),z3=Math.sin(a)*Math.sin(b);
+        const rx=x3*Math.cos(t)-z3*Math.sin(t),rz=x3*Math.sin(t)+z3*Math.cos(t);
+        const ry2=y3*Math.cos(t*0.6)-rz*Math.sin(t*0.6);
+        const px=cx+rx*R,py=cy+ry2*R;
+        if(j===0)gl.moveTo(px,py);else gl.lineTo(px,py);
+      }
+      gl.strokeStyle='rgba(200,169,78,0.08)';gl.lineWidth=0.8;gl.stroke();
+    }
+    for(let j=0;j<segs;j++){
+      const b=Math.PI*2*j/segs;gl.beginPath();
+      for(let i=0;i<=rings;i++){
+        const a=Math.PI*i/rings,x3=Math.sin(a)*Math.cos(b),y3=Math.cos(a),z3=Math.sin(a)*Math.sin(b);
+        const rx=x3*Math.cos(t)-z3*Math.sin(t),rz=x3*Math.sin(t)+z3*Math.cos(t);
+        const ry2=y3*Math.cos(t*0.6)-rz*Math.sin(t*0.6);
+        const px=cx+rx*R,py=cy+ry2*R;
+        if(i===0)gl.moveTo(px,py);else gl.lineTo(px,py);
+      }
+      gl.strokeStyle='rgba(200,169,78,0.06)';gl.lineWidth=0.6;gl.stroke();
+    }
+    const grd=gl.createRadialGradient(cx,cy,0,cx,cy,R*0.8);
+    grd.addColorStop(0,'rgba(200,169,78,0.04)');grd.addColorStop(0.5,'rgba(200,169,78,0.015)');grd.addColorStop(1,'transparent');
+    gl.fillStyle=grd;gl.fillRect(0,0,S*2,S*2);
+    requestAnimationFrame(drawSphere);
+  }
+  drawSphere();
+})();
 
 /* ═══ CURSOR ═══ */
 const cD=document.getElementById('cDot'),cR=document.getElementById('cRing'),gl=document.getElementById('glow');
