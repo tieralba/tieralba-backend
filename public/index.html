@@ -5103,3 +5103,19 @@
                 <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
                 <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade
  to Standard — €49.99/mo</b
+utton>
+                <button class="btn-secondary" onclick="closeUpgradeModal()" style="width:100%;">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function closeUpgradeModal() {
+        document.getElementById('upgradeModal').style.display = 'none';
+    }
+    function upgradePlan(plan) {
+        window.location.href = '/api/checkout?plan=' + plan;
+    }
+    </script>
+</body>
+</html>
