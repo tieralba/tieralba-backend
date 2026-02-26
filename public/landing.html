@@ -19,8 +19,8 @@
   --ease:cubic-bezier(.22,1,.36,1);
   --ease-back:cubic-bezier(.34,1.56,.64,1);
 }
-html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html{scroll-behavior:smooth;overflow-x:hidden;width:100%}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;width:100%}
 ::selection{background:rgba(200,169,78,0.25)}
 a{text-decoration:none;color:inherit}
 .g{color:var(--gold)}
@@ -178,8 +178,8 @@ a{text-decoration:none;color:inherit}
 .partners::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
 .partners::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
 .p-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
-.p-track img{height:24px;margin:0 52px;opacity:0.3;filter:brightness(0) invert(1);transition:all 0.4s}
-.p-track img:hover{opacity:0.6;transform:scale(1.05)}
+.p-track img{height:24px;margin:0 52px;opacity:0.45;filter:brightness(0) invert(1);transition:all 0.4s}
+.p-track img:hover{opacity:0.75;transform:scale(1.05)}
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
 /* ═══ STATS ═══ */
@@ -210,7 +210,8 @@ a{text-decoration:none;color:inherit}
 .svc-sec{padding:120px 32px}
 .svc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1200px;margin:0 auto}
 .svc-block{padding:48px 36px;border-radius:24px;background:var(--surface);backdrop-filter:blur(16px);
-  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden}
+  border:1px solid var(--border);transition:all 0.5s var(--ease);position:relative;overflow:hidden;
+  display:flex;flex-direction:column}
 .svc-block::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
   background:linear-gradient(90deg,transparent,rgba(200,169,78,0.2),transparent);opacity:0;transition:opacity 0.4s}
 .svc-block:hover{border-color:var(--border-h);transform:translateY(-8px);box-shadow:0 24px 80px rgba(200,169,78,0.06)}
@@ -224,7 +225,7 @@ a{text-decoration:none;color:inherit}
 .svc-block h3{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:12px}
 .svc-block .svc-sub{font-size:15px;color:var(--gold);font-weight:600;margin-bottom:20px}
 .svc-block p{font-size:14px;color:var(--text-2);line-height:1.8;margin-bottom:28px}
-.svc-features{list-style:none;margin-bottom:32px}
+.svc-features{list-style:none;margin-bottom:32px;flex:1}
 .svc-features li{padding:10px 0;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
 .svc-features li:last-child{border:none}
 .svc-features li::before{content:'✓';font-size:11px;font-weight:700;color:var(--green);width:22px;height:22px;
@@ -233,7 +234,7 @@ a{text-decoration:none;color:inherit}
 .svc-cta{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;
   background:var(--gold-d);border:1px solid rgba(200,169,78,0.1);color:var(--gold);
   font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
-  transition:all 0.4s var(--ease);cursor:pointer}
+  transition:all 0.4s var(--ease);cursor:pointer;align-self:flex-start;margin-top:auto}
 .svc-cta:hover{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;border-color:transparent;
   box-shadow:0 8px 32px rgba(200,169,78,0.3);transform:translateY(-2px)}
 .svc-cta .arr{transition:transform 0.3s}
@@ -384,11 +385,49 @@ a{text-decoration:none;color:inherit}
   display:flex;justify-content:space-between;align-items:center;transition:color 0.3s;gap:16px}
 .faq-q:hover{color:var(--gold)}
 .faq-ic{width:34px;height:34px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-3);
-  transition:all 0.4s var(--ease);flex-shrink:0}
-.faq-item.open .faq-ic{background:var(--gold-d);border-color:rgba(200,169,78,0.1);color:var(--gold);transform:rotate(45deg)}
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.4s var(--ease);flex-shrink:0;position:relative}
+.faq-ic::before,.faq-ic::after{content:'';position:absolute;background:var(--text-3);border-radius:1px;transition:all 0.4s var(--ease)}
+.faq-ic::before{width:14px;height:1.5px}
+.faq-ic::after{width:1.5px;height:14px}
+.faq-item.open .faq-ic{background:var(--gold-d);border-color:rgba(200,169,78,0.1)}
+.faq-item.open .faq-ic::before,.faq-item.open .faq-ic::after{background:var(--gold)}
+.faq-item.open .faq-ic::after{height:0}
 .faq-a{max-height:0;overflow:hidden;transition:max-height 0.5s var(--ease),padding 0.4s;font-size:15px;color:var(--text-2);line-height:1.8}
 .faq-item.open .faq-a{max-height:300px;padding-bottom:28px}
+
+/* ═══ REVIEWS ═══ */
+.reviews-sec{padding:120px 32px;overflow:hidden}
+.reviews-header{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto 48px;flex-wrap:wrap;gap:20px}
+.reviews-tp{display:flex;align-items:center;gap:16px}
+.tp-logo{height:28px;opacity:0.9}
+.tp-score{display:flex;flex-direction:column;gap:2px}
+.tp-score-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.tp-score-lbl{font-size:12px;color:var(--text-2);font-weight:500}
+.tp-stars{display:flex;gap:3px}
+.tp-star{width:28px;height:28px;background:#00b67a;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.tp-star-half{background:linear-gradient(90deg,#00b67a 50%,#dcdce6 50%)}
+.reviews-track-wrap{position:relative;max-width:1100px;margin:0 auto}
+.reviews-track-wrap::before,.reviews-track-wrap::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none}
+.reviews-track-wrap::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.reviews-track-wrap::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+.reviews-track{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:8px 4px 20px;scrollbar-width:none}
+.reviews-track::-webkit-scrollbar{display:none}
+.review-card{flex-shrink:0;width:340px;padding:32px 28px;border-radius:20px;background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);scroll-snap-align:start;transition:all 0.4s var(--ease);position:relative}
+.review-card:hover{border-color:var(--border-h);transform:translateY(-4px);box-shadow:0 16px 48px rgba(200,169,78,0.06)}
+.review-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.review-stars{display:flex;gap:2px}
+.review-star{color:#00b67a;font-size:16px}
+.review-date{font-size:11px;color:var(--text-3);font-weight:500}
+.review-text{font-size:14px;color:var(--text-2);line-height:1.8;margin-bottom:20px;min-height:50px}
+.review-author{display:flex;align-items:center;gap:12px}
+.review-avatar{width:36px;height:36px;border-radius:10px;background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gold)}
+.review-name{font-size:13px;font-weight:600}
+.review-loc{font-size:11px;color:var(--text-3)}
+.review-badge{font-size:10px;color:#00b67a;font-weight:600;display:flex;align-items:center;gap:4px;margin-top:2px}
+.review-badge::before{content:'✓';font-size:9px}
 
 /* ═══ CTA ═══ */
 .cta-sec{padding:160px 32px;text-align:center;position:relative;overflow:hidden}
@@ -398,13 +437,54 @@ a{text-decoration:none;color:inherit}
 .cta-sec p{font-size:17px;color:var(--text-2);margin-bottom:52px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.7;position:relative;z-index:1}
 
 /* ═══ FOOTER ═══ */
-.footer{padding:64px 32px 32px;border-top:1px solid var(--border)}
-.footer-in{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px}
-.footer-brand{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px}
-.footer-links{display:flex;gap:28px}
-.footer-links a{font-size:13px;color:var(--text-3);transition:color 0.3s;font-weight:500}
-.footer-links a:hover{color:var(--gold)}
-.footer-copy{width:100%;text-align:center;font-size:12px;color:var(--text-3);margin-top:32px;padding-top:32px;border-top:1px solid var(--border);letter-spacing:0.5px}
+.footer{padding:80px 32px 32px;border-top:1px solid var(--border)}
+.footer-top{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr 1fr;gap:40px;margin-bottom:56px}
+.footer-brand-col .footer-brand{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.footer-brand-col p{font-size:13px;color:var(--text-3);line-height:1.7;margin-bottom:20px;max-width:280px}
+.footer-socials{display:flex;gap:10px}
+.footer-social{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;
+  display:flex;align-items:center;justify-content:center;transition:all 0.3s var(--ease);cursor:pointer;color:var(--text-3)}
+.footer-social:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d);transform:translateY(-2px)}
+.footer-social svg{width:16px;height:16px;fill:currentColor}
+.footer-col h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text-2);margin-bottom:16px}
+.footer-col a{display:block;font-size:13px;color:var(--text-3);padding:5px 0;transition:color 0.3s;font-weight:500}
+.footer-col a:hover{color:var(--gold)}
+.footer-tp{display:flex;align-items:center;gap:6px;margin-top:12px}
+.footer-tp-stars{display:flex;gap:2px;font-size:12px;color:#00b67a}
+.footer-tp-label{font-size:11px;color:var(--text-3)}
+.footer-bottom{max-width:1100px;margin:0 auto;padding-top:32px;border-top:1px solid var(--border)}
+.footer-legal-links{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:20px}
+.footer-legal-links a{font-size:11px;color:var(--text-3);transition:color 0.3s;font-weight:500}
+.footer-legal-links a:hover{color:var(--gold)}
+.footer-legal-links .sep{color:var(--border);font-size:11px}
+.footer-disclaimer{font-size:11px;color:var(--text-3);line-height:1.8;margin-bottom:20px;opacity:0.7}
+.footer-copy{text-align:center;font-size:12px;color:var(--text-3);letter-spacing:0.5px}
+
+@media(max-width:768px){
+  .footer-top{grid-template-columns:1fr 1fr;gap:32px}
+  .footer{padding:48px 20px 24px}
+}
+@media(max-width:480px){
+  .footer-top{grid-template-columns:1fr}
+}
+
+/* ═══ COOKIE BANNER ═══ */
+.cookie-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:20px 32px;
+  background:rgba(14,15,22,0.95);backdrop-filter:blur(24px) saturate(1.5);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  transform:translateY(100%);transition:transform 0.6s var(--ease);flex-wrap:wrap}
+.cookie-banner.show{transform:translateY(0)}
+.cookie-text{font-size:13px;color:var(--text-2);line-height:1.6;flex:1;min-width:250px}
+.cookie-text a{color:var(--gold);font-weight:600}
+.cookie-btns{display:flex;gap:10px;flex-shrink:0}
+.cookie-btn{padding:10px 24px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all 0.3s var(--ease);text-transform:uppercase;letter-spacing:1px;border:none}
+.cookie-accept{background:linear-gradient(135deg,var(--gold),#b59840);color:#06070a;
+  box-shadow:0 2px 12px rgba(200,169,78,0.2)}
+.cookie-accept:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(200,169,78,0.3)}
+.cookie-decline{background:transparent;border:1px solid var(--border);color:var(--text-3)}
+.cookie-decline:hover{border-color:var(--text-3);color:var(--text-2)}
 
 /* ═══ REVEAL ═══ */
 .rv{opacity:0;transform:translateY(32px);transition:opacity 0.9s var(--ease),transform 0.9s var(--ease)}
@@ -431,10 +511,14 @@ a{text-decoration:none;color:inherit}
   .partner-box{grid-template-columns:1fr;gap:36px}
   .plat-row{flex-direction:column;max-width:240px}
   .svc-sel{max-width:100%}.svc-btn{padding:12px 6px;font-size:11px;letter-spacing:.3px}
-  .footer-in{flex-direction:column;align-items:center;text-align:center}
-  .footer-links{flex-wrap:wrap;justify-content:center}
   .scroll-ind{display:none}
   .sw::before,.sw::after{width:40px}
+  .cookie-banner{flex-direction:column;padding:16px 20px;gap:14px}
+  .cookie-btns{width:100%}
+  .cookie-btn{flex:1;text-align:center}
+  .reviews-header{flex-direction:column;align-items:flex-start}
+  .review-card{width:290px;padding:24px 20px}
+  .reviews-track-wrap::before,.reviews-track-wrap::after{width:40px}
 }
 @media(max-width:480px){
   .hiw-row{grid-template-columns:1fr}
@@ -454,13 +538,14 @@ a{text-decoration:none;color:inherit}
 <!-- NAV -->
 <nav class="nav" id="nav">
   <button class="mob-toggle" onclick="document.getElementById('mobMenu').classList.add('open')">&#9776;</button>
-  <a href="#" class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false"><img src="/images/logo-icon.png" alt="TierAlba" style="width:34px;height:34px;border-radius:8px;object-fit:cover;"><span class="logo-text">TierAlba</span></a>
+  <a href="#" class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false"><div class="nav-mark">T</div><span class="logo-text">TierAlba</span></a>
   <div class="nav-mid">
     <a href="#services">Services</a>
     <a href="#how">How It Works</a>
     <a href="#why">Why Us</a>
+    <a href="/about">About Us</a>
     <a href="/partner">Be a Partner</a>
-    <a href="#faq">FAQ</a>
+    <a href="/faq">FAQ</a>
   </div>
   <div class="nav-end">
     <a href="/login" class="nav-cta">Dashboard</a>
@@ -475,8 +560,9 @@ a{text-decoration:none;color:inherit}
     <a href="#services" onclick="closeMob()">Services</a>
     <a href="#how" onclick="closeMob()">How It Works</a>
     <a href="#why" onclick="closeMob()">Why Us</a>
+    <a href="/about" onclick="closeMob()">About Us</a>
     <a href="/partner" onclick="closeMob()">Be a Partner</a>
-    <a href="#faq" onclick="closeMob()">FAQ</a>
+    <a href="/faq" onclick="closeMob()">FAQ</a>
   </div>
   <a href="/login" class="mob-menu-cta">Dashboard</a>
 </div>
@@ -635,23 +721,23 @@ a{text-decoration:none;color:inherit}
   <div class="svc-sel rv"><button class="svc-btn on" onclick="swSvc('tp',this)">Tier Pass</button><button class="svc-btn" onclick="swSvc('mg',this)">Tier Manage</button><button class="svc-btn" onclick="swSvc('ta',this)">TradesAlba</button></div>
 
   <div class="pnl on" id="p-tp"><div class="sw"><div class="sc" id="sc-tp">
-    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Bronze</div><div class="tp-size">5K</div><div class="tp-price">&euro;59</div><a href="/products/tierpass-5k" class="card-btn">Select Plan</a></div>
-    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Silver</div><div class="tp-size">10K</div><div class="tp-price">&euro;99</div><a href="/products/tierpass-10k" class="card-btn">Select Plan</a></div>
-    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Gold</div><div class="tp-size">25K</div><div class="tp-price">&euro;149</div><a href="/products/tierpass-25k" class="card-btn">Select Plan</a></div>
-    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Platinum</div><div class="tp-size">50K</div><div class="tp-price">&euro;199</div><a href="/products/tierpass-50k" class="card-btn">Select Plan</a></div>
-    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Emerald</div><div class="tp-size">100K</div><div class="tp-price">&euro;249</div><a href="/products/tierpass-100k" class="card-btn">Select Plan</a></div>
-    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Diamond</div><div class="tp-size">200K</div><div class="tp-price">&euro;349</div><a href="/products/tierpass-200k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Bronze</div><div class="tp-size">5K</div><div class="tp-price">&euro;59</div><a href="/checkout?plan=tierpass-5k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Silver</div><div class="tp-size">10K</div><div class="tp-price">&euro;99</div><a href="/checkout?plan=tierpass-10k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Gold</div><div class="tp-size">25K</div><div class="tp-price">&euro;149</div><a href="/checkout?plan=tierpass-25k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Platinum</div><div class="tp-size">50K</div><div class="tp-price">&euro;199</div><a href="/checkout?plan=tierpass-50k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Emerald</div><div class="tp-size">100K</div><div class="tp-price">&euro;249</div><a href="/checkout?plan=tierpass-100k" class="card-btn">Select Plan</a></div>
+    <div class="gcard tp"><div class="gcard-shine"></div><div class="tp-tier">Diamond</div><div class="tp-size">200K</div><div class="tp-price">&euro;349</div><a href="/checkout?plan=tierpass-200k" class="card-btn">Select Plan</a></div>
   </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-tp',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-tp',1)">&rarr;</button></div></div>
 
   <div class="pnl" id="p-mg"><div class="sw"><div class="sc" id="sc-mg">
-    <div class="gcard mg"><div class="gcard-shine"></div><div class="mg-name">Lite Funded</div><div class="mg-price">&euro;89<span>/mo</span></div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 5%/month</li><li>Max drawdown 4%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="https://buy.stripe.com/4gw4kf8z66P4gkE9AJ" target="_blank" class="card-btn">Subscribe</a></div>
-    <div class="gcard mg feat"><div class="gcard-shine"></div><div class="mg-name">Starter Funded</div><div class="mg-price">&euro;149<span>/mo</span></div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 9%/month</li><li>Max drawdown 3%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="https://buy.stripe.com/dR603Z3eM0qGfgA4gi" target="_blank" class="card-btn">Subscribe</a></div>
-    <div class="gcard mg"><div class="gcard-shine"></div><div class="mg-name">Pro Funded</div><div class="mg-price">&euro;299<span>/mo</span></div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 15%/month</li><li>Max drawdown 2%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="https://buy.stripe.com/dR63gb7v24GWgkEbIL" target="_blank" class="card-btn">Subscribe</a></div>
+    <div class="gcard mg"><div class="gcard-shine"></div><div class="mg-name">Lite Funded</div><div class="mg-price">&euro;89</div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 5%/month</li><li>Max drawdown 4%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="/checkout?plan=tiermanage-lite" class="card-btn">Select Plan</a></div>
+    <div class="gcard mg feat"><div class="gcard-shine"></div><div class="mg-name">Starter Funded</div><div class="mg-price">&euro;149</div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 9%/month</li><li>Max drawdown 3%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="/checkout?plan=tiermanage-starter" class="card-btn">Select Plan</a></div>
+    <div class="gcard mg"><div class="gcard-shine"></div><div class="mg-name">Pro Funded</div><div class="mg-price">&euro;299</div><div class="mg-sub">EA on your prop firm (5k-200k)</div><ul class="ft-list"><li>Profit target 15%/month</li><li>Max drawdown 2%</li><li>Full account access</li><li>EA software provided</li><li>Private Q&amp;A</li><li>24/7 Support</li></ul><a href="/checkout?plan=tiermanage-pro" class="card-btn">Select Plan</a></div>
   </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-mg',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-mg',1)">&rarr;</button></div></div>
 
   <div class="pnl" id="p-ta"><div class="sw"><div class="sc" id="sc-ta" style="justify-content:center">
-    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Standard</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'std','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'std','y')">Yearly</button></div><div class="ta-price" id="std-p">&euro;49<span>/mo</span></div><div class="ta-save" id="std-s">&nbsp;</div><ul class="ft-list"><li>Live trading signals</li><li>Trading journal</li><li>Risk management tools</li><li>Economic calendar</li><li>Email support</li></ul><a href="#" class="card-btn" id="std-b">Subscribe</a></div>
-    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Pro</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'pro','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'pro','y')">Yearly</button></div><div class="ta-price" id="pro-p">&euro;89<span>/mo</span></div><div class="ta-save" id="pro-s">&nbsp;</div><ul class="ft-list"><li>Everything in Standard</li><li>Expert Advisor access</li><li>3 TradingView indicators</li><li>Broker integration (MT4/MT5)</li><li>Priority 24/7 support</li></ul><a href="#" class="card-btn" id="pro-b">Subscribe</a></div>
+    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Standard</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'std','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'std','y')">Yearly</button></div><div class="ta-price" id="std-p">&euro;49<span>/mo</span></div><div class="ta-save" id="std-s">&nbsp;</div><ul class="ft-list"><li>Live trading signals</li><li>Trading journal</li><li>Risk management tools</li><li>Economic calendar</li><li>Email support</li></ul><a href="/checkout?plan=tradesalba-standard-m" class="card-btn" id="std-b">Subscribe</a></div>
+    <div class="gcard ta"><div class="gcard-shine"></div><div class="ta-name">Pro</div><div class="bill-row"><button class="bill-b on" onclick="swBill(this,'pro','m')">Monthly</button><button class="bill-b" onclick="swBill(this,'pro','y')">Yearly</button></div><div class="ta-price" id="pro-p">&euro;89<span>/mo</span></div><div class="ta-save" id="pro-s">&nbsp;</div><ul class="ft-list"><li>Everything in Standard</li><li>Expert Advisor access</li><li>3 TradingView indicators</li><li>Broker integration (MT4/MT5)</li><li>Priority 24/7 support</li></ul><a href="/checkout?plan=tradesalba-pro-m" class="card-btn" id="pro-b">Subscribe</a></div>
   </div></div><div class="s-nav"><button class="s-arr" onclick="sScr('sc-ta',-1)">&larr;</button><button class="s-arr" onclick="sScr('sc-ta',1)">&rarr;</button></div></div>
 </section>
 
@@ -706,14 +792,132 @@ a{text-decoration:none;color:inherit}
 <section class="faq-sec" id="faq">
   <div class="sh rv"><div class="sh-tag">Support</div><h2 class="sh-title">Frequently Asked <span class="g">Questions</span></h2></div>
   <div class="faq-list">
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is the difference between Tier Pass, Tier Manage, and TradesAlba?</span><div class="faq-ic">+</div></div><div class="faq-a"><strong>Tier Pass</strong> passes your prop firm challenge using our Expert Advisor. <strong>Tier Manage</strong> manages your funded account for monthly returns after you're funded. <strong>TradesAlba</strong> is a standalone trading dashboard with signals, journal, risk tools, and broker integration. You can use one, two, or all three.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the Tier Pass EA work?</span><div class="faq-ic">+</div></div><div class="faq-a">We install the EA on your MetaTrader platform during a private Zoom session. It trades your challenge automatically with low-risk strategies. You maintain full access to your account at all times. We use the investor (read-only) password — your master password is never needed.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What's included in the TradesAlba dashboard?</span><div class="faq-ic">+</div></div><div class="faq-a">Standard plan: live trading signals, trading journal with tags and screenshots, risk management tools, position size calculator, and economic calendar. Pro plan adds: TradingView indicators, Expert Advisor access, broker integration (MT4/MT5), and priority 24/7 support.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I need to share my password?</span><div class="faq-ic">+</div></div><div class="faq-a">No. For Tier Pass and Tier Manage, we only use the investor (read-only) password. Your master password is never required. Everything is installed securely via a private Zoom session.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic">+</div></div><div class="faq-a">Any prop firm that allows Expert Advisors on MetaTrader 4 or MetaTrader 5. This includes most major firms in the industry.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your success rate?</span><div class="faq-ic">+</div></div><div class="faq-a">We maintain a 94% pass rate with Tier Pass. Our approach uses consistent, low-risk trading strategies designed to maximize your probability of passing.</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How does the referral program work?</span><div class="faq-ic">+</div></div><div class="faq-a">Sign up for a free account, get your unique referral link from the dashboard, and share it. You earn 15% commission on every subscription your referrals make. Minimum payout is €50, paid via USDT (TRC-20).</div></div>
-    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I cancel anytime?</span><div class="faq-ic">+</div></div><div class="faq-a">Yes. All subscriptions (Tier Manage and TradesAlba) can be cancelled anytime from your dashboard. No commitments, no hidden fees. Tier Pass is a one-time purchase.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is Tier Pass and how does it work?</span><div class="faq-ic"></div></div><div class="faq-a">Tier Pass is our flagship service that helps traders become funded. We provide a proprietary Expert Advisor (EA) that you install on your MetaTrader 4 or 5 platform. The EA trades your prop firm challenge automatically with a 94% success rate. You maintain full access to your account — we never request your login credentials.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Which prop firms are supported?</span><div class="faq-ic"></div></div><div class="faq-a">We support 20+ leading prop firms including FTMO, FundedNext, FundingPips, FunderPro, Blueberry Funded, The5%ers, E8 Markets, FXIFY, Goat Funded Trader, OANDA Prop Trader, and many more. Any firm that allows Expert Advisors on MT4 or MT5 is compatible.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What happens if the challenge fails?</span><div class="faq-ic"></div></div><div class="faq-a">If the challenge fails due to our EA's performance, you receive a full refund of the Tier Pass service fee within 30 days of purchase. The guarantee is void if you change bot parameters, manually open or close trades, or fail to follow our operational instructions.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do you need my account login credentials?</span><div class="faq-ic"></div></div><div class="faq-a">No — never. We do not access, request, or store your trading account credentials under any circumstances. The EA runs locally on your MetaTrader platform. Your account, your control. For broker sync in the dashboard, we use the investor (read-only) password only.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is Tier Manage?</span><div class="faq-ic"></div></div><div class="faq-a">After passing your challenge, you can keep our EA active on your funded account to generate consistent profits. We offer three plans: Lite Funded (5% target), Starter Funded (9% target), and Pro Funded (15% target). Drawdown parameters are fully configurable to match your prop firm's rules.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What does TradesAlba include?</span><div class="faq-ic"></div></div><div class="faq-a">Standard plan includes unlimited daily signals, AI-powered analysis, 1 TradingView indicator, and 24/7 support. Pro plan adds 2 trading software tools for live accounts, 3 TradingView indicators, advanced analytics, and VIP priority support. Both available monthly or annually.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is your refund policy?</span><div class="faq-ic"></div></div><div class="faq-a">Tier Pass: full refund within 30 days if the challenge fails due to our EA (conditions apply). Tier Manage: no refunds, cancel anytime. TradesAlba: 7-day money-back guarantee from the date of subscription, no questions asked.</div></div>
+    <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What payment methods do you accept?</span><div class="faq-ic"></div></div><div class="faq-a">All payments are processed through Stripe, supporting credit/debit cards (Visa, Mastercard, Amex), Revolut, and Klarna. Cryptocurrency payments are coming soon. Tier Pass is a one-time payment; Tier Manage and TradesAlba are recurring subscriptions.</div></div>
+  </div>
+  <div style="text-align:center;margin-top:48px" class="rv">
+    <a href="/faq" class="btn-p" style="font-size:12px;padding:14px 36px;">View All FAQ &rarr;</a>
+  </div>
+</section>
+
+<!-- ═══ TRUSTPILOT REVIEWS ═══ -->
+<section class="reviews-sec">
+  <div class="reviews-header rv">
+    <div class="sh" style="text-align:left;margin-bottom:0">
+      <div class="sh-tag">Reviews</div>
+      <h2 class="sh-title">Trusted by <span class="g">Traders</span></h2>
+    </div>
+    <div class="reviews-tp">
+      <div class="tp-stars">
+        <div class="tp-star"></div><div class="tp-star"></div><div class="tp-star"></div><div class="tp-star"></div><div class="tp-star-half tp-star"></div>
+      </div>
+      <div class="tp-score">
+        <div class="tp-score-val">4.5 / 5</div>
+        <div class="tp-score-lbl">Based on <a href="https://www.trustpilot.com/review/tieralba.com" target="_blank" style="color:var(--gold);font-weight:600">15 reviews</a> on Trustpilot</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="reviews-track-wrap rv rv-d1">
+    <div class="reviews-track" id="reviewsTrack">
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Feb 2026</span>
+        </div>
+        <div class="review-text">I joined their free channel and they only send great calls. The other day they perfectly predicted before the FED news — XAU long. Incredible accuracy.</div>
+        <div class="review-author">
+          <div class="review-avatar">AK</div>
+          <div><div class="review-name">Andrew K.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star" style="color:var(--text-3)">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">I've been using TierAlba for a while. Their EA is perfect for passing challenges and for funded accounts, specially as it's all hands-free and doesn't require manual trading at all. Let the bot do what's best.</div>
+        <div class="review-author">
+          <div class="review-avatar">MK</div>
+          <div><div class="review-name">Menar K.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">The most reliable, safest, and best company I've worked with. Their service exceeded my expectations. Highly recommended for any trader looking for professional support.</div>
+        <div class="review-author">
+          <div class="review-avatar">HH</div>
+          <div><div class="review-name">Hekuran H.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">The best prop firm support out there. Their tools and team are top notch. I wouldn't trust anyone else with my funded accounts.</div>
+        <div class="review-author">
+          <div class="review-avatar">CO</div>
+          <div><div class="review-name">Consumer</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">I suggest TierAlba for all new users. The best service you can get in this space. Easy to set up, professional support, and real results. Can't ask for more.</div>
+        <div class="review-author">
+          <div class="review-avatar">SJ</div>
+          <div><div class="review-name">Shqiperia J.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Nov 2025</span>
+        </div>
+        <div class="review-text">Super company! Everything works smoothly. The EA handles challenges perfectly and the team is always available when you need them. Five stars from me.</div>
+        <div class="review-author">
+          <div class="review-avatar">EA</div>
+          <div><div class="review-name">Edison A.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-stars"><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span><span class="review-star">★</span></div>
+          <span class="review-date">Dec 2025</span>
+        </div>
+        <div class="review-text">A great experience so far. Professional team, reliable software, and transparent communication. Exactly what you need when trusting someone with your trading account.</div>
+        <div class="review-author">
+          <div class="review-avatar">EA</div>
+          <div><div class="review-name">Endrit A.</div><div class="review-badge">Verified Review</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:40px" class="rv rv-d2">
+    <a href="https://www.trustpilot.com/review/tieralba.com" target="_blank" style="font-size:13px;color:var(--text-2);font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:color 0.3s">
+      Read all reviews on Trustpilot <span style="color:var(--gold)">&rarr;</span>
+    </a>
   </div>
 </section>
 
@@ -727,12 +931,85 @@ a{text-decoration:none;color:inherit}
 
 <!-- FOOTER -->
 <footer class="footer">
-  <div class="footer-in">
-    <div class="footer-brand"><img src="/images/logo-icon.png" alt="TierAlba" style="width:28px;height:28px;border-radius:7px;object-fit:cover;">TierAlba</div>
-    <div class="footer-links"><a href="#services">Services</a><a href="#how">How It Works</a><a href="#why">Why Us</a><a href="/partner">Be a Partner</a><a href="#faq">FAQ</a><a href="/login">Dashboard</a></div>
+  <div class="footer-top">
+    <!-- BRAND COL -->
+    <div class="footer-brand-col">
+      <div class="footer-brand"><div class="nav-mark" style="width:28px;height:28px;font-size:12px;border-radius:7px">T</div>TierAlba</div>
+      <p>Professional prop firm services. Passing challenges, managing accounts, and delivering signals since 2024.</p>
+      <div class="footer-socials">
+        <a href="https://t.me/tieralba" target="_blank" class="footer-social" title="Telegram"><svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.16l-1.97 9.28c-.15.67-.54.83-1.09.52l-3.02-2.22-1.46 1.4c-.16.16-.3.3-.61.3l.22-3.06 5.56-5.02c.24-.22-.05-.33-.37-.13l-6.87 4.33-2.96-.93c-.64-.2-.66-.64.14-.95l11.58-4.47c.53-.2 1-.05.85.95z"/></svg></a>
+        <a href="https://instagram.com/tieralba" target="_blank" class="footer-social" title="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.97.24 2.44.41.61.24 1.05.52 1.51.98s.74.9.98 1.51c.17.47.36 1.27.41 2.44.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.24 1.97-.41 2.44-.24.61-.52 1.05-.98 1.51s-.9.74-1.51.98c-.47.17-1.27.36-2.44.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.97-.24-2.44-.41a4.08 4.08 0 01-1.51-.98 4.08 4.08 0 01-.98-1.51c-.17-.47-.36-1.27-.41-2.44C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.24-1.97.41-2.44.24-.61.52-1.05.98-1.51s.9-.74 1.51-.98c.47-.17 1.27-.36 2.44-.41C8.42 2.17 8.8 2.16 12 2.16zM12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.88 5.88 0 00-2.13 1.38A5.88 5.88 0 00.63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.31.79.72 1.47 1.38 2.13a5.88 5.88 0 002.13 1.38c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.88 5.88 0 002.13-1.38 5.88 5.88 0 001.38-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.88 5.88 0 00-1.38-2.13A5.88 5.88 0 0019.86.63C19.1.33 18.22.13 16.95.07 15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm7.85-10.4a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z"/></svg></a>
+        <a href="https://facebook.com/tieralba" target="_blank" class="footer-social" title="Facebook"><svg viewBox="0 0 24 24"><path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.41 0 12.07c0 6.02 4.39 11.01 10.13 11.93v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.88v2.26h3.33l-.53 3.49h-2.8v8.44C19.61 23.08 24 18.09 24 12.07z"/></svg></a>
+        <a href="https://wa.me/447400757815" target="_blank" class="footer-social" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.28-.1-.48-.15-.68.15-.2.3-.76.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.04-.17-.3-.02-.46.13-.6.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.68-.51h-.58c-.2 0-.52.07-.8.37-.27.3-1.04 1.01-1.04 2.47 0 1.46 1.06 2.87 1.21 3.07.15.2 2.09 3.19 5.07 4.47.71.3 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.42-.07-.12-.27-.2-.57-.34zM12.05 21.78c-1.8 0-3.56-.48-5.1-1.4l-.36-.22-3.78.99 1.01-3.68-.24-.38A9.76 9.76 0 012.23 12c0-5.42 4.41-9.83 9.83-9.83 2.63 0 5.1 1.02 6.95 2.88a9.77 9.77 0 012.88 6.95c0 5.42-4.41 9.83-9.84 9.83zM20.52 3.48A11.78 11.78 0 0012.05 0C5.46 0 .1 5.35.1 11.94c0 2.1.55 4.16 1.6 5.97L0 24l6.24-1.64a11.9 11.9 0 005.81 1.48c6.59 0 11.94-5.35 11.95-11.94 0-3.19-1.24-6.19-3.48-8.44z"/></svg></a>
+      </div>
+      <div class="footer-tp">
+        <div class="footer-tp-stars">★★★★★</div>
+        <span class="footer-tp-label">4.5/5 on <a href="https://www.trustpilot.com/review/tieralba.com" target="_blank" style="color:var(--gold)">Trustpilot</a></span>
+      </div>
+    </div>
+
+    <!-- SERVICES COL -->
+    <div class="footer-col">
+      <h4>Services</h4>
+      <a href="#services">Tier Pass</a>
+      <a href="#services">Tier Manage</a>
+      <a href="#services">TradesAlba</a>
+      <a href="/login">Dashboard</a>
+    </div>
+
+    <!-- COMPANY COL -->
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="/about">About Us</a>
+      <a href="/partner">Be a Partner</a>
+      <a href="/faq">Help Center</a>
+      <a href="#faq">FAQ</a>
+    </div>
+
+    <!-- CONTACT COL -->
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <a href="mailto:info@tieralba.com">info@tieralba.com</a>
+      <a href="tel:+447400757815">+44 7400 757815</a>
+      <a href="https://t.me/tieralba" target="_blank">Telegram</a>
+      <a href="https://wa.me/447400757815" target="_blank">WhatsApp</a>
+    </div>
+
+    <!-- LEGAL COL -->
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/legal-notice">Legal Notice</a>
+      <a href="/cookie-policy">Cookie Policy</a>
+      <a href="#" onclick="resetCookies();return false">Cookie Preferences</a>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="footer-bottom">
+    <div class="footer-legal-links">
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/legal-notice">Legal Notice</a>
+      <a href="/cookie-policy">Cookie Policy</a>
+      <a href="#" onclick="resetCookies();return false">Cookie Preferences</a>
+    </div>
+    <div class="footer-disclaimer">Trading involves a high level of risk and may not be suitable for all investors. There is a possibility of losing more than your initial investment. Before using our services, make sure you fully understand the risks involved. Tier Alba assumes no responsibility for any financial losses incurred by users. Past performance does not guarantee future results. The information provided by Tier Alba, including signals, tools, analysis, and software, is for educational and informational purposes only and does not constitute financial, legal, or investment advice. The use of our services is at your own risk and discretion. All content, software, tools, and materials provided by Tier Alba are protected by copyright and may not be copied, distributed, modified, or used without prior written permission. Personal data provided will be processed in accordance with our policies. For detailed information on refund policies, please visit the dedicated page.</div>
     <div class="footer-copy">&copy; 2025 TierAlba. All rights reserved.</div>
   </div>
 </footer>
+
+<!-- COOKIE BANNER -->
+<div class="cookie-banner" id="cookieBanner">
+  <div class="cookie-text">We use cookies to enhance your experience, analyze traffic, and personalize content. By clicking "Accept", you consent to our use of cookies.</div>
+  <div class="cookie-btns">
+    <button class="cookie-btn cookie-decline" id="cookieDecline">Decline</button>
+    <button class="cookie-btn cookie-accept" id="cookieAccept">Accept All</button>
+  </div>
+</div>
 
 <script>
 /* ═══ GRAIN ═══ */
@@ -785,7 +1062,7 @@ function swHiw(id,b){document.querySelectorAll('.hiw-tab').forEach(t=>t.classLis
 function sScr(id,d){const el=document.getElementById(id);if(!el)return;const c=el.querySelector(':scope>*');el.scrollBy({left:d*(c?c.offsetWidth+20:320),behavior:'smooth'})}
 
 /* ═══ BILLING ═══ */
-const pr={std:{m:{p:'€49',s:'/mo',sv:'',l:'#'},y:{p:'€399',s:'/yr',sv:'Save €189',l:'#'}},pro:{m:{p:'€89',s:'/mo',sv:'',l:'#'},y:{p:'€749',s:'/yr',sv:'Save €319',l:'#'}}};
+const pr={std:{m:{p:'€49',s:'/mo',sv:'',l:'/checkout?plan=tradesalba-standard-m'},y:{p:'€399',s:'/yr',sv:'Save 32%',l:'/checkout?plan=tradesalba-standard-y'}},pro:{m:{p:'€89',s:'/mo',sv:'',l:'/checkout?plan=tradesalba-pro-m'},y:{p:'€699',s:'/yr',sv:'Save 34%',l:'/checkout?plan=tradesalba-pro-y'}}};
 function swBill(b,p,t){b.parentElement.querySelectorAll('.bill-b').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   const d=pr[p][t];document.getElementById(p+'-p').innerHTML=d.p+'<span>'+d.s+'</span>';document.getElementById(p+'-s').textContent=d.sv||'\u00A0';document.getElementById(p+'-b').href=d.l}
 
@@ -808,6 +1085,18 @@ document.querySelectorAll('.stat-val').forEach(el=>{
 
 /* ═══ SMOOTH SCROLL ═══ */
 document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+
+/* ═══ COOKIE BANNER ═══ */
+function resetCookies(){localStorage.removeItem('ta_cookies');const b=document.getElementById('cookieBanner');if(b){b.style.display='';b.classList.add('show')}else{location.reload()}}
+(function(){
+  const b=document.getElementById('cookieBanner');
+  if(!b)return;
+  if(localStorage.getItem('ta_cookies')){b.remove();return}
+  setTimeout(()=>b.classList.add('show'),1500);
+  document.getElementById('cookieAccept').onclick=()=>{localStorage.setItem('ta_cookies','accepted');b.classList.remove('show');setTimeout(()=>b.remove(),600)};
+  document.getElementById('cookieDecline').onclick=()=>{localStorage.setItem('ta_cookies','declined');b.classList.remove('show');setTimeout(()=>b.remove(),600)};
+})();
 </script>
+
 </body>
 </html>
