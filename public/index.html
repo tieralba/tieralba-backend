@@ -2921,7 +2921,8 @@
         try {
             const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
             if (res.status === 429) { console.warn(`Rate limited: ${endpoint}`); return null; }
-            if (res.status === 401 || res.status === 403) { logout(); return null; }
+            if (res.status === 401) { logout(); return null; }
+            if (res.status === 403) { console.warn(`Access denied: ${endpoint} (plan restriction)`); return null; }
             const text = await res.text();
             try { return JSON.parse(text); } catch { console.error(`Invalid JSON from ${endpoint}`); return null; }
         } catch (err) {
@@ -3062,7 +3063,7 @@
         applyIndicatorGating(plan);
         loadRefundHistory();
         loadReferralData();
-        loadSignals();
+        if (plan === 'standard' || plan === 'pro') loadSignals();
 
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
