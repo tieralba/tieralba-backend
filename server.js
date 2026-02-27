@@ -2377,21 +2377,6 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
 });
 
 // ============================================
-// SERVE FRONTEND per route non-API
-// ============================================
-// ============================================
-// GESTIONE ERRORI 404 (solo per API)
-// ============================================
-
-app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint non trovato',
-    path: req.path 
-  });
-});
-
-// ============================================
-// AVVIO SERVER
 // ============================================
 // ADMIN PANEL API ENDPOINTS
 // ============================================
@@ -2492,6 +2477,17 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
     console.error('Admin update user error:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
+});
+
+// ============================================
+// GESTIONE ERRORI 404 (solo per API)
+// ============================================
+
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Endpoint non trovato',
+    path: req.path 
+  });
 });
 
 // ============================================
