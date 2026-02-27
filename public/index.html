@@ -2920,8 +2920,10 @@
         if (token) headers['Authorization'] = `Bearer ${token}`;
         try {
             const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+            if (res.status === 429) { console.warn(`Rate limited: ${endpoint}`); return null; }
             if (res.status === 401 || res.status === 403) { logout(); return null; }
-            return await res.json();
+            const text = await res.text();
+            try { return JSON.parse(text); } catch { console.error(`Invalid JSON from ${endpoint}`); return null; }
         } catch (err) {
             console.error(`API error: ${endpoint}`, err);
             return null;
@@ -4906,8 +4908,10 @@
         const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
         try {
             const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+            if (res.status === 429) { console.warn(`Rate limited: ${endpoint}`); return null; }
             if (res.status === 401 || res.status === 403) { toast('error', 'Unauthorized', 'Admin access required'); return null; }
-            return await res.json();
+            const text = await res.text();
+            try { return JSON.parse(text); } catch { console.error(`Invalid JSON from ${endpoint}`); return null; }
         } catch (err) {
             console.error(`Admin API error: ${endpoint}`, err);
             return null;
@@ -5080,12 +5084,12 @@
 
     window.addEventListener('load', () => {
         loadDashboard();
-        // Full MetaAPI sync every 60 seconds
-        setInterval(autoSync, 60000);
-        // Light DB refresh every 10 seconds
-        setInterval(refreshDashboard, 10000);
-        // Refresh signals every 60 seconds
-        setInterval(loadSignals, 60000);
+        // Full MetaAPI sync every 2 minutes
+        setInterval(autoSync, 120000);
+        // Light DB refresh every 15 seconds
+        setInterval(refreshDashboard, 15000);
+        // Refresh signals every 30 seconds
+        setInterval(loadSignals, 30000);
     });
 </script>
     <!-- Upgrade Modal -->
