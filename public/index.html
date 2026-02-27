@@ -5080,12 +5080,12 @@
 
     window.addEventListener('load', () => {
         loadDashboard();
-        // Full MetaAPI sync every 2 minutes
-        setInterval(autoSync, 120000);
-        // Light DB refresh every 15 seconds
-        setInterval(refreshDashboard, 15000);
-        // Refresh signals every 30 seconds
-        setInterval(loadSignals, 30000);
+        // Full MetaAPI sync every 60 seconds
+        setInterval(autoSync, 60000);
+        // Light DB refresh every 10 seconds
+        setInterval(refreshDashboard, 10000);
+        // Refresh signals every 60 seconds
+        setInterval(loadSignals, 60000);
     });
 </script>
     <!-- Upgrade Modal -->
