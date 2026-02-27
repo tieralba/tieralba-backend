@@ -95,11 +95,11 @@ a{text-decoration:none;color:var(--gold)}
 .pw-strength-bar{height:100%;border-radius:2px;width:0;transition:all 0.4s var(--ease)}
 
 .phone-row{display:flex;gap:8px}
-.phone-prefix{width:120px;flex-shrink:0;padding:14px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
-  color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;transition:all 0.3s var(--ease);outline:none;cursor:pointer;
+.phone-prefix{width:76px;flex-shrink:0;padding:14px 6px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:12px;transition:all 0.3s var(--ease);outline:none;cursor:pointer;
   appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2355514a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center}
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2355514a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center}
 .phone-prefix:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,78,0.08)}
 .phone-prefix option{background:var(--bg);color:var(--text)}
 .phone-row input{flex:1}
@@ -161,7 +161,7 @@ a{text-decoration:none;color:var(--gold)}
 
 <!-- NAV -->
 <nav class="nav">
-  <a href="/" class="nav-logo"><div class="nav-mark">T</div>TierAlba</a>
+  <a href="/" class="nav-logo"><img src="/logo.png" alt="TierAlba" style="width:34px;height:34px;border-radius:9px;object-fit:contain;">TierAlba</a>
   <div class="nav-secure">
     <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
     Secure Checkout
@@ -212,7 +212,7 @@ a{text-decoration:none;color:var(--gold)}
     <div class="trust-row">
       <div class="trust-item"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> SSL Encrypted</div>
       <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Secure Payment</div>
-      <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Money-back Guarantee</div>
+
     </div>
   </div>
 
@@ -348,7 +348,7 @@ a{text-decoration:none;color:var(--gold)}
       </div>
 
       <div class="checkbox-row">
-        <input type="checkbox" id="agreeRisk">
+        <input type="checkbox" id="agreeRisk" required>
         <label for="agreeRisk">I understand that trading involves significant risk and past performance does not guarantee future results</label>
       </div>
 
@@ -387,10 +387,10 @@ const PRODUCTS = {
   'tiermanage-pro':     { service:'Tier Manage', plan:'Pro Funded', name:'Pro Funded', price:299, badge:'One-time', mode:'payment', priceId:'price_1T4QVERo0AfnvbiM4bChqkQH', desc:'Our EA continues trading your funded account with a 15% profit target and strict drawdown management.', sub:'Professional management for your funded account', features:['Profit target 15%','Max drawdown 2%','Full account access','EA software provided','Private Q&A','24/7 support'], tiermanage:true },
 
   // TRADESALBA (subscription)
-  'tradesalba-standard-m': { service:'TradesAlba', plan:'Standard — Monthly', name:'Standard Monthly', price:49, badge:'Monthly', mode:'subscription', priceId:'price_1Sx9ZARo0AfnvbiMbWiYdZ0n', desc:'Access live trading signals, journal, risk management tools, and economic calendar.', sub:'Your complete trading dashboard', features:['Unlimited daily signals','AI-powered analysis','1 TradingView indicator','Trading journal','Risk management tools','24/7 support'], tradesalba:'standard' },
-  'tradesalba-standard-y': { service:'TradesAlba', plan:'Standard — Yearly', name:'Standard Yearly', price:399, badge:'Yearly — Save 32%', mode:'subscription', priceId:'price_1Sx9hbRo0AfnvbiMmM69HQ6c', desc:'Access live trading signals, journal, risk management tools, and economic calendar.', sub:'Your complete trading dashboard', features:['Unlimited daily signals','AI-powered analysis','1 TradingView indicator','Trading journal','Risk management tools','24/7 support'], tradesalba:'standard' },
-  'tradesalba-pro-m':      { service:'TradesAlba', plan:'Pro — Monthly', name:'Pro Monthly', price:89, badge:'Monthly', mode:'subscription', priceId:'price_1Sx9bMRo0AfnvbiMVTcum8SM', desc:'Everything in Standard plus Expert Advisor access, 3 TradingView indicators, and VIP support.', sub:'Your complete trading dashboard — Pro', features:['Everything in Standard','2 trading software tools','3 TradingView indicators','Advanced analytics','Broker integration (MT4/MT5)','VIP priority support'], tradesalba:'pro' },
-  'tradesalba-pro-y':      { service:'TradesAlba', plan:'Pro — Yearly', name:'Pro Yearly', price:699, badge:'Yearly — Save 34%', mode:'subscription', priceId:'price_1Sx9qRRo0AfnvbiMwhCq3fPx', desc:'Everything in Standard plus Expert Advisor access, 3 TradingView indicators, and VIP support.', sub:'Your complete trading dashboard — Pro', features:['Everything in Standard','2 trading software tools','3 TradingView indicators','Advanced analytics','Broker integration (MT4/MT5)','VIP priority support'], tradesalba:'pro' },
+  'tradesalba-standard-m': { service:'TradesAlba', plan:'Standard — Monthly', name:'Standard Monthly', price:49.99, badge:'Monthly', mode:'subscription', priceId:'price_1Sx9ZARo0AfnvbiMbWiYdZ0n', desc:'Access live trading signals, journal, risk management tools, and economic calendar.', sub:'Your complete trading dashboard', features:['Unlimited daily signals','AI-powered analysis','1 TradingView indicator','Trading journal','Risk management tools','24/7 support'], tradesalba:'standard' },
+  'tradesalba-standard-y': { service:'TradesAlba', plan:'Standard — Yearly', name:'Standard Yearly', price:389.92, badge:'Yearly — Save 35%', mode:'subscription', priceId:'price_1Sx9hbRo0AfnvbiMmM69HQ6c', desc:'Access live trading signals, journal, risk management tools, and economic calendar.', sub:'Your complete trading dashboard', features:['Unlimited daily signals','AI-powered analysis','1 TradingView indicator','Trading journal','Risk management tools','24/7 support'], tradesalba:'standard' },
+  'tradesalba-pro-m':      { service:'TradesAlba', plan:'Pro — Monthly', name:'Pro Monthly', price:89.99, badge:'Monthly', mode:'subscription', priceId:'price_1Sx9bMRo0AfnvbiMVTcum8SM', desc:'Everything in Standard plus Expert Advisor access, 3 TradingView indicators, and VIP support.', sub:'Your complete trading dashboard — Pro', features:['Everything in Standard','2 trading software tools','3 TradingView indicators','Advanced analytics','Broker integration (MT4/MT5)','VIP priority support'], tradesalba:'pro' },
+  'tradesalba-pro-y':      { service:'TradesAlba', plan:'Pro — Yearly', name:'Pro Yearly', price:701.92, badge:'Yearly — Save 35%', mode:'subscription', priceId:'price_1Sx9qRRo0AfnvbiMwhCq3fPx', desc:'Everything in Standard plus Expert Advisor access, 3 TradingView indicators, and VIP support.', sub:'Your complete trading dashboard — Pro', features:['Everything in Standard','2 trading software tools','3 TradingView indicators','Advanced analytics','Broker integration (MT4/MT5)','VIP priority support'], tradesalba:'pro' },
 };
 
 /* ═══ LOAD PRODUCT FROM URL ═══ */
