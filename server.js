@@ -626,8 +626,8 @@ app.set('trust proxy', 1);
 // Rate limiting: previene spam/attacchi
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 2000, // dashboard refresh ogni 15s = ~300 calls/15min per utente
-  message: { error: 'Too many requests, please try again later' }
+  max: 100, // max 100 richieste per IP
+  message: 'Troppe richieste, riprova tra 15 minuti'
 });
 app.use('/api/', limiter);
 
