@@ -37,9 +37,6 @@ function emailFrom() {
 
 function emailWrapper(content) {
   return `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
-                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
-                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
-                    </div>
     <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
       <img src="${LOGO_URL}" alt="TierAlba" style="height:40px;width:auto;" />
     </div>
@@ -295,7 +292,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                 [customerEmail]
               );
               if (verifyCheck.rows[0] && !verifyCheck.rows[0].email_verified && verifyCheck.rows[0].verify_token) {
-                const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
+                const baseUrl = process.env.APP_URL || 'https://tieralba.com';
                 const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyCheck.rows[0].verify_token}`;
                 verifyBlock = `
                   <div style="background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.15);border-radius:12px;padding:20px;margin-bottom:24px;">
@@ -723,7 +720,7 @@ app.post('/api/checkout', async (req, res) => {
     }
     
     // Create Stripe checkout session
-    const baseUrl = process.env.APP_URL || req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app';
+    const baseUrl = process.env.APP_URL || req.headers.origin || 'https://tieralba.com';
     
     const sessionConfig = {
       payment_method_types: ['card'],
@@ -913,7 +910,7 @@ app.post('/api/auth/register', async (req, res) => {
     const user = result.rows[0];
     
     // Send welcome + verification email
-    const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
+    const baseUrl = process.env.APP_URL || 'https://tieralba.com';
     const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyToken}`;
     
     if (resend) {
@@ -1178,7 +1175,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       [resetToken, expires, user.rows[0].id]
     );
 
-    const baseUrl = process.env.APP_URL || `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'tieralba-backend-production-f18f.up.railway.app'}`;
+    const baseUrl = process.env.APP_URL || `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'tieralba.com'}`;
     const resetUrl = `${baseUrl}/reset-password.html?token=${resetToken}`;
     const userName = user.rows[0].name || '';
 
@@ -2068,7 +2065,7 @@ app.delete('/api/signals/:id', async (req, res) => {
 app.get('/api/admin/signals', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
-    console.log('Admin login attempt. Key received:', JSON.stringify(adminKey), 'Expected:', JSON.stringify(process.env.ADMIN_KEY));
+    
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
 
     const result = await pool.query('SELECT * FROM signals ORDER BY created_at DESC LIMIT 100');
@@ -2175,8 +2172,8 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
       payment_method_types: ['card'],
       customer_email: userResult.rows[0].email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard?upgrade=success`,
-      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard?upgrade=cancelled`,
+      success_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba.com'}/dashboard?upgrade=success`,
+      cancel_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://tieralba.com'}/dashboard?upgrade=cancelled`,
       metadata: { userId: req.userId.toString() }
     });
     
@@ -2213,7 +2210,7 @@ app.post('/api/stripe/portal', authenticateToken, async (req, res) => {
     
     const session = await stripe.billingPortal.sessions.create({
       customer: result.rows[0].stripe_customer_id,
-      return_url: `${req.headers.origin || 'https://tieralba-backend-production-f18f.up.railway.app'}/dashboard`
+      return_url: `${req.headers.origin || 'https://tieralba.com'}/dashboard`
     });
     
     res.json({ url: session.url });
