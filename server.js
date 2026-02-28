@@ -429,6 +429,22 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 // Body parser: permette di leggere JSON nelle richieste
 app.use(express.json());
 
+// ============================================
+// MAINTENANCE MODE — set MAINTENANCE_MODE=true in env to show coming-soon page
+// Remove or set to false when ready to launch
+// ============================================
+const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === 'true';
+
+if (MAINTENANCE_MODE) {
+  // In maintenance mode: serve coming-soon for ALL frontend routes
+  // but keep /api/* working so you can still test backend
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/health')) return next();
+    res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
+  });
+  console.log('🚧 MAINTENANCE MODE ACTIVE — coming-soon page served on all routes');
+}
+
 // Explicit routes FIRST (before static, so landing.html is served on /)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'landing.html'));
