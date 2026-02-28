@@ -192,7 +192,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     if (referrerData.rows[0]) {
                       const newBalance = parseFloat(referrerData.rows[0].referral_balance) || 0;
                       await resend.emails.send({
-                        from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+                        from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
                         to: referrerData.rows[0].email,
                         subject: `TierAlba — You Earned €${commission.toFixed(2)} Commission! 💰`,
                         html: `
@@ -228,13 +228,37 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Referral commission error:', refErr);
         }
 
-        // ─── PURCHASE CONFIRMATION EMAIL ───
+        // ─── PURCHASE CONFIRMATION EMAIL (includes verify link for new users) ───
         try {
           if (resend && customerEmail) {
             const serviceNames = { tierpass: 'Tier Pass', tiermanage: 'Tier Manage', tradesalba: 'TradesAlba' };
             const serviceName = serviceNames[service] || service;
+            
+            // Check if user needs email verification
+            let verifyBlock = '';
+            try {
+              const verifyCheck = await pool.query(
+                'SELECT verify_token, email_verified, name FROM users WHERE LOWER(email) = LOWER($1)',
+                [customerEmail]
+              );
+              if (verifyCheck.rows[0] && !verifyCheck.rows[0].email_verified && verifyCheck.rows[0].verify_token) {
+                const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
+                const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyCheck.rows[0].verify_token}`;
+                verifyBlock = `
+                  <div style="background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.15);border-radius:12px;padding:20px;margin-bottom:24px;">
+                    <p style="margin:0 0 12px;font-size:14px;color:#5ee0a0;font-weight:600;">📧 Verify your email to unlock all features</p>
+                    <div style="text-align:center;">
+                      <a href="${verifyUrl}" style="display:inline-block;padding:10px 28px;background:rgba(94,224,160,0.15);border:1px solid rgba(94,224,160,0.3);color:#5ee0a0;text-decoration:none;font-weight:600;border-radius:8px;font-size:13px;">Verify Email</a>
+                    </div>
+                  </div>`;
+              }
+            } catch (vErr) { /* non-fatal */ }
+
+            const userName = await pool.query('SELECT name FROM users WHERE LOWER(email) = LOWER($1)', [customerEmail]);
+            const displayName = userName.rows[0]?.name?.split(' ')[0] || 'there';
+
             await resend.emails.send({
-              from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+              from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
               to: customerEmail,
               subject: `TierAlba — Your ${serviceName} is Active! 🎉`,
               html: `
@@ -243,8 +267,9 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Thank You for Your Purchase!</h1>
                   </div>
                   <div style="padding:40px 32px;color:#ece8de;">
-                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi there,</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi ${displayName},</p>
                     <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Your <strong style="color:#c8a94e;">${serviceName} — ${planLabel}</strong> has been activated successfully.</p>
+                    ${verifyBlock}
                     ${service === 'tierpass' || service === 'tiermanage' ? '<p style="font-size:16px;line-height:1.8;margin-bottom:24px;">📅 <strong>Next step:</strong> Book your private Zoom setup session. Our team will install the EA on your MetaTrader platform. Reply to this email or contact us at support@tieralba.com to schedule.</p>' : ''}
                     ${service === 'tradesalba' ? '<p style="font-size:16px;line-height:1.8;margin-bottom:24px;">🚀 <strong>Next step:</strong> Log in to your dashboard to access signals, journal, risk tools, and more.</p>' : ''}
                     <div style="text-align:center;margin:32px 0;">
@@ -253,7 +278,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     <p style="font-size:14px;color:#8e897e;line-height:1.7;">If you have any questions, reply to this email or contact support@tieralba.com</p>
                   </div>
                   <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                    <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                    <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
                   </div>
                 </div>`
             });
@@ -272,10 +297,47 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           const priceId = sub.items.data[0]?.price?.id;
           const proPriceIds = ['price_1Sx9bMRo0AfnvbiMVTcum8SM', 'price_1Sx9qRRo0AfnvbiMwhCq3fPx'];
           const plan = proPriceIds.includes(priceId) ? 'pro' : 'standard';
-          await pool.query(
-            'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2',
+          const renewed = await pool.query(
+            'UPDATE users SET plan = $1 WHERE stripe_subscription_id = $2 RETURNING email, name',
             [plan, sub.id]
           );
+
+          // Send renewal confirmation email
+          if (renewed.rows.length > 0 && resend) {
+            try {
+              const renewedUser = renewed.rows[0];
+              const planLabel = plan === 'pro' ? 'Pro' : 'Standard';
+              const nextBilling = sub.current_period_end ? new Date(sub.current_period_end * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
+              await resend.emails.send({
+                from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+                to: renewedUser.email,
+                subject: `TierAlba — Your ${planLabel} Subscription Has Been Renewed ✅`,
+                html: `
+                  <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#c8a94e,#b59840);padding:40px 32px;text-align:center;">
+                      <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Subscription Renewed!</h1>
+                    </div>
+                    <div style="padding:40px 32px;color:#ece8de;">
+                      <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi${renewedUser.name ? ' ' + renewedUser.name.split(' ')[0] : ''},</p>
+                      <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Your <strong style="color:#c8aa6e;">TradesAlba ${planLabel}</strong> subscription has been successfully renewed. You continue to have full access to all features.</p>
+                      <div style="background:rgba(200,169,78,0.06);border:1px solid rgba(200,169,78,0.1);border-radius:12px;padding:20px;margin-bottom:24px;">
+                        <p style="margin:0;font-size:14px;color:#8e897e;">📅 <strong style="color:#ece8de;">Next billing date:</strong> ${nextBilling}</p>
+                      </div>
+                      <div style="text-align:center;margin:32px 0;">
+                        <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">Go to Dashboard</a>
+                      </div>
+                      <p style="font-size:14px;color:#8e897e;line-height:1.7;">To manage your subscription, visit your dashboard or contact support@tieralba.com</p>
+                    </div>
+                    <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                      <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
+                    </div>
+                  </div>`
+              });
+              console.log(`📧 Renewal confirmation email sent to ${renewedUser.email}`);
+            } catch (renewEmailErr) {
+              console.error('Renewal email error (non-fatal):', renewEmailErr.message);
+            }
+          }
         }
         break;
       }
@@ -302,7 +364,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           try {
             if (resend && downgraded.rows[0].email) {
               await resend.emails.send({
-                from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+                from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
                 to: downgraded.rows[0].email,
                 subject: 'TierAlba — Your Subscription Has Been Cancelled',
                 html: `
@@ -346,7 +408,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             const planName = abandonedMeta.planLabel || '';
             
             await resend.emails.send({
-              from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+              from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
               to: abandonedEmail,
               subject: 'TierAlba — You Left Something Behind',
               html: `
@@ -390,7 +452,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         if (failedEmail && resend) {
           try {
             await resend.emails.send({
-              from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+              from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
               to: failedEmail,
               subject: 'TierAlba — Payment Failed — Action Required',
               html: `
@@ -586,28 +648,8 @@ app.post('/api/checkout', async (req, res) => {
       );
       userId = result.rows[0].id;
       
-      // Send verification email (non-blocking)
-      if (resend) {
-        const baseUrl = process.env.APP_URL || 'https://tieralba-backend-production-f18f.up.railway.app';
-        const verifyUrl = `${baseUrl}/api/auth/verify?token=${verifyToken}`;
-        resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
-          to: [emailLower],
-          subject: 'Welcome to TierAlba — Verify Your Email',
-          html: `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
-            <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
-              <h1 style="margin:0;font-size:24px;color:#c8aa6e;">TierAlba</h1>
-            </div>
-            <div style="padding:40px;">
-              <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Welcome, ${firstName}!</h2>
-              <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 24px;">Thank you for purchasing <strong style="color:#c8aa6e;">${product.planLabel}</strong>. Your account is ready.</p>
-              <p style="color:#9b978f;font-size:15px;line-height:1.6;margin:0 0 32px;">Please verify your email to unlock all features:</p>
-              <div style="text-align:center;margin:0 0 32px;">
-                <a href="${verifyUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#c8aa6e,#b89a5a);color:#0a0b0f;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;text-transform:uppercase;letter-spacing:1.2px;">Verify Email</a>
-              </div>
-            </div></div>`
-        }).catch(err => console.error('Email send error:', err));
-      }
+      // NOTE: Welcome + verification email is sent by the webhook (checkout.session.completed)
+      // together with purchase confirmation to avoid sending 2 emails at once
     }
     
     // Create Stripe checkout session
@@ -807,7 +849,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (resend) {
       try {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
           to: [email.toLowerCase()],
           subject: 'Welcome to TierAlba — Verify Your Email',
           html: `
@@ -986,7 +1028,7 @@ app.get('/api/auth/verify', async (req, res) => {
     try {
       if (resend) {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
           to: result.rows[0].email,
           subject: 'Welcome to TierAlba — Here\'s How to Get Started 🚀',
           html: `
@@ -1068,7 +1110,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     if (resend) {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
         to: [email.toLowerCase()],
         subject: 'TierAlba — Reset Your Password',
         html: `
@@ -1815,7 +1857,7 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
         if (userData.rows[0]) {
           // User confirmation
           await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+            from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
             to: userData.rows[0].email,
             subject: `TierAlba — Payout Request Received (€${balance.toFixed(2)})`,
             html: `
@@ -1841,7 +1883,7 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
           // Admin notification
           const adminEmail = process.env.ADMIN_EMAIL || 'support@tieralba.com';
           await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+            from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
             to: adminEmail,
             subject: `[ADMIN] Payout Request: €${balance.toFixed(2)} → ${wallet}`,
             html: `<div style="font-family:monospace;padding:20px;background:#111;color:#eee;border-radius:8px;">
@@ -2393,7 +2435,7 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
     if (resend) {
       try {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <onboarding@resend.dev>',
+          from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
           to: ['info@tieralba.com'],
           subject: '[TierAlba] New support request from ' + user.email,
           html: '<div style="font-family:sans-serif;padding:20px;">' +
@@ -2527,6 +2569,55 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
     }
 
     console.log(`🔧 Admin updated user ${userId}: plan=${plan}, services=${JSON.stringify(active_services)}`);
+    
+    // Notify user about account changes
+    if (resend) {
+      try {
+        const userData = await pool.query('SELECT email, name FROM users WHERE id = $1', [userId]);
+        if (userData.rows[0]) {
+          const u = userData.rows[0];
+          const serviceNames = { tierpass: 'Tier Pass', tiermanage: 'Tier Manage', tradesalba: 'TradesAlba' };
+          const activeList = Object.entries(services)
+            .filter(([, v]) => v.status === 'active')
+            .map(([k, v]) => `${serviceNames[k] || k} — ${v.plan || 'Active'}`)
+            .join(', ') || 'None';
+          
+          await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+            to: u.email,
+            subject: hasAnyActive 
+              ? 'TierAlba — Your Account Has Been Updated ✅' 
+              : 'TierAlba — Your Account Services Have Changed',
+            html: `
+              <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <h1 style="color:#ece8de;margin:0;font-size:26px;">Account Update</h1>
+                </div>
+                <div style="padding:40px 32px;color:#ece8de;">
+                  <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi${u.name ? ' ' + u.name.split(' ')[0] : ''},</p>
+                  <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Your TierAlba account has been updated by our team.</p>
+                  <div style="background:rgba(200,169,78,0.06);border:1px solid rgba(200,169,78,0.1);border-radius:12px;padding:20px;margin-bottom:24px;">
+                    <p style="margin:0 0 8px;font-size:14px;color:#8e897e;"><strong style="color:#ece8de;">Plan:</strong> ${(plan || 'free').charAt(0).toUpperCase() + (plan || 'free').slice(1)}</p>
+                    <p style="margin:0;font-size:14px;color:#8e897e;"><strong style="color:#ece8de;">Active services:</strong> ${activeList}</p>
+                  </div>
+                  ${!hasAnyActive ? '<p style="font-size:15px;line-height:1.8;margin-bottom:24px;color:#e87272;">Your EA license keys have been deactivated. If you believe this is an error, please contact support.</p>' : ''}
+                  <div style="text-align:center;margin:32px 0;">
+                    <a href="https://tieralba.com/dashboard" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:14px;">View Dashboard</a>
+                  </div>
+                  <p style="font-size:14px;color:#8e897e;line-height:1.7;">Questions? Contact support@tieralba.com</p>
+                </div>
+                <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                  <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
+                </div>
+              </div>`
+          });
+          console.log(`📧 Account update email sent to ${u.email}`);
+        }
+      } catch (notifErr) {
+        console.error('Admin update notification email error (non-fatal):', notifErr.message);
+      }
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error('Admin update user error:', error);
