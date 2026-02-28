@@ -453,6 +453,16 @@ if (MAINTENANCE_MODE) {
   console.log('🚧 MAINTENANCE MODE ACTIVE — coming-soon on ' + CUSTOM_DOMAIN + ' only');
 }
 
+// SEO: Sitemap & Robots
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
 // Explicit routes FIRST (before static, so landing.html is served on /)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'landing.html'));
