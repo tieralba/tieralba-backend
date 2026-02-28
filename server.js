@@ -669,20 +669,33 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ============================================
+// EA LICENSE HELPER — Check if user has active service
+// ============================================
+// Returns true if user has TradesAlba sub OR active Tier Pass/Manage
+function hasActiveService(user) {
+  // TradesAlba subscription (standard/pro plan)
+  if ((user.plan === 'standard' || user.plan === 'pro') && 
+      (!user.plan_expires_at || new Date(user.plan_expires_at) > new Date())) {
+    return true;
+  }
+  // Tier Pass or Tier Manage (one-time, stored in active_services)
+  const services = user.active_services || {};
+  if (services.tierpass?.status === 'active') return true;
+  if (services.tiermanage?.status === 'active') return true;
+  return false;
+}
+
+// ============================================
 // PROTECTED EA FILE DOWNLOADS
 // ============================================
 
 app.get('/ea-files/:filename', authenticateToken, async (req, res) => {
   try {
-    const user = await pool.query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId]);
+    const user = await pool.query('SELECT plan, plan_expires_at, active_services FROM users WHERE id = $1', [req.userId]);
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
-    const u = user.rows[0];
-    const subActive = u.plan === 'standard' || u.plan === 'pro';
-    const subNotExpired = !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
-
-    if (!subActive || !subNotExpired) {
-      return res.status(403).json({ error: 'Active subscription required to download EA files.' });
+    if (!hasActiveService(user.rows[0])) {
+      return res.status(403).json({ error: 'Active service required to download EA files.' });
     }
 
     const filename = path.basename(req.params.filename);
@@ -2084,7 +2097,7 @@ app.post('/api/ea/verify', async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT el.*, u.plan, u.plan_expires_at, u.email
+      `SELECT el.*, u.plan, u.plan_expires_at, u.email, u.active_services
        FROM ea_licenses el
        JOIN users u ON u.id = el.user_id
        WHERE el.license_key = $1 AND el.product = $2 AND el.is_active = true`,
@@ -2097,12 +2110,9 @@ app.post('/api/ea/verify', async (req, res) => {
 
     const license = result.rows[0];
 
-    // Check if subscription is active
-    const subActive = license.plan === 'standard' || license.plan === 'pro';
-    const subNotExpired = !license.plan_expires_at || new Date(license.plan_expires_at) > new Date();
-
-    if (!subActive || !subNotExpired) {
-      return res.json({ valid: false, expired: true, error: 'Subscription expired' });
+    // Check if user has any active service (sub OR tierpass/tiermanage)
+    if (!hasActiveService(license)) {
+      return res.json({ valid: false, expired: true, error: 'Service expired or inactive' });
     }
 
     // Update last verification time and MT account
@@ -2135,19 +2145,14 @@ app.get('/api/ea/license', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/ea/license/generate — Generate license keys for user (requires auth + active sub)
+// POST /api/ea/license/generate — Generate license keys for user (requires auth + active service)
 app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
   try {
-    // Check subscription
-    const user = await pool.query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId]);
+    const user = await pool.query('SELECT plan, plan_expires_at, active_services FROM users WHERE id = $1', [req.userId]);
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
-    const u = user.rows[0];
-    const subActive = u.plan === 'standard' || u.plan === 'pro';
-    const subNotExpired = !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
-
-    if (!subActive || !subNotExpired) {
-      return res.status(403).json({ error: 'Subscription not active. Renew to generate license keys.' });
+    if (!hasActiveService(user.rows[0])) {
+      return res.status(403).json({ error: 'No active service. Purchase a plan to generate license keys.' });
     }
 
     // Check if already has licenses for both products
@@ -2470,6 +2475,22 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
       'UPDATE users SET active_services = $1, plan = $2 WHERE id = $3',
       [JSON.stringify(active_services || {}), plan || 'free', userId]
     );
+
+    // If user no longer has any active service, deactivate their EA licenses
+    const services = active_services || {};
+    const hasAnyActive = (plan === 'standard' || plan === 'pro') ||
+      services.tierpass?.status === 'active' ||
+      services.tiermanage?.status === 'active';
+    
+    if (!hasAnyActive) {
+      const deactivated = await pool.query(
+        'UPDATE ea_licenses SET is_active = false WHERE user_id = $1 AND is_active = true RETURNING id',
+        [userId]
+      );
+      if (deactivated.rowCount > 0) {
+        console.log(`🔑 Admin deactivated ${deactivated.rowCount} license(s) for user ${userId}`);
+      }
+    }
 
     console.log(`🔧 Admin updated user ${userId}: plan=${plan}, services=${JSON.stringify(active_services)}`);
     res.json({ success: true });
