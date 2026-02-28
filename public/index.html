@@ -3232,7 +3232,7 @@
         if (user) {
             const initials = (user.name || user.email || 'U').substring(0, 2).toUpperCase();
             document.getElementById('userAvatar').textContent = initials;
-            document.getElementById('userName').textContent = user.name || user.email?.split('@')[0] || 'Utente';
+            document.getElementById('userName').textContent = user.name || user.email?.split('@')[0] || 'User';
             document.getElementById('userEmail').textContent = user.email || '';
             document.getElementById('settingsEmail').textContent = user.email || '—';
             checkAdminAccess(user.email);
@@ -3243,7 +3243,7 @@
         if (!me) return;
 
         if (me.user?.created_at) {
-            document.getElementById('settingsDate').textContent = new Date(me.user.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('settingsDate').textContent = new Date(me.user.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
         }
 
         // Load stats
@@ -3293,7 +3293,7 @@
     // ══════════════════════════════════════════════
     // UPDATE STATS
     // ══════════════════════════════════════════════
-    function fmt(v) { return '€' + Math.round(v || 0).toLocaleString('it-IT'); }
+    function fmt(v) { return '€' + Math.round(v || 0).toLocaleString('en-US'); }
 
     function updateStats(s) {
         document.getElementById('statEquity').textContent = fmt(s.equity);
@@ -3386,7 +3386,7 @@
         charts.equity = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: history.map(h => new Date(h.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })),
+                labels: history.map(h => new Date(h.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })),
                 datasets: [{
                     data: history.map(h => h.equity),
                     borderColor: lineColor,
@@ -3407,7 +3407,7 @@
                         padding: 12, cornerRadius: 8, displayColors: false,
                         callbacks: {
                             title: (items) => items[0]?.label || '',
-                            label: (ctx) => 'Equity: €' + Math.round(ctx.parsed.y).toLocaleString('it-IT')
+                            label: (ctx) => 'Equity: €' + Math.round(ctx.parsed.y).toLocaleString('en-US')
                         }
                     }
                 },
@@ -3441,7 +3441,7 @@
         // Group closed trades by day
         const daily = {};
         trades.filter(t => t.closed_at).forEach(t => {
-            const day = new Date(t.closed_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+            const day = new Date(t.closed_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
             daily[day] = (daily[day] || 0) + (parseFloat(t.profit) || 0);
         });
 
@@ -3468,7 +3468,7 @@
                         borderColor: 'rgba(255,255,255,0.06)', borderWidth: 1,
                         padding: 10, cornerRadius: 8, displayColors: false,
                         callbacks: {
-                            label: (ctx) => (ctx.parsed.y >= 0 ? '+' : '') + '€' + ctx.parsed.y.toLocaleString('it-IT')
+                            label: (ctx) => (ctx.parsed.y >= 0 ? '+' : '') + '€' + ctx.parsed.y.toLocaleString('en-US')
                         }
                     }
                 },
@@ -3518,7 +3518,7 @@
                         <div class="trade-row-symbol"><span class="trade-row-dir ${dirClass}">${dir}</span>${t.symbol || '—'}</div>
                         <div class="trade-row-lots">${parseFloat(t.lots || 0).toFixed(2)}</div>
                         <div class="trade-row-price">${price}</div>
-                        <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('it-IT')}</div>
+                        <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('en-US')}</div>
                         <div class="trade-row-time">${tradeTimeAgo(t.opened_at)}</div>
                     </div>`;
                 }).join('');
@@ -3539,7 +3539,7 @@
                         <div class="trade-row-symbol"><span class="trade-row-dir ${dirClass}">${dir}</span>${t.symbol || '—'}</div>
                         <div class="trade-row-lots">${parseFloat(t.lots || 0).toFixed(2)}</div>
                         <div class="trade-row-price">${price}</div>
-                        <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('it-IT')}</div>
+                        <div class="trade-row-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}€${Math.round(pnl).toLocaleString('en-US')}</div>
                         <div class="trade-row-time">${tradeTimeAgo(t.closed_at)}</div>
                     </div>`;
                 }).join('');
@@ -3556,7 +3556,7 @@
         if (hrs < 24) return hrs + 'h ago';
         const days = Math.floor(hrs / 24);
         if (days < 7) return days + 'd ago';
-        return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+        return new Date(dateStr).toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
     }
 
     function drawMonthlyChart(trades) {
@@ -3653,7 +3653,7 @@
             const d=peak>0?parseFloat(((cum-peak)/peak*100).toFixed(2)):0;
             if(d<maxDD) maxDD=d;
             dd.push(d); cumD.push(parseFloat(cum.toFixed(2)));
-            labels.push(new Date(t.closed_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}));
+            labels.push(new Date(t.closed_at).toLocaleDateString('en-US',{day:'2-digit',month:'short'}));
         });
         const ddEl=document.getElementById('perfMaxDD');
         if(ddEl) ddEl.textContent=maxDD.toFixed(1)+'%';
@@ -4559,7 +4559,7 @@
         if (trades?.trades) {
             trades.trades.forEach(t => {
                 const pnl = parseFloat(t.profit) || 0;
-                const date = t.closed_at ? new Date(t.closed_at).toLocaleDateString('it-IT', { day:'2-digit', month:'short' }) : 'Open';
+                const date = t.closed_at ? new Date(t.closed_at).toLocaleDateString('en-US', { day:'2-digit', month:'short' }) : 'Open';
                 const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.dataset.symbol = t.symbol || '';
@@ -4718,7 +4718,7 @@
             const dir = e.direction || '';
             const dc = dir==='BUY'?'buy':dir==='SELL'?'sell':'';
             const pnl = e.pnl !== null ? parseFloat(e.pnl) : null;
-            const date = e.trade_date ? new Date(e.trade_date).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+            const date = e.trade_date ? new Date(e.trade_date).toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
             const moodE = {confident:'😎',calm:'😌',neutral:'😐',anxious:'😰',fomo:'🤑',revenge:'😤'}[e.mood]||'';
             const rulesIcon = e.followed_rules===true?'✅':e.followed_rules===false?'❌':'';
             return `<div class="journal-card">
