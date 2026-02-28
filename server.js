@@ -430,22 +430,27 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 app.use(express.json());
 
 // ============================================
-// MAINTENANCE MODE — set MAINTENANCE_MODE=true in env to show coming-soon page
-// Remove or set to false when ready to launch
+// MAINTENANCE MODE — coming soon ONLY on custom domain (tieralba.com)
+// Railway domain shows the full site for testing
+// Set MAINTENANCE_MODE=true and CUSTOM_DOMAIN=tieralba.com in env
+// Remove or set MAINTENANCE_MODE=false when ready to launch
 // ============================================
 const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === 'true';
+const CUSTOM_DOMAIN = process.env.CUSTOM_DOMAIN || 'tieralba.com';
 
 if (MAINTENANCE_MODE) {
-  // Middleware: intercept ALL requests before any route
   app.use((req, res, next) => {
-    // Let API calls and webhooks through
+    const host = req.hostname || req.headers.host || '';
+    // Only show coming soon on custom domain
+    if (!host.includes(CUSTOM_DOMAIN)) return next();
+    // Let API calls through
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) return next();
-    // Let static file extensions through (images, css, js, fonts)
+    // Let static files through
     if (req.path.match(/\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp)$/)) return next();
-    // Everything else → coming soon
+    // Coming soon for everything else
     return res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
   });
-  console.log('🚧 MAINTENANCE MODE ACTIVE — coming-soon page served on all routes');
+  console.log('🚧 MAINTENANCE MODE ACTIVE — coming-soon on ' + CUSTOM_DOMAIN + ' only');
 }
 
 // Explicit routes FIRST (before static, so landing.html is served on /)
