@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TierAlba — Coming Soon</title>
+<meta name="description" content="TierAlba — Professional prop firm services. Challenge passing, funded account management, and premium trading dashboard. Launching soon.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#06070a;--gold:#c8a94e;--gold-l:#e8d5a0;--gold-d:rgba(200,169,78,0.06);
+  --text:#ece8de;--text-2:#8e897e;--text-3:#55514a;
+  --border:rgba(255,255,255,0.04);
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+html{overflow-x:hidden}
+body{
+  font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;overflow:hidden;position:relative;
+}
+::selection{background:rgba(200,169,78,0.25)}
+
+/* Ambient glow */
+.ambient{position:fixed;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:0.07;z-index:0}
+.ambient-1{width:600px;height:600px;background:var(--gold);top:-200px;left:-100px;animation:drift1 20s ease-in-out infinite}
+.ambient-2{width:500px;height:500px;background:var(--gold);bottom:-200px;right:-100px;animation:drift2 25s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(80px,60px)}}
+@keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-60px,-80px)}}
+
+/* Grid overlay */
+.grid-overlay{
+  position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0.025;
+  background-image:linear-gradient(rgba(200,169,78,0.3) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(200,169,78,0.3) 1px, transparent 1px);
+  background-size:80px 80px;
+}
+
+/* Grain */
+.grain{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:0.3;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* Content */
+.container{
+  position:relative;z-index:10;text-align:center;padding:2rem;
+  max-width:600px;animation:fadeUp 1.2s var(--ease) both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* Logo */
+.logo{display:inline-flex;align-items:center;gap:14px;margin-bottom:3rem;animation:fadeUp 1s var(--ease) 0.1s both}
+.logo-mark{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,var(--gold),#b59840);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-weight:800;font-size:22px;color:var(--bg);
+}
+.logo-text{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
+
+/* Diamond separator */
+.diamond{
+  width:10px;height:10px;border:1.5px solid rgba(200,169,78,0.3);
+  transform:rotate(45deg);margin:0 auto 2.5rem;
+  animation:fadeUp 1s var(--ease) 0.3s both;
+}
+
+/* Heading */
+h1{
+  font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,56px);
+  font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin-bottom:1.25rem;
+  animation:fadeUp 1s var(--ease) 0.4s both;
+}
+h1 span{
+  background:linear-gradient(135deg,var(--gold),var(--gold-l));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+p{
+  font-size:16px;color:var(--text-2);line-height:1.8;margin-bottom:2.5rem;
+  max-width:440px;margin-left:auto;margin-right:auto;
+  animation:fadeUp 1s var(--ease) 0.55s both;
+}
+
+/* Notify form */
+.notify-form{
+  display:flex;gap:10px;max-width:420px;margin:0 auto 2rem;
+  animation:fadeUp 1s var(--ease) 0.7s both;
+}
+.notify-input{
+  flex:1;padding:14px 18px;background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;
+  outline:none;transition:all 0.3s var(--ease);
+}
+.notify-input:focus{border-color:rgba(200,169,78,0.3);background:rgba(200,169,78,0.03)}
+.notify-input::placeholder{color:var(--text-3)}
+.notify-btn{
+  padding:14px 28px;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),#b59840);
+  color:#06070a;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.8px;
+  transition:all 0.3s var(--ease);white-space:nowrap;
+}
+.notify-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,169,78,0.3)}
+.notify-btn:active{transform:translateY(0)}
+
+.notify-success{
+  display:none;padding:12px 20px;border-radius:10px;
+  background:rgba(94,224,160,0.06);border:1px solid rgba(94,224,160,0.15);
+  color:#5ee0a0;font-size:13px;font-weight:600;max-width:420px;margin:0 auto 2rem;
+}
+.notify-success.show{display:block;animation:fadeUp 0.4s var(--ease)}
+
+/* Services preview */
+.services{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:3rem;
+  animation:fadeUp 1s var(--ease) 0.85s both;
+}
+.service-tag{
+  padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;
+  letter-spacing:0.8px;text-transform:uppercase;
+  background:var(--gold-d);border:1px solid rgba(200,169,78,0.08);color:var(--gold);
+  transition:all 0.3s var(--ease);
+}
+.service-tag:hover{border-color:rgba(200,169,78,0.2);background:rgba(200,169,78,0.1)}
+
+/* Socials */
+.socials{
+  display:flex;gap:16px;justify-content:center;
+  animation:fadeUp 1s var(--ease) 1s both;
+}
+.social-link{
+  width:40px;height:40px;border-radius:10px;
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  color:var(--text-3);transition:all 0.3s var(--ease);
+}
+.social-link:hover{border-color:rgba(200,169,78,0.2);color:var(--gold);background:var(--gold-d)}
+.social-link svg{width:18px;height:18px;fill:currentColor}
+
+/* Floating shapes */
+.shape{position:absolute;pointer-events:none;opacity:0.04;z-index:2}
+.s1{width:50px;height:50px;border:1.5px solid var(--gold);transform:rotate(45deg);top:15%;left:8%;animation:shapeFloat 18s ease-in-out infinite}
+.s2{width:70px;height:70px;border:1.5px solid var(--gold);border-radius:50%;bottom:20%;right:10%;animation:shapeFloat 22s ease-in-out infinite reverse}
+.s3{width:35px;height:35px;border:1.5px solid var(--gold);transform:rotate(45deg);top:60%;left:5%;animation:shapeFloat 15s ease-in-out infinite 3s}
+.s4{width:55px;height:55px;border:1.5px solid var(--gold);border-radius:50%;top:10%;right:15%;animation:shapeFloat 20s ease-in-out infinite 5s}
+@keyframes shapeFloat{0%,100%{transform:rotate(45deg) translate(0,0)}25%{transform:rotate(45deg) translate(15px,-20px)}50%{transform:rotate(45deg) translate(-10px,25px)}75%{transform:rotate(45deg) translate(20px,10px)}}
+
+/* Pulse line */
+.pulse-line{
+  position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
+  width:60px;height:2px;border-radius:1px;overflow:hidden;opacity:0.2;z-index:10;
+}
+.pulse-line::after{
+  content:'';position:absolute;width:30px;height:100%;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  animation:pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse{0%{left:-30px}100%{left:60px}}
+
+@media(max-width:500px){
+  .notify-form{flex-direction:column}
+  .notify-btn{width:100%}
+  .services{gap:8px}
+  .service-tag{font-size:11px;padding:6px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="grid-overlay"></div>
+<div class="grain"></div>
+
+<div class="shape s1"></div>
+<div class="shape s2"></div>
+<div class="shape s3"></div>
+<div class="shape s4"></div>
+
+<div class="container">
+  <div class="logo">
+    <img src="/logo.png" alt="TierAlba" class="logo-img">
+    <div class="logo-text">TierAlba</div>
+  </div>
+
+  <div class="diamond"></div>
+
+  <h1>Something <span>Powerful</span> Is Coming</h1>
+  <p>We're building the next generation of prop firm services. Automated challenge passing, funded account management, and a premium trading dashboard — all in one platform.</p>
+
+  <div class="notify-form" id="notifyForm">
+    <input type="email" class="notify-input" id="notifyEmail" placeholder="Enter your email for early access" required>
+    <button class="notify-btn" onclick="handleNotify()">Notify Me</button>
+  </div>
+  <div class="notify-success" id="notifySuccess">✓ You're on the list! We'll notify you at launch.</div>
+
+  <div class="services">
+    <div class="service-tag">Tier Pass</div>
+    <div class="service-tag">Tier Manage</div>
+    <div class="service-tag">TradesAlba</div>
+  </div>
+
+  <div class="socials">
+    <a href="https://t.me/tieralba" target="_blank" class="social-link" title="Telegram">
+      <svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    </a>
+    <a href="https://instagram.com/tieralba" target="_blank" class="social-link" title="Instagram">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+    </a>
+    <a href="/cdn-cgi/l/email-protection#d8b1b6beb798acb1bdaab9b4bab9f6bbb7b5" class="social-link" title="Email">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+    </a>
+  </div>
+</div>
+
+<div class="pulse-line"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+function handleNotify() {
+  const email = document.getElementById('notifyEmail').value.trim();
+  if (!email || !email.includes('@')) return;
+  document.getElementById('notifyForm').style.display = 'none';
+  document.getElementById('notifySuccess').classList.add('show');
+  // Optional: send to your backend
+  fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stri
