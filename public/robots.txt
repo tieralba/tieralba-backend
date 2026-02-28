@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /checkout-success
+Disallow: /ea-files/
+
+Sitemap: https://www.tieralba.com/sitemap.xml
