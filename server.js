@@ -436,12 +436,14 @@ app.use(express.json());
 const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === 'true';
 
 if (MAINTENANCE_MODE) {
-  // Serve static files first (logo, images, css, js)
-  app.use(express.static(path.join(__dirname, 'public')));
-  // Then redirect all other frontend routes to coming-soon
-  app.get('*', (req, res, next) => {
+  // Middleware: intercept ALL requests before any route
+  app.use((req, res, next) => {
+    // Let API calls and webhooks through
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) return next();
-    res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
+    // Let static file extensions through (images, css, js, fonts)
+    if (req.path.match(/\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp)$/)) return next();
+    // Everything else → coming soon
+    return res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
   });
   console.log('🚧 MAINTENANCE MODE ACTIVE — coming-soon page served on all routes');
 }
