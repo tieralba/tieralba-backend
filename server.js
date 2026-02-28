@@ -436,8 +436,9 @@ app.use(express.json());
 const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === 'true';
 
 if (MAINTENANCE_MODE) {
-  // In maintenance mode: serve coming-soon for ALL frontend routes
-  // but keep /api/* working so you can still test backend
+  // Serve static files first (logo, images, css, js)
+  app.use(express.static(path.join(__dirname, 'public')));
+  // Then redirect all other frontend routes to coming-soon
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) return next();
     res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
