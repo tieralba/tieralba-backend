@@ -241,10 +241,25 @@
         .main {
             margin-left: 260px;
             min-height: 100vh;
-            padding: 2rem 2.5rem;
+            padding: 2.5rem 3rem;
             transition: margin-left 0.3s;
             overflow-x: hidden;
             max-width: 100vw;
+        }
+
+        /* 4K centering */
+        .section { max-width: 1600px; }
+
+        @media (min-width: 2560px) {
+            .main { padding: 3rem 4rem; }
+            .section { max-width: 1800px; }
+            .stats-grid { gap: 1.25rem; }
+            .stat-value { font-size: 34px; }
+            .stat-label { font-size: 12px; letter-spacing: 1.5px; }
+            .card { padding: 2rem; }
+            .card-title { font-size: 14px; }
+            .chart-wrap { min-height: 280px; }
+            .page-title { font-size: 34px; }
         }
 
         /* ── Topbar ── */
@@ -267,7 +282,7 @@
 
         .page-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 28px; font-weight: 600;
+            font-size: 30px; font-weight: 600;
             letter-spacing: -0.5px;
             color: var(--text);
         }
@@ -304,23 +319,24 @@
 
         /* ── Cards ── */
         .card {
-            background: linear-gradient(145deg, var(--surface), rgba(12,13,18,0.8));
-            border: 1px solid var(--border);
+            background: linear-gradient(160deg, rgba(15,16,22,0.95), rgba(10,10,14,0.85));
+            border: 1px solid rgba(255,255,255,0.04);
             border-radius: var(--radius-lg);
-            padding: 1.5rem;
+            padding: 1.75rem;
             transition: all var(--transition);
             position: relative;
+            backdrop-filter: blur(12px);
         }
 
         .card::before {
             content: '';
             position: absolute;
-            top: 0; left: 20%; right: 20%;
+            top: 0; left: 15%; right: 15%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.12), transparent);
+            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.1), transparent);
         }
 
-        .card:hover { border-color: rgba(255,255,255,0.06); }
+        .card:hover { border-color: rgba(255,255,255,0.07); }
 
         .card-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -343,29 +359,30 @@
         }
 
         .stat-card {
-            background: linear-gradient(145deg, var(--surface), var(--surface-2));
-            border: 1px solid var(--border);
+            background: linear-gradient(160deg, rgba(15,16,22,0.95), rgba(10,10,14,0.9));
+            border: 1px solid rgba(255,255,255,0.04);
             border-radius: var(--radius-lg);
-            padding: 1.25rem 1.5rem;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1.5rem 1.75rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(12px);
         }
 
         .stat-card::after {
             content: '';
             position: absolute;
-            top: -50%; right: -50%;
-            width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(212,185,120,0.03) 0%, transparent 70%);
+            top: -60%; right: -60%;
+            width: 120%; height: 120%;
             pointer-events: none;
-            transition: all 0.5s ease;
+            transition: all 0.6s ease;
+            opacity: 0.5;
         }
 
         .stat-icon {
-            width: 42px; height: 42px; border-radius: 12px;
+            width: 44px; height: 44px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             position: relative;
         }
 
@@ -374,19 +391,59 @@
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(212,185,120,0.2), transparent);
             opacity: 0;
             transition: opacity var(--transition);
         }
 
         .stat-card:hover {
-            border-color: rgba(212,185,120,0.15);
-            box-shadow: 0 8px 32px rgba(212,185,120,0.06), 0 0 0 1px rgba(212,185,120,0.05);
-            transform: translateY(-3px);
+            transform: translateY(-4px);
         }
 
         .stat-card:hover::before { opacity: 1; }
-        .stat-card:hover::after { top: -30%; right: -30%; }
+        .stat-card:hover::after { top: -40%; right: -40%; opacity: 0.8; }
+
+        /* ── Unique Stat Card Colors ── */
+        
+        /* Equity — Gold */
+        .stat-card.stat-equity {
+            border-color: rgba(212,185,120,0.1);
+            background: linear-gradient(160deg, rgba(212,185,120,0.05), rgba(10,10,14,0.95));
+        }
+        .stat-card.stat-equity::before { background: linear-gradient(90deg, transparent, rgba(212,185,120,0.3), transparent); }
+        .stat-card.stat-equity::after { background: radial-gradient(circle, rgba(212,185,120,0.06) 0%, transparent 70%); }
+        .stat-card.stat-equity:hover { border-color: rgba(212,185,120,0.2); box-shadow: 0 12px 40px rgba(212,185,120,0.08), 0 0 0 1px rgba(212,185,120,0.06); }
+        .stat-card.stat-equity .stat-icon { background: rgba(212,185,120,0.12); color: var(--gold); box-shadow: 0 0 20px rgba(212,185,120,0.1); }
+        .stat-card.stat-equity .stat-value { color: var(--gold-light); }
+
+        /* Win Rate — Emerald Green */
+        .stat-card.stat-winrate {
+            border-color: rgba(52,211,153,0.08);
+            background: linear-gradient(160deg, rgba(52,211,153,0.04), rgba(10,10,14,0.95));
+        }
+        .stat-card.stat-winrate::before { background: linear-gradient(90deg, transparent, rgba(52,211,153,0.25), transparent); }
+        .stat-card.stat-winrate::after { background: radial-gradient(circle, rgba(52,211,153,0.05) 0%, transparent 70%); }
+        .stat-card.stat-winrate:hover { border-color: rgba(52,211,153,0.18); box-shadow: 0 12px 40px rgba(52,211,153,0.06), 0 0 0 1px rgba(52,211,153,0.05); }
+        .stat-card.stat-winrate .stat-icon { background: rgba(52,211,153,0.1); color: #34d399; box-shadow: 0 0 20px rgba(52,211,153,0.08); }
+
+        /* Profit Factor — Indigo */
+        .stat-card.stat-pf {
+            border-color: rgba(129,140,248,0.08);
+            background: linear-gradient(160deg, rgba(129,140,248,0.04), rgba(10,10,14,0.95));
+        }
+        .stat-card.stat-pf::before { background: linear-gradient(90deg, transparent, rgba(129,140,248,0.25), transparent); }
+        .stat-card.stat-pf::after { background: radial-gradient(circle, rgba(129,140,248,0.05) 0%, transparent 70%); }
+        .stat-card.stat-pf:hover { border-color: rgba(129,140,248,0.18); box-shadow: 0 12px 40px rgba(129,140,248,0.06), 0 0 0 1px rgba(129,140,248,0.05); }
+        .stat-card.stat-pf .stat-icon { background: rgba(129,140,248,0.1); color: #818cf8; box-shadow: 0 0 20px rgba(129,140,248,0.08); }
+
+        /* Total Profit — Cyan */
+        .stat-card.stat-profit {
+            border-color: rgba(34,211,238,0.08);
+            background: linear-gradient(160deg, rgba(34,211,238,0.04), rgba(10,10,14,0.95));
+        }
+        .stat-card.stat-profit::before { background: linear-gradient(90deg, transparent, rgba(34,211,238,0.25), transparent); }
+        .stat-card.stat-profit::after { background: radial-gradient(circle, rgba(34,211,238,0.05) 0%, transparent 70%); }
+        .stat-card.stat-profit:hover { border-color: rgba(34,211,238,0.18); box-shadow: 0 12px 40px rgba(34,211,238,0.06), 0 0 0 1px rgba(34,211,238,0.05); }
+        .stat-card.stat-profit .stat-icon { background: rgba(34,211,238,0.1); color: #22d3ee; box-shadow: 0 0 20px rgba(34,211,238,0.08); }
 
         .stat-label {
             font-size: 11px;
@@ -394,12 +451,12 @@
             color: var(--text-3);
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .stat-value {
             font-family: 'DM Mono', monospace;
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 500;
             letter-spacing: -0.5px;
             margin-bottom: 6px;
@@ -418,23 +475,23 @@
         .stat-change.negative { color: var(--red); }
 
         .stats-row-mini {
-            display: flex; gap: 0; margin-bottom: 1rem;
-            background: linear-gradient(145deg, var(--surface), var(--surface-2));
+            display: flex; gap: 0; margin-bottom: 1.25rem;
+            background: linear-gradient(160deg, rgba(15,16,22,0.95), rgba(10,10,14,0.9));
             border: 1px solid var(--border); border-radius: var(--radius-lg);
-            overflow: hidden;
+            overflow: hidden; backdrop-filter: blur(12px);
         }
         .stat-mini {
-            flex: 1; padding: 14px 16px; display: flex; align-items: center; gap: 8px;
+            flex: 1; padding: 16px 20px; display: flex; align-items: center; gap: 10px;
             border-right: 1px solid var(--border);
             transition: background 0.2s ease;
         }
-        .stat-mini:hover { background: rgba(255,255,255,0.015); }
+        .stat-mini:hover { background: rgba(255,255,255,0.02); }
         .stat-mini:last-child { border-right: none; }
-        .stat-mini-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .stat-mini-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,0.3); }
-        .stat-mini-dot.gold { background: var(--gold); box-shadow: 0 0 8px rgba(212,185,120,0.3); }
-        .stat-mini-label { font-size: 11px; color: var(--text-3); white-space: nowrap; font-weight: 500; }
-        .stat-mini-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); margin-left: auto; }
+        .stat-mini-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .stat-mini-dot.green { background: var(--green); box-shadow: 0 0 10px rgba(74,222,128,0.4); }
+        .stat-mini-dot.gold { background: var(--gold); box-shadow: 0 0 10px rgba(212,185,120,0.4); }
+        .stat-mini-label { font-size: 11.5px; color: var(--text-3); white-space: nowrap; font-weight: 600; }
+        .stat-mini-val { font-family: 'DM Mono', monospace; font-size: 13.5px; font-weight: 500; color: var(--text); margin-left: auto; }
 
         .chart-range-btns { display: flex; gap: 3px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
         .chart-range-btn {
@@ -557,14 +614,14 @@
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: 1.25rem;
             margin-bottom: 1.5rem;
         }
 
         .grid-3 {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
+            gap: 1.25rem;
         }
 
         /* ── Content Sections ── */
@@ -1281,7 +1338,11 @@
 
         body.light .sidebar { background: #ffffff; border-right-color: rgba(0,0,0,0.08); }
         body.light .card { background: #ffffff; }
-        body.light .stat-card { background: #ffffff; }
+        body.light .stat-card { background: #ffffff; border-color: rgba(0,0,0,0.06); }
+        body.light .stat-card.stat-equity { background: linear-gradient(160deg, rgba(212,185,120,0.06), #ffffff); }
+        body.light .stat-card.stat-winrate { background: linear-gradient(160deg, rgba(52,211,153,0.06), #ffffff); }
+        body.light .stat-card.stat-pf { background: linear-gradient(160deg, rgba(129,140,248,0.06), #ffffff); }
+        body.light .stat-card.stat-profit { background: linear-gradient(160deg, rgba(34,211,238,0.06), #ffffff); }
         body.light .nav-link.active { background: rgba(184,154,80,0.1); }
         body.light .perf-item { background: #f0ede6; }
         body.light .equity-protector { background: #f0ede6; }
@@ -1576,32 +1637,32 @@
         <div id="overview" class="section active">
             <!-- Hero Stats -->
             <div class="stats-grid">
-                <div class="stat-card stat-hero" style="background:linear-gradient(145deg, rgba(212,185,120,0.06), var(--surface)); border-color:rgba(212,185,120,0.1);">
-                    <div class="stat-icon" style="background:rgba(212,185,120,0.12);color:var(--gold);">
+                <div class="stat-card stat-equity">
+                    <div class="stat-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
                     <div class="stat-label">Total Equity</div>
                     <div class="stat-value" id="statEquity">—</div>
                     <div class="stat-change" id="statEquityChange">Loading...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--green-dim);color:var(--green);">
+                <div class="stat-card stat-winrate">
+                    <div class="stat-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
                     </div>
                     <div class="stat-label">Win Rate</div>
                     <div class="stat-value" id="statWinRate">—</div>
                     <div class="stat-change" id="statWinRateChange">Loading...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(129,140,248,0.08);color:#818cf8;">
+                <div class="stat-card stat-pf">
+                    <div class="stat-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
                     </div>
                     <div class="stat-label">Profit Factor</div>
                     <div class="stat-value" id="statPF">—</div>
                     <div class="stat-change" id="statPFChange">Loading...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--green-dim);color:var(--green);">
+                <div class="stat-card stat-profit">
+                    <div class="stat-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                     </div>
                     <div class="stat-label">Total Profit</div>
@@ -1635,10 +1696,10 @@
             </div>
 
             <!-- Equity Curve (Full Width) -->
-            <div class="card" style="margin-bottom:1rem;overflow:hidden;">
+            <div class="card" style="margin-bottom:1.25rem;overflow:hidden;">
                 <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:10px;">
-                        <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px rgba(212,185,120,0.4);"></div>
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px rgba(212,185,120,0.5);"></div>
                         <span class="card-title">Equity Curve</span>
                     </div>
                     <div class="chart-range-btns">
@@ -1648,18 +1709,18 @@
                         <button class="chart-range-btn" onclick="changeEquityRange(365, this)">1Y</button>
                     </div>
                 </div>
-                <div class="chart-wrap" style="height:360px;"><canvas id="equityChart"></canvas></div>
+                <div class="chart-wrap" style="height:380px;"><canvas id="equityChart"></canvas></div>
             </div>
 
             <!-- Daily P/L (Full Width) -->
-            <div class="card" style="margin-bottom:1rem;overflow:hidden;">
+            <div class="card" style="margin-bottom:1.25rem;overflow:hidden;">
                 <div class="card-header">
                     <div style="display:flex;align-items:center;gap:10px;">
-                        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(74,222,128,0.4);"></div>
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(74,222,128,0.5);"></div>
                         <span class="card-title">Daily P/L</span>
                     </div>
                 </div>
-                <div class="chart-wrap" style="height:220px;"><canvas id="dailyPLChart"></canvas></div>
+                <div class="chart-wrap" style="height:240px;"><canvas id="dailyPLChart"></canvas></div>
             </div>
 
             <!-- Monthly + W/L Row -->
