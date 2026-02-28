@@ -1069,6 +1069,35 @@
         }
         .btn-download:hover { background: var(--gold); color: var(--bg); }
 
+        /* ── EA Settings Table ── */
+        .ea-settings-table { display: flex; flex-direction: column; gap: 0; }
+        .ea-setting-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 80px;
+            gap: 12px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            align-items: center;
+            font-size: 13px;
+        }
+        .ea-setting-row:last-child { border-bottom: none; }
+        .ea-setting-header { border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; }
+        .ea-setting-highlight { background: rgba(200,169,78,0.03); border-radius: 6px; }
+        .ea-setting-name { color: var(--text-1); font-weight: 500; }
+        .ea-setting-default { color: var(--text-3); font-size: 12px; text-align: center; }
+        .ea-setting-value { color: var(--gold); font-size: 13px; text-align: center; }
+        .ea-settings-tab.active {
+            background: rgba(200,169,78,0.1) !important;
+            border-color: rgba(200,169,78,0.3) !important;
+            color: var(--gold) !important;
+        }
+        body.light .ea-setting-highlight { background: rgba(184,154,80,0.06); }
+        body.light .ea-setting-row { border-color: rgba(0,0,0,0.04); }
+        @media (max-width: 600px) {
+            .ea-setting-row { grid-template-columns: 1fr 60px 60px; gap: 8px; padding: 8px 10px; font-size: 12px; }
+            .ea-setting-value { font-size: 12px; }
+        }
+
         /* ── Setup Steps ── */
         .setup-steps { display: flex; flex-direction: column; gap: 0; }
         .setup-step {
@@ -1926,6 +1955,20 @@
                 </div>
             </div>
 
+            <!-- Need Help? Book Zoom -->
+            <div class="card" style="margin-bottom:1.5rem;background:linear-gradient(135deg,rgba(200,169,78,0.06),rgba(200,169,78,0.02));border:1px solid rgba(200,169,78,0.15);">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+                    <div>
+                        <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Need help installing? Book a free Zoom session</div>
+                        <div style="font-size:13px;color:var(--text-3);line-height:1.5;">Our team will install and configure the EA on your MetaTrader platform — step by step, live on screen.</div>
+                    </div>
+                    <a href="https://calendly.com/tieralba/expert-advisor-installation-1" target="_blank" rel="noopener" class="btn-small gold" style="white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Book Zoom Session
+                    </a>
+                </div>
+            </div>
+
             <!-- License Keys -->
             <div class="card" style="margin-bottom:1.5rem;">
                 <div class="card-header">
@@ -1962,6 +2005,162 @@
                 </div>
             </div>
 
+            <!-- EA Recommended Settings -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header">
+                    <span class="card-title">Recommended EA Settings</span>
+                </div>
+                <p style="color:var(--text-2);margin-bottom:1.5rem;font-size:14px;">After attaching the EA to a chart, open the <strong style="color:var(--text-1);">Inputs</strong> tab and set the following values. All other parameters can remain at default.</p>
+
+                <!-- Tab buttons -->
+                <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+                    <button onclick="showEASettings('gold')" id="eaTabGold" class="ea-settings-tab active" style="flex:1;padding:10px 16px;border-radius:8px;border:1px solid rgba(200,169,78,0.3);background:rgba(200,169,78,0.1);color:var(--gold);font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;">
+                        ⚡ Tier Algo Gold
+                    </button>
+                    <button onclick="showEASettings('us100')" id="eaTabUs100" class="ea-settings-tab" style="flex:1;padding:10px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:var(--text-2);font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;">
+                        📊 Tier Algo US100
+                    </button>
+                </div>
+
+                <!-- Gold Settings -->
+                <div id="eaSettingsGold" class="ea-settings-panel">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                        <span style="font-size:13px;font-weight:600;color:var(--gold);">XAUUSD</span>
+                        <span style="font-size:11px;color:var(--text-3);background:rgba(255,255,255,0.04);padding:3px 8px;border-radius:4px;">Only 1 parameter to change</span>
+                    </div>
+                    <div class="ea-settings-table">
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">No. of Bars to Scan for FVGs/LIQ</div>
+                            <div class="ea-setting-default">Default: 50</div>
+                            <div class="ea-setting-value">→ <strong>100</strong></div>
+                        </div>
+                    </div>
+                    <div style="margin-top:16px;padding:14px 16px;background:rgba(94,224,160,0.04);border:1px solid rgba(94,224,160,0.1);border-radius:8px;">
+                        <div style="font-size:13px;color:var(--text-2);line-height:1.6;">
+                            ✅ All other settings remain at <strong style="color:var(--text-1);">default</strong>. Attach the EA to a <strong style="color:var(--text-1);">XAUUSD</strong> chart and enable AutoTrading.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- US100 Settings -->
+                <div id="eaSettingsUs100" class="ea-settings-panel" style="display:none;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                        <span style="font-size:13px;font-weight:600;color:var(--gold);">NAS100</span>
+                        <span style="font-size:11px;color:var(--text-3);background:rgba(255,255,255,0.04);padding:3px 8px;border-radius:4px;">Multiple parameters to configure</span>
+                    </div>
+                    <div class="ea-settings-table">
+                        <div class="ea-setting-row ea-setting-header">
+                            <div class="ea-setting-name" style="color:var(--text-3);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Parameter</div>
+                            <div class="ea-setting-default" style="color:var(--text-3);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Default</div>
+                            <div class="ea-setting-value" style="color:var(--text-3);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Set To</div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">Medium Time Frame</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>M15</strong></div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">TP Protect</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>600</strong></div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">Grid Distance</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>2000</strong></div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">Take Profits</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>2500</strong></div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">MaxLoss</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>1</strong></div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">Time Filter (Start)</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>09:00</strong></div>
+                        </div>
+                        <div class="ea-setting-row ea-setting-highlight">
+                            <div class="ea-setting-name">Time Filter (End)</div>
+                            <div class="ea-setting-default">—</div>
+                            <div class="ea-setting-value"><strong>21:00</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Filters Section -->
+                    <div style="margin-top:16px;">
+                        <div style="font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Filters Configuration</div>
+                        <div class="ea-settings-table">
+                            <div class="ea-setting-row ea-setting-highlight">
+                                <div class="ea-setting-name">RSI Filter</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong style="color:#5ee0a0;">true</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name" style="padding-left:20px;color:var(--text-3);">RSI Period</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong>14</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name" style="padding-left:20px;color:var(--text-3);">Sell Extreme Entry</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong>75</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name" style="padding-left:20px;color:var(--text-3);">Buy Extreme Entry</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong>25</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name" style="padding-left:20px;color:var(--text-3);">Sell Optimal Entry</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong>55</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name" style="padding-left:20px;color:var(--text-3);">Buy Optimal Entry</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong>45</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name">EMA Filter</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong style="color:var(--text-3);">false</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name">MACD Filter</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong style="color:var(--text-3);">false</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name">Bands Filter</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong style="color:var(--text-3);">false</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name">Break Even</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong style="color:var(--text-3);">false</strong></div>
+                            </div>
+                            <div class="ea-setting-row">
+                                <div class="ea-setting-name">News Filter</div>
+                                <div class="ea-setting-default">—</div>
+                                <div class="ea-setting-value"><strong style="color:var(--text-3);">false</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:16px;padding:14px 16px;background:rgba(94,224,160,0.04);border:1px solid rgba(94,224,160,0.1);border-radius:8px;">
+                        <div style="font-size:13px;color:var(--text-2);line-height:1.6;">
+                            ✅ Attach the EA to a <strong style="color:var(--text-1);">NAS100</strong> chart. All parameters not listed above remain at <strong style="color:var(--text-1);">default</strong>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Setup Guide -->
             <div class="card" style="margin-bottom:1.5rem;">
                 <div class="card-header"><span class="card-title">Setup Guide</span></div>
@@ -1984,23 +2183,39 @@
                         <div class="step-num">3</div>
                         <div>
                             <div class="step-title">Copy EA to MetaTrader</div>
-                            <div class="step-desc">In MT5: File → Open Data Folder → MQL5 → Experts → paste the .ex5 file.</div>
+                            <div class="step-desc">In MT5: <strong>File → Open Data Folder → MQL5 → Experts</strong> → paste the .ex5 file. Restart MT5.</div>
                         </div>
                     </div>
                     <div class="setup-step">
                         <div class="step-num">4</div>
                         <div>
                             <div class="step-title">Allow Web Requests</div>
-                            <div class="step-desc">In MT5: Tools → Options → Expert Advisors → Check "Allow WebRequest" and add your server URL.</div>
+                            <div class="step-desc">In MT5: <strong>Tools → Options → Expert Advisors</strong> → Check "Allow algorithmic trading" and "Allow WebRequest for listed URL" → add <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-size:12px;">https://tieralba.com</code></div>
                         </div>
                     </div>
                     <div class="setup-step">
                         <div class="step-num">5</div>
                         <div>
-                            <div class="step-title">Attach & Enter License Key</div>
-                            <div class="step-desc">Drag the EA onto a chart. In the Inputs tab, paste your License Key. Enable AutoTrading. ✅</div>
+                            <div class="step-title">Attach EA & Configure Settings</div>
+                            <div class="step-desc">Drag the EA onto the correct chart (XAUUSD or NAS100). In the <strong>Inputs</strong> tab, paste your License Key and apply the recommended settings shown above.</div>
                         </div>
                     </div>
+                    <div class="setup-step">
+                        <div class="step-num">6</div>
+                        <div>
+                            <div class="step-title">Enable AutoTrading</div>
+                            <div class="step-desc">Click the <strong>AutoTrading</strong> button in the MT5 toolbar (it should turn green). The EA will start operating. ✅</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Zoom CTA inside guide -->
+                <div style="margin-top:1.5rem;padding:16px 20px;background:rgba(200,169,78,0.04);border:1px solid rgba(200,169,78,0.1);border-radius:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div style="font-size:13px;color:var(--text-2);line-height:1.5;">
+                        <strong style="color:var(--text-1);">Having trouble?</strong> Book a free Zoom call and we'll set it up for you.
+                    </div>
+                    <a href="https://calendly.com/tieralba/expert-advisor-installation-1" target="_blank" rel="noopener" style="font-size:13px;color:var(--gold);font-weight:600;text-decoration:none;white-space:nowrap;">
+                        Book Now →
+                    </a>
                 </div>
             </div>
 
@@ -4030,6 +4245,22 @@
         } catch (err) {
             toast('error', 'Error', 'Download failed.');
         }
+    }
+
+    // ══════════════════════════════════════════════
+    // EA SETTINGS TABS
+    // ══════════════════════════════════════════════
+    function showEASettings(tab) {
+        document.getElementById('eaSettingsGold').style.display = tab === 'gold' ? 'block' : 'none';
+        document.getElementById('eaSettingsUs100').style.display = tab === 'us100' ? 'block' : 'none';
+        document.getElementById('eaTabGold').classList.toggle('active', tab === 'gold');
+        document.getElementById('eaTabUs100').classList.toggle('active', tab === 'us100');
+        document.getElementById('eaTabGold').style.background = tab === 'gold' ? 'rgba(200,169,78,0.1)' : 'rgba(255,255,255,0.02)';
+        document.getElementById('eaTabGold').style.borderColor = tab === 'gold' ? 'rgba(200,169,78,0.3)' : 'rgba(255,255,255,0.06)';
+        document.getElementById('eaTabGold').style.color = tab === 'gold' ? 'var(--gold)' : 'var(--text-2)';
+        document.getElementById('eaTabUs100').style.background = tab === 'us100' ? 'rgba(200,169,78,0.1)' : 'rgba(255,255,255,0.02)';
+        document.getElementById('eaTabUs100').style.borderColor = tab === 'us100' ? 'rgba(200,169,78,0.3)' : 'rgba(255,255,255,0.06)';
+        document.getElementById('eaTabUs100').style.color = tab === 'us100' ? 'var(--gold)' : 'var(--text-2)';
     }
 
     // ══════════════════════════════════════════════
