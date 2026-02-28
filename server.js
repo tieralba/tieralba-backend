@@ -27,6 +27,53 @@ const { Resend } = process.env.RESEND_API_KEY ? require('resend') : { Resend: nu
 const resend = Resend ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // ============================================
+// EMAIL TEMPLATE HELPERS
+// ============================================
+const LOGO_URL = 'https://tieralba.com/logo.png';
+
+function emailFrom() {
+  return process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>';
+}
+
+function emailWrapper(content) {
+  return `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
+    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <img src="${LOGO_URL}" alt="TierAlba" style="height:40px;width:auto;" />
+    </div>
+    ${content}
+    <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+      <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
+    </div>
+  </div>`;
+}
+
+// ============================================
+// TELEGRAM BOT NOTIFICATIONS (Admin)
+// ============================================
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+async function sendTelegramNotification(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (err) {
+    console.error('Telegram notification error (non-fatal):', err.message);
+  }
+}
+
+// ============================================
 // CONFIGURAZIONE SERVER
 // ============================================
 
@@ -129,6 +176,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             [taPlan, customerId, subscriptionId, JSON.stringify({ tradesalba: { plan: taPlan, status: 'active', activated_at: new Date().toISOString(), product_key: productKey } }), customerEmail]
           );
           console.log(`📊 TradesAlba ${taPlan} activated for ${customerEmail}`);
+          sendTelegramNotification(`💰 <b>New Purchase</b>\n\n📧 ${customerEmail}\n📦 TradesAlba ${taPlan}\n💵 Product: ${productKey}`);
           
         } else if (service === 'tierpass') {
           // ─── TIER PASS: one-time, immediate access ───
@@ -140,6 +188,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             [customerId, JSON.stringify({ tierpass: { plan: planLabel, status: 'active', activated_at: new Date().toISOString(), product_key: productKey } }), customerEmail]
           );
           console.log(`🏆 Tier Pass ${planLabel} activated for ${customerEmail}`);
+          sendTelegramNotification(`💰 <b>New Purchase</b>\n\n📧 ${customerEmail}\n📦 Tier Pass — ${planLabel}\n💵 Product: ${productKey}`);
           
         } else if (service === 'tiermanage') {
           // ─── TIER MANAGE: one-time, immediate access ───
@@ -151,6 +200,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             [customerId, JSON.stringify({ tiermanage: { plan: planLabel, status: 'active', activated_at: new Date().toISOString(), product_key: productKey } }), customerEmail]
           );
           console.log(`📈 Tier Manage ${planLabel} activated for ${customerEmail}`);
+          sendTelegramNotification(`💰 <b>New Purchase</b>\n\n📧 ${customerEmail}\n📦 Tier Manage — ${planLabel}\n💵 Product: ${productKey}`);
         }
 
         // ─── RECORD PURCHASE ───
@@ -192,11 +242,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     if (referrerData.rows[0]) {
                       const newBalance = parseFloat(referrerData.rows[0].referral_balance) || 0;
                       await resend.emails.send({
-                        from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+                        from: emailFrom(),
                         to: referrerData.rows[0].email,
                         subject: `TierAlba — You Earned €${commission.toFixed(2)} Commission! 💰`,
                         html: `
                           <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                             <div style="background:linear-gradient(135deg,#2a6b4a,#5ee0a0);padding:32px;text-align:center;">
                               <h1 style="color:#0a0b0f;margin:0;font-size:28px;">You Earned a Commission!</h1>
                             </div>
@@ -212,7 +265,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                               </div>
                             </div>
                             <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                              <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                              <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
                             </div>
                           </div>`
                       });
@@ -258,11 +311,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             const displayName = userName.rows[0]?.name?.split(' ')[0] || 'there';
 
             await resend.emails.send({
-              from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+              from: emailFrom(),
               to: customerEmail,
               subject: `TierAlba — Your ${serviceName} is Active! 🎉`,
               html: `
                 <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                   <div style="background:linear-gradient(135deg,#c8a94e,#b59840);padding:40px 32px;text-align:center;">
                     <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Thank You for Your Purchase!</h1>
                   </div>
@@ -309,11 +365,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
               const planLabel = plan === 'pro' ? 'Pro' : 'Standard';
               const nextBilling = sub.current_period_end ? new Date(sub.current_period_end * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
               await resend.emails.send({
-                from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+                from: emailFrom(),
                 to: renewedUser.email,
                 subject: `TierAlba — Your ${planLabel} Subscription Has Been Renewed ✅`,
                 html: `
                   <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                     <div style="background:linear-gradient(135deg,#c8a94e,#b59840);padding:40px 32px;text-align:center;">
                       <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Subscription Renewed!</h1>
                     </div>
@@ -364,11 +423,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           try {
             if (resend && downgraded.rows[0].email) {
               await resend.emails.send({
-                from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+                from: emailFrom(),
                 to: downgraded.rows[0].email,
                 subject: 'TierAlba — Your Subscription Has Been Cancelled',
                 html: `
                   <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                     <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
                       <h1 style="color:#ece8de;margin:0;font-size:26px;">We're Sorry to See You Go</h1>
                     </div>
@@ -381,7 +443,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                       <p style="font-size:14px;color:#8e897e;line-height:1.7;">We'd love your feedback — reply to this email and let us know what we could improve.</p>
                     </div>
                     <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                      <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                      <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
                     </div>
                   </div>`
               });
@@ -392,6 +454,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           }
         }
         console.log(`⚠️ Subscription ${sub.id} cancelled - downgraded to free`);
+        sendTelegramNotification(`⚠️ <b>Subscription Cancelled</b>\n\n📧 ${downgraded.rows[0]?.email || 'unknown'}\n🔑 Licenses deactivated`);
         break;
       }
 
@@ -408,16 +471,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             const planName = abandonedMeta.planLabel || '';
             
             await resend.emails.send({
-              from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+              from: emailFrom(),
               to: abandonedEmail,
               subject: 'TierAlba — You Left Something Behind',
               html: `
                 <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                   <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
                     <h1 style="color:#c8a94e;margin:0;font-size:28px;">Still Thinking?</h1>
                   </div>
                   <div style="padding:40px 32px;color:#ece8de;">
-                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi there,</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi ${displayName},</p>
                     <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">We noticed you didn't complete your <strong style="color:#c8a94e;">${serviceName} ${planName}</strong> checkout. No worries — your spot is still available.</p>
                     <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Here's what you'll get:</p>
                     <ul style="font-size:15px;color:#8e897e;line-height:2;padding-left:20px;margin-bottom:32px;">
@@ -432,7 +498,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     <p style="font-size:14px;color:#8e897e;line-height:1.7;">Questions? Reply to this email — we're here to help.</p>
                   </div>
                   <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                    <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                    <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
                   </div>
                 </div>`
             });
@@ -452,11 +518,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         if (failedEmail && resend) {
           try {
             await resend.emails.send({
-              from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+              from: emailFrom(),
               to: failedEmail,
               subject: 'TierAlba — Payment Failed — Action Required',
               html: `
                 <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                   <div style="background:#e87272;padding:32px;text-align:center;">
                     <h1 style="color:#fff;margin:0;font-size:24px;">⚠ Payment Failed</h1>
                   </div>
@@ -469,11 +538,12 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     <p style="font-size:14px;color:#8e897e;line-height:1.7;">Need help? Contact support@tieralba.com</p>
                   </div>
                   <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                    <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                    <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
                   </div>
                 </div>`
             });
             console.log(`📧 Payment failed email sent to ${failedEmail}`);
+            sendTelegramNotification(`🔴 <b>Payment Failed</b>\n\n📧 ${failedEmail}`);
           } catch (emailErr) {
             console.error('Payment failed email error (non-fatal):', emailErr.message);
           }
@@ -849,7 +919,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (resend) {
       try {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+          from: emailFrom(),
           to: [email.toLowerCase()],
           subject: 'Welcome to TierAlba — Verify Your Email',
           html: `
@@ -883,6 +953,7 @@ app.post('/api/auth/register', async (req, res) => {
           `
         });
         console.log(`✅ Welcome email sent to ${email}`);
+        sendTelegramNotification(`👤 <b>New User Registered</b>\n\n📧 ${email}\n👤 ${userName || 'N/A'}`);
       } catch (emailErr) {
         console.error('Email send error:', emailErr);
         // Don't fail registration if email fails
@@ -1028,11 +1099,14 @@ app.get('/api/auth/verify', async (req, res) => {
     try {
       if (resend) {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+          from: emailFrom(),
           to: result.rows[0].email,
           subject: 'Welcome to TierAlba — Here\'s How to Get Started 🚀',
           html: `
             <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
               <div style="background:linear-gradient(135deg,#c8a94e,#b59840);padding:40px 32px;text-align:center;">
                 <h1 style="color:#0a0b0f;margin:0;font-size:28px;">Welcome to TierAlba!</h1>
                 <p style="color:rgba(10,11,15,0.7);margin:8px 0 0;font-size:15px;">Your email is verified. Let's get you started.</p>
@@ -1067,7 +1141,7 @@ app.get('/api/auth/verify', async (req, res) => {
                 <p style="font-size:14px;color:#8e897e;line-height:1.7;margin-top:24px;">Questions? Reply to this email — we're here to help.</p>
               </div>
               <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
               </div>
             </div>`
         });
@@ -1110,13 +1184,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     if (resend) {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+        from: emailFrom(),
         to: [email.toLowerCase()],
         subject: 'TierAlba — Reset Your Password',
         html: `
           <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;color:#f0ede6;padding:0;">
-            <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);">
-              <h1 style="margin:0;font-size:24px;color:#c8aa6e;letter-spacing:-0.3px;">TierAlba</h1>
+            <div style="background:#12131a;padding:32px 40px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center;">
+              <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
             </div>
             <div style="padding:40px;">
               <h2 style="margin:0 0 16px;font-size:22px;color:#f0ede6;">Reset your password</h2>
@@ -1849,6 +1923,7 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
     await pool.query('UPDATE users SET referral_balance = 0 WHERE id = $1', [req.userId]);
 
     res.json({ success: true, amount: balance, message: 'Payout request submitted! We will process it within 48 hours.' });
+    sendTelegramNotification(`💸 <b>Payout Request</b>\n\n💰 €${balance.toFixed(2)}\n🔗 ${wallet}`);
     
     // Send payout request confirmation + admin notification
     try {
@@ -1857,11 +1932,14 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
         if (userData.rows[0]) {
           // User confirmation
           await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+            from: emailFrom(),
             to: userData.rows[0].email,
             subject: `TierAlba — Payout Request Received (€${balance.toFixed(2)})`,
             html: `
               <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                 <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
                   <h1 style="color:#5ee0a0;margin:0;font-size:26px;">Payout Request Received</h1>
                 </div>
@@ -1875,7 +1953,7 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
                   <p style="font-size:14px;color:#8e897e;line-height:1.7;">You'll receive a confirmation once the transfer is complete.</p>
                 </div>
                 <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-                  <p style="font-size:12px;color:#55514a;margin:0;">© 2025 TierAlba · All rights reserved</p>
+                  <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
                 </div>
               </div>`
           });
@@ -1883,7 +1961,7 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
           // Admin notification
           const adminEmail = process.env.ADMIN_EMAIL || 'support@tieralba.com';
           await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+            from: emailFrom(),
             to: adminEmail,
             subject: `[ADMIN] Payout Request: €${balance.toFixed(2)} → ${wallet}`,
             html: `<div style="font-family:monospace;padding:20px;background:#111;color:#eee;border-radius:8px;">
@@ -2057,6 +2135,7 @@ app.post('/api/refund/request', authenticateToken, async (req, res) => {
     );
 
     res.json({ success: true, message: 'Refund request submitted successfully' });
+    sendTelegramNotification(`🔄 <b>Refund Request</b>\n\n📧 ${userResult.rows[0].email}\n📋 ${reason}\n💬 ${(details || '').substring(0, 100)}`);
   } catch (error) {
     console.error('Refund request error:', error);
     res.status(500).json({ error: 'Failed to submit refund request' });
@@ -2430,12 +2509,13 @@ app.post('/api/support/message', authenticateToken, async (req, res) => {
     );
 
     console.log(`📩 Support from ${user.email}: [${subject}] ${message.substring(0, 100)}`);
+    sendTelegramNotification(`📩 <b>Support Message</b>\n\n📧 ${user.email}\n📋 ${subject}\n💬 ${message.substring(0, 150)}`);
 
     // Send notification email (not the message itself, just a heads-up)
     if (resend) {
       try {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+          from: emailFrom(),
           to: ['info@tieralba.com'],
           subject: '[TierAlba] New support request from ' + user.email,
           html: '<div style="font-family:sans-serif;padding:20px;">' +
@@ -2583,13 +2663,16 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
             .join(', ') || 'None';
           
           await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'TierAlba <noreply@tieralba.com>',
+            from: emailFrom(),
             to: u.email,
             subject: hasAnyActive 
               ? 'TierAlba — Your Account Has Been Updated ✅' 
               : 'TierAlba — Your Account Services Have Changed',
             html: `
               <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                    </div>
                 <div style="padding:40px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);">
                   <h1 style="color:#ece8de;margin:0;font-size:26px;">Account Update</h1>
                 </div>
@@ -2640,6 +2723,7 @@ app.use((req, res) => {
 
 app.listen(port, () => {
   console.log('=================================');
+  if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) console.log('📱 Telegram notifications: ACTIVE');
   console.log('🚀 TierAlba API Server');
   console.log('=================================');
   console.log(`✅ Server avviato su porta ${port}`);
