@@ -576,6 +576,8 @@ if (MAINTENANCE_MODE) {
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) return next();
     // Let static files through
     if (req.path.match(/\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp)$/)) return next();
+    // Let verification files through (Google Search Console, etc.)
+    if (req.path.match(/^\/google.*\.html$/) || req.path === '/robots.txt' || req.path === '/sitemap.xml') return next();
     // Coming soon for everything else
     return res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
   });
