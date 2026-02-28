@@ -83,10 +83,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Test connessione database
+// Test database connection
 pool.connect((err, client, release) => {
   if (err) {
-    console.error('❌ Errore connessione database:', err.stack);
+    console.error('❌ Database connection error:', err.stack);
   } else {
     console.log('✅ Database connesso con successo');
     release();
@@ -576,8 +576,6 @@ if (MAINTENANCE_MODE) {
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) return next();
     // Let static files through
     if (req.path.match(/\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|webp)$/)) return next();
-    // Let verification files through (Google Search Console, etc.)
-    if (req.path.match(/^\/google.*\.html$/) || req.path === '/robots.txt' || req.path === '/sitemap.xml') return next();
     // Coming soon for everything else
     return res.sendFile(path.join(__dirname, 'public', 'coming-soon.html'));
   });
@@ -1034,9 +1032,9 @@ app.post('/api/auth/login', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore login:', error);
+    console.error('Login error:', error);
     res.status(500).json({ 
-      error: 'Errore durante il login' 
+      error: 'Login error' 
     });
   }
 });
@@ -1050,13 +1048,13 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     );
     
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Utente non trovato' });
+      return res.status(404).json({ error: 'User not found' });
     }
     
     res.json({ user: result.rows[0] });
   } catch (error) {
-    console.error('Errore verifica utente:', error);
-    res.status(500).json({ error: 'Errore server' });
+    console.error('User verification error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -1337,8 +1335,8 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore statistiche:', error);
-    res.status(500).json({ error: 'Errore recupero statistiche' });
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 
@@ -1375,8 +1373,8 @@ app.get('/api/trades', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore recupero trade:', error);
-    res.status(500).json({ error: 'Errore recupero trade' });
+    console.error('Trades fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch trades' });
   }
 });
 
@@ -1414,8 +1412,8 @@ app.post('/api/trades', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore aggiunta trade:', error);
-    res.status(500).json({ error: 'Errore aggiunta trade' });
+    console.error('Add trade error:', error);
+    res.status(500).json({ error: 'Failed to add trade' });
   }
 });
 
@@ -1431,14 +1429,14 @@ app.delete('/api/trades/:id', authenticateToken, async (req, res) => {
     );
     
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Trade non trovato' });
+      return res.status(404).json({ error: 'Trade not found' });
     }
     
     res.json({ success: true, message: 'Trade eliminato' });
     
   } catch (error) {
-    console.error('Errore eliminazione trade:', error);
-    res.status(500).json({ error: 'Errore eliminazione trade' });
+    console.error('Delete trade error:', error);
+    res.status(500).json({ error: 'Failed to delete trade' });
   }
 });
 
@@ -1468,8 +1466,8 @@ app.get('/api/equity-history', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore storico equity:', error);
-    res.status(500).json({ error: 'Errore recupero storico' });
+    console.error('Equity history error:', error);
+    res.status(500).json({ error: 'Failed to fetch equity history' });
   }
 });
 
@@ -1494,8 +1492,8 @@ app.post('/api/equity-snapshot', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Errore snapshot equity:', error);
-    res.status(500).json({ error: 'Errore salvataggio equity' });
+    console.error('Equity snapshot error:', error);
+    res.status(500).json({ error: 'Failed to save equity snapshot' });
   }
 });
 
@@ -2295,7 +2293,7 @@ app.get('/api/ea/license', authenticateToken, async (req, res) => {
     res.json({ licenses: result.rows });
   } catch (err) {
     console.error('Get licenses error:', err);
-    res.status(500).json({ error: 'Errore server' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -2336,7 +2334,7 @@ app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
 
   } catch (err) {
     console.error('Generate license error:', err);
-    res.status(500).json({ error: 'Errore server' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -2350,7 +2348,7 @@ app.post('/api/ea/license/revoke', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Revoke license error:', err);
-    res.status(500).json({ error: 'Errore server' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -2713,7 +2711,7 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
 
 app.use((req, res) => {
   res.status(404).json({ 
-    error: 'Endpoint non trovato',
+    error: 'Endpoint not found',
     path: req.path 
   });
 });
@@ -2725,7 +2723,7 @@ app.listen(port, () => {
   if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) console.log('📱 Telegram notifications: ACTIVE');
   console.log('🚀 TierAlba API Server');
   console.log('=================================');
-  console.log(`✅ Server avviato su porta ${port}`);
+  console.log(`✅ Server running on port ${port}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 URL: http://localhost:${port}`);
   console.log('=================================');
