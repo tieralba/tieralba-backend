@@ -3555,7 +3555,7 @@
 
     function drawMonthlyChart(trades) {
         const ctx = document.getElementById('monthlyChart');
-        const months = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         const data = Array(12).fill(0);
         trades.forEach(t => {
             if (t.closed_at && t.profit) data[new Date(t.closed_at).getMonth()] += parseFloat(t.profit);
@@ -4482,7 +4482,7 @@
         if (hrs < 24) return hrs + 'h ago';
         const days = Math.floor(hrs / 24);
         if (days < 7) return days + 'd ago';
-        return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        return new Date(dateStr).toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
     }
 
     // ══════════════════════════════════════════════
@@ -5121,7 +5121,8 @@
 
             // Equity (from DB snapshots)
             const activeDays = document.querySelector('.chart-range-btn.active');
-            const days = activeDays ? parseInt(activeDays.textContent) || 30 : 30;
+            const rangeMap = {'7D':7,'30D':30,'90D':90,'1Y':365};
+            const days = activeDays ? (rangeMap[activeDays.textContent.trim()] || 30) : 30;
             const equity = await apiCall('/api/equity-history?days=' + days);
             if (equity?.history) drawEquityChart(equity.history);
         } catch (e) { /* silent */ }
@@ -5189,7 +5190,7 @@
             if (services.tiermanage?.status === 'completed') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(94,224,160,0.1);color:#5ee0a0;margin-right:4px;">TM ✓</span>`);
             if (services.tradesalba?.status === 'active') badges.push(`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(168,130,255,0.1);color:#a882ff;margin-right:4px;">TA: ${services.tradesalba.plan || '—'}</span>`);
             const serviceHtml = badges.length ? badges.join('') : '<span style="color:var(--text-3);font-size:11px;">No service</span>';
-            const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '—';
+            const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' }) : '—';
             
             return `<tr style="border-bottom:1px solid var(--border);transition:background 0.2s;" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='transparent'">
                 <td style="padding:10px 12px;">
@@ -5221,7 +5222,7 @@
             return;
         }
         tbody.innerHTML = purchases.slice(0, 20).map(p => {
-            const date = p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+            const date = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
             const sColor = p.service === 'tierpass' ? 'var(--gold)' : p.service === 'tiermanage' ? '#64b4ff' : '#a882ff';
             return `<tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:10px 12px;font-size:12px;color:var(--text-2);">${date}</td>
@@ -5343,21 +5344,10 @@
                 </div>
                 <p style="font-size:15px;margin-bottom:0.5rem;">This feature requires a <strong id="upgradePlanName">Standard</strong> plan.</p>
                 <p style="font-size:24px;font-weight:700;color:var(--gold);margin-bottom:1.5rem;" id="upgradePrice">€49.99<span style="font-size:14px;color:var(--text-3);font-weight:400;">/month</span></p>
-                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade
- to Standard — €49.99/mo</b
-utton>
+                <button class="btn-primary" onclick="upgradePlan('standard')" id="upgradeStdBtn" style="width:100%;margin-bottom:0.5rem;">Upgrade to Standard — €49.99/mo</button>
                 <button class="btn-secondary" onclick="closeUpgradeModal()" style="width:100%;">Maybe Later</button>
             </div>
         </div>
     </div>
-
-    <script>
-    function closeUpgradeModal() {
-        document.getElementById('upgradeModal').style.display = 'none';
-    }
-    function upgradePlan(plan) {
-        window.location.href = '/api/checkout?plan=' + plan;
-    }
-    </script>
 </body>
 </html>
