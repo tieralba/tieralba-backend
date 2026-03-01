@@ -1425,6 +1425,15 @@
             .page-title { font-size: 18px; }
             .card-title { font-size: 13px; }
         }
+        /* Prevent iOS auto-zoom on input focus */
+        @media screen and (max-width: 768px) {
+            input[type="text"], input[type="email"], input[type="password"],
+            input[type="number"], input[type="date"], input[type="tel"],
+            input[type="url"], input[type="search"], select, textarea,
+            .form-input, .form-select {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2836,11 +2845,11 @@
                             <div style="font-size:11px;color:var(--text-3);">@tieralba</div>
                         </div>
                     </a>
-                    <a href="mailto:info@tieralba.com" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="/cdn-cgi/l/email-protection#7f161119103f0b161a0d1e131d1e511c1012" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <div>
                             <div style="font-size:13px;font-weight:600;color:var(--text);">Email</div>
-                            <div style="font-size:11px;color:var(--text-3);">info@tieralba.com</div>
+                            <div style="font-size:11px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="bcd5d2dad3fcc8d5d9ceddd0dedd92dfd3d1">[email&#160;protected]</span></div>
                         </div>
                     </a>
                 </div>
@@ -2871,10 +2880,10 @@
                         <span style="font-size:13px;font-weight:600;color:var(--text);">WhatsApp</span>
                         <span style="font-size:10px;color:var(--text-3);">Direct message</span>
                     </a>
-                    <a href="mailto:info@tieralba.com" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <a href="/cdn-cgi/l/email-protection#84edeae2ebc4f0ede1f6e5e8e6e5aae7ebe9" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:1.25rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.borderColor='var(--border)'">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         <span style="font-size:13px;font-weight:600;color:var(--text);">Email</span>
-                        <span style="font-size:10px;color:var(--text-3);">info@tieralba.com</span>
+                        <span style="font-size:10px;color:var(--text-3);"><span class="__cf_email__" data-cfemail="5b32353d341b2f323e293a37393a75383436">[email&#160;protected]</span></span>
                     </a>
                 </div>
             </div>
@@ -2925,11 +2934,7 @@
                 </div>
                 <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
                     <input type="text" class="form-input" id="adminSearch" placeholder="Search by name or email..." style="flex:1;min-width:200px;" oninput="filterAdminUsers()">
-                    <select class="form-input" id="adminFilterService" style="width:160px;cursor:pointer;" onchange="filterAdminUsers()">
-                        <option value="">All Services</option>
-                        <option value="tierpass">Tier Pass</option>
-                        <option value="tiermanage">Tier Manage</option>
-                        <option value="tradesalba">TradesAlba</option>
+                    <select class="form-input" id="adminFilterService" style="width:160px;cursor:pointer;" onn value="tradesalba">TradesAlba</option>
                     </select>
                     <select class="form-input" id="adminFilterStatus" style="width:140px;cursor:pointer;" onchange="filterAdminUsers()">
                         <option value="">All Status</option>
