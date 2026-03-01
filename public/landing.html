@@ -984,7 +984,7 @@ a{text-decoration:none;color:inherit}
     <!-- CONTACT COL -->
     <div class="footer-col">
       <h4>Contact</h4>
-      <a href="/cdn-cgi/l/email-protection#a8c1c6cec7e8dcc1cddac9c4cac986cbc7c5"><span class="__cf_email__" data-cfemail="f29b9c949db2869b9780939e9093dc919d9f">[email&#160;protected]</span></a>
+      <a href="mailto:info@tieralba.com">info@tieralba.com</a>
       <a href="tel:+447400757815">+44 7400 757815</a>
       <a href="https://t.me/tieralba" target="_blank">Telegram</a>
       <a href="https://wa.me/message/AGLUYD2DQ7E3G1" target="_blank">WhatsApp</a>
@@ -1026,7 +1026,7 @@ a{text-decoration:none;color:inherit}
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ═══ GRAIN ═══ */
 (function(){const c=document.getElementById('grain'),x=c.getContext('2d');function r(){c.width=window.innerWidth;c.height=window.innerHeight}r();window.addEventListener('resize',r);
 function draw(){const d=x.createImageData(c.width,c.height),p=d.data;for(let i=0;i<p.length;i+=4){const v=Math.random()*255;p[i]=p[i+1]=p[i+2]=v;p[i+3]=15}x.putImageData(d,0,0);requestAnimationFrame(draw)}draw()})();
@@ -1147,4 +1147,11 @@ requestAnimationFrame(draw)}draw()})();
     proj.forEach(p=>{if(p.z<-0.3)return;const a=0.12+p.d*0.4,sz=0.7+p.d*1.8;const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*3);g.addColorStop(0,'rgba(200,169,78,'+(a*0.25)+')');g.addColorStop(1,'rgba(200,169,78,0)');ctx.fillStyle=g;ctx.fillRect(p.x-sz*3,p.y-sz*3,sz*6,sz*6);ctx.beginPath();ctx.arc(p.x,p.y,sz*0.45,0,Math.PI*2);ctx.fillStyle='rgba(228,210,160,'+a+')';ctx.fill()});
     sparks.forEach(s=>{const st=t*s.sp+s.ph,ox=s.ox+Math.sin(st*2)*0.07,oy=s.oy+Math.cos(st*1.5)*0.07,oz=s.oz+Math.sin(st)*0.07;const r=rot(ox,oy,oz,ax,ay),d=1/(1+r.z*0.35),px=cx+r.x*rr*d,py=cy+r.y*rr*d;if(r.z<-0.4)return;const a=0.08+d*0.3+Math.sin(st*4)*0.08,sz=s.sz*d;const sg=ctx.createRadialGradient(px,py,0,px,py,sz*4);sg.addColorStop(0,'rgba(200,169,78,'+(a*0.35)+')');sg.addColorStop(1,'rgba(200,169,78,0)');ctx.fillStyle=sg;ctx.fillRect(px-sz*4,py-sz*4,sz*8,sz*8);ctx.beginPath();ctx.arc(px,py,sz*0.35,0,Math.PI*2);ctx.fillStyle='rgba(255,235,180,'+a+')';ctx.fill()});
     const core=ctx.createRadialGradient(cx,cy,0,cx,cy,rr*0.55);core.addColorStop(0,'rgba(200,169,78,'+(0.03+Math.sin(t*2)*0.01)+')');core.addColorStop(1,'rgba(200,169,78,0)');ctx.fillStyle=core;ctx.beginPath();ctx.arc(cx,cy,rr*0.55,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(cx,cy,rr*1.05,0,Math.PI*2);ctx.strokeStyle='rgba(200,169,78,'+(0.05+Math.sin(t*1.5)*0.02)+')';ctx.lineWidth=0.8;ctx.<script src="//code.tidio.co/lyyyrhnpnvybck3adu02rvhcosydoylh.js" async><\/script>
+    ctx.beginPath();ctx.arc(cx,cy,rr*1.05,0,Math.PI*2);ctx.strokeStyle='rgba(200,169,78,'+(0.05+Math.sin(t*1.5)*0.02)+')';ctx.lineWidth=0.8;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,rr*1.15,0,Math.PI*2);ctx.strokeStyle='rgba(200,169,78,'+(0.025+Math.sin(t*2.5)*0.01)+')';ctx.lineWidth=0.4;ctx.stroke();
+    requestAnimationFrame(draw)}
+  draw()
+})();
+</script>
+</body>
+</html>
