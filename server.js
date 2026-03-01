@@ -1561,6 +1561,12 @@ app.post('/api/broker/connect', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Platform not supported. Use MT4 or MT5' });
     }
 
+    // Limit: max 1 broker account per user
+    const existingConn = await pool.query('SELECT id FROM broker_connections WHERE user_id = $1 AND is_active = true', [userId]);
+    if (existingConn.rows.length > 0) {
+      return res.status(400).json({ error: 'You can only connect one broker account. Please disconnect the current one first.' });
+    }
+
     const metaApiToken = process.env.METAAPI_TOKEN;
     if (!metaApiToken) {
       return res.status(500).json({ error: 'MetaApi not configured' });
