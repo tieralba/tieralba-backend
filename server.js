@@ -664,6 +664,10 @@ app.get('/faq', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'faq.html'));
 });
 
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // Legal pages
 ['privacy-policy','terms-of-service','refund-policy','legal-notice','cookie-policy'].forEach(page => {
   app.get(`/${page}`, (req, res) => {
