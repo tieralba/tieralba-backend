@@ -39,6 +39,9 @@
             padding: 2rem 1.5rem;
         }
 
+        .back-to-site { position: fixed; top: 24px; left: 24px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-3); text-decoration: none; transition: color 0.3s; z-index: 10; }
+        .back-to-site:hover { color: var(--gold); }
+        .back-to-site svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
         .auth-container { width: 100%; max-width: 400px; text-align: center; }
 
         /* Logo */
@@ -113,6 +116,8 @@
 
         body.light { background: #f5f3ee; color: #1a1815; }
         body.light .auth-logo-text { color: #1a1815; }
+        body.light .back-to-site { color: #8a857c; }
+        body.light .back-to-site:hover { color: #b89a50; }
         body.light .form-input { border-color: rgba(0,0,0,0.12); color: #1a1815; }
         body.light .form-input:focus { border-color: rgba(184,154,80,0.4); box-shadow: 0 0 0 2px rgba(184,154,80,0.08); }
         body.light .btn-submit { background: #c5a855; color: #fff; }
@@ -129,6 +134,10 @@
     </style>
 </head>
 <body>
+    <a href="/" class="back-to-site">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to website
+    </a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
         <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
