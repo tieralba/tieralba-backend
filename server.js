@@ -340,6 +340,53 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         } catch (emailErr) {
           console.error('Purchase email error (non-fatal):', emailErr.message);
         }
+
+        // ─── TRADESALBA-ONLY: Telegram Pro Channel Access Email ───
+        try {
+          if (resend && customerEmail && service === 'tradesalba') {
+            const taUserName = await pool.query('SELECT name FROM users WHERE LOWER(email) = LOWER($1)', [customerEmail]);
+            const taDisplayName = taUserName.rows[0]?.name?.split(' ')[0] || 'there';
+
+            await resend.emails.send({
+              from: emailFrom(),
+              to: customerEmail,
+              subject: 'TierAlba — Your TradesAlba Pro Channel Access 📲',
+              html: `
+                <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0b0f;border-radius:16px;overflow:hidden;">
+                  <div style="padding:24px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <img src="https://tieralba.com/logo.png" alt="TierAlba" style="height:40px;width:auto;" />
+                  </div>
+                  <div style="background:linear-gradient(135deg,#1a8cff,#0066cc);padding:40px 32px;text-align:center;">
+                    <div style="font-size:48px;margin-bottom:12px;">📲</div>
+                    <h1 style="color:#ffffff;margin:0;font-size:26px;">Your Pro Channel is Ready</h1>
+                  </div>
+                  <div style="padding:40px 32px;color:#ece8de;">
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Hi ${taDisplayName},</p>
+                    <p style="font-size:16px;line-height:1.8;margin-bottom:24px;">Welcome to TradesAlba! As part of your subscription, you now have exclusive access to our <strong style="color:#c8a94e;">private Telegram channel</strong>.</p>
+                    <div style="background:rgba(200,169,78,0.06);border:1px solid rgba(200,169,78,0.12);border-radius:12px;padding:24px;margin-bottom:28px;">
+                      <p style="margin:0 0 6px;font-size:14px;color:#8e897e;">Inside the channel you'll find:</p>
+                      <p style="margin:0;font-size:15px;color:#ece8de;line-height:2;">
+                        ✦ Real-time trading signals<br>
+                        ✦ Daily market analysis<br>
+                        ✦ Community discussion<br>
+                        ✦ Exclusive updates & insights
+                      </p>
+                    </div>
+                    <div style="text-align:center;margin:32px 0;">
+                      <a href="https://t.me/+EJr0HJz54QBkMTM0" style="display:inline-block;padding:16px 44px;background:linear-gradient(135deg,#c8a94e,#b59840);color:#0a0b0f;text-decoration:none;font-weight:700;border-radius:10px;font-size:15px;letter-spacing:0.5px;">Join the Channel Now →</a>
+                    </div>
+                    <p style="font-size:13px;color:#55514a;line-height:1.7;text-align:center;">This link is exclusive to your subscription. Please do not share it with others.</p>
+                  </div>
+                  <div style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                    <p style="font-size:12px;color:#55514a;margin:0;">© ${new Date().getFullYear()} TierAlba · All rights reserved</p>
+                  </div>
+                </div>`
+            });
+            console.log(`📲 TradesAlba Telegram channel email sent to ${customerEmail}`);
+          }
+        } catch (tgEmailErr) {
+          console.error('Telegram channel email error (non-fatal):', tgEmailErr.message);
+        }
         break;
       }
       
