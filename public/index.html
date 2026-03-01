@@ -3277,7 +3277,7 @@
         const plan = planData?.plan || me.user?.plan || 'free';
         const activeServices = me.user?.active_services || {};
         applyPlanGating(plan, activeServices);
-        applyIndicatorGating(plan);
+        applyIndicatorLocks(plan);
         loadRefundHistory();
         loadReferralData();
         if (plan === 'standard' || plan === 'pro') loadSignals();
@@ -3737,6 +3737,13 @@
         const brokerName = document.getElementById('modalBrokerName').value.trim();
         if (!account || !investorPassword || !brokerName) { toast('error', 'Error', 'Please fill in all fields'); return; }
 
+        // Check if user already has a connected account
+        const existing = await apiCall('/api/broker/connections');
+        if (existing?.connections && existing.connections.length > 0) {
+            toast('error', 'Limit Reached', 'You can only connect one broker account. Please disconnect the current one first.');
+            return;
+        }
+
         const btn = document.getElementById('connectBrokerBtn');
         btn.disabled = true; btn.textContent = 'Connecting...';
 
@@ -4008,7 +4015,7 @@
     // PLAN GATING
     // ══════════════════════════════════════════════
     const planAccess = {
-        free: ['overview', 'calculator', 'calendar', 'referral', 'refund', 'settings', 'support', 'admin'],
+        free: ['overview', 'calculator', 'calendar', 'referral', 'settings', 'support', 'admin'],
         standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support', 'admin'],
         pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support', 'admin']
     };
@@ -4021,11 +4028,21 @@
         userActiveServices = activeServices || {};
         let allowed = [...(planAccess[userPlan] || planAccess.free)];
         
-        // Tier Pass or Tier Manage users get access to Experts (license keys)
         const hasTierPass = userActiveServices.tierpass?.status === 'active';
         const hasTierManage = userActiveServices.tiermanage?.status === 'active';
-        if ((hasTierPass || hasTierManage) && !allowed.includes('experts')) {
-            allowed.push('experts');
+        
+        // Tier Pass: + experts, brokers, journal, riskguard, performance, analytics, refund (NO signals, NO indicators)
+        if (hasTierPass) {
+            ['experts', 'brokers', 'journal', 'riskguard', 'performance', 'analytics', 'refund'].forEach(s => {
+                if (!allowed.includes(s)) allowed.push(s);
+            });
+        }
+        
+        // Tier Manage: + experts, brokers, journal, riskguard, performance, analytics (NO signals, NO indicators, NO refund)
+        if (hasTierManage) {
+            ['experts', 'brokers', 'journal', 'riskguard', 'performance', 'analytics'].forEach(s => {
+                if (!allowed.includes(s)) allowed.push(s);
+            });
         }
         
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -4045,6 +4062,9 @@
                 lockEl.remove();
             }
         });
+
+        // Apply indicator gating (standard = only 1st, pro = all 3)
+        applyIndicatorLocks(userPlan);
 
         // Update plan badge in settings
         const planEl = document.querySelector('#settingsPlan');
@@ -4122,7 +4142,7 @@
     // ══════════════════════════════════════════════
     // INDICATORS
     // ══════════════════════════════════════════════
-    function applyIndicatorGating(plan) {
+    function applyIndicatorLocks(plan) {
         const badge = document.getElementById('indicatorPlanBadge');
         if (plan === 'pro') {
             badge.textContent = 'PRO — 3 INDICATORS'; badge.className = 'dd-status-badge';
