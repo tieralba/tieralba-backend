@@ -2040,17 +2040,25 @@ app.post('/api/referral/payout', authenticateToken, async (req, res) => {
 // Get signals (for clients)
 app.get('/api/signals', authenticateToken, async (req, res) => {
   try {
-    // Check plan - only standard and pro
     const user = await pool.query('SELECT plan FROM users WHERE id = $1', [req.userId]);
     const plan = user.rows[0]?.plan || 'free';
-    if (plan === 'free') return res.status(403).json({ error: 'Upgrade to Standard or Pro to access signals' });
-
     const limit = parseInt(req.query.limit) || 30;
+
+    if (plan === 'free') {
+      // Free users only see free signals
+      const result = await pool.query(
+        "SELECT * FROM signals WHERE COALESCE(tier, 'pro') = 'free' ORDER BY created_at DESC LIMIT $1",
+        [limit]
+      );
+      return res.json({ signals: result.rows, tier: 'free' });
+    }
+
+    // Standard/Pro see all signals
     const result = await pool.query(
       'SELECT * FROM signals ORDER BY created_at DESC LIMIT $1',
       [limit]
     );
-    res.json({ signals: result.rows });
+    res.json({ signals: result.rows, tier: plan });
   } catch (error) {
     console.error('Signals error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -2063,13 +2071,13 @@ app.post('/api/signals', async (req, res) => {
     const adminKey = req.headers['x-admin-key'];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes } = req.body;
+    const { source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes, tier } = req.body;
     if (!symbol || !direction) return res.status(400).json({ error: 'Symbol and direction required' });
 
     const result = await pool.query(
-      `INSERT INTO signals (source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [source || 'team', symbol.toUpperCase(), direction.toUpperCase(), entry_price || null, stop_loss || null, tp1 || null, tp2 || null, tp3 || null, notes || null]
+      `INSERT INTO signals (source, symbol, direction, entry_price, stop_loss, tp1, tp2, tp3, notes, tier)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [source || 'team', symbol.toUpperCase(), direction.toUpperCase(), entry_price || null, stop_loss || null, tp1 || null, tp2 || null, tp3 || null, notes || null, tier || 'pro']
     );
     
     console.log(`📡 New signal: ${direction} ${symbol} @ ${entry_price}`);
