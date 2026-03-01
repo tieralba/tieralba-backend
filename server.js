@@ -83,10 +83,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Test database connection
+// Test connessione database
 pool.connect((err, client, release) => {
   if (err) {
-    console.error('❌ Database connection error:', err.stack);
+    console.error('❌ Errore connessione database:', err.stack);
   } else {
     console.log('✅ Database connesso con successo');
     release();
@@ -1032,9 +1032,9 @@ app.post('/api/auth/login', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Errore login:', error);
     res.status(500).json({ 
-      error: 'Login error' 
+      error: 'Errore durante il login' 
     });
   }
 });
@@ -1048,13 +1048,13 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     );
     
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'Utente non trovato' });
     }
     
     res.json({ user: result.rows[0] });
   } catch (error) {
-    console.error('User verification error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Errore verifica utente:', error);
+    res.status(500).json({ error: 'Errore server' });
   }
 });
 
@@ -1335,8 +1335,8 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch stats' });
+    console.error('Errore statistiche:', error);
+    res.status(500).json({ error: 'Errore recupero statistiche' });
   }
 });
 
@@ -1373,8 +1373,8 @@ app.get('/api/trades', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Trades fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch trades' });
+    console.error('Errore recupero trade:', error);
+    res.status(500).json({ error: 'Errore recupero trade' });
   }
 });
 
@@ -1412,8 +1412,8 @@ app.post('/api/trades', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Add trade error:', error);
-    res.status(500).json({ error: 'Failed to add trade' });
+    console.error('Errore aggiunta trade:', error);
+    res.status(500).json({ error: 'Errore aggiunta trade' });
   }
 });
 
@@ -1429,14 +1429,14 @@ app.delete('/api/trades/:id', authenticateToken, async (req, res) => {
     );
     
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Trade not found' });
+      return res.status(404).json({ error: 'Trade non trovato' });
     }
     
     res.json({ success: true, message: 'Trade eliminato' });
     
   } catch (error) {
-    console.error('Delete trade error:', error);
-    res.status(500).json({ error: 'Failed to delete trade' });
+    console.error('Errore eliminazione trade:', error);
+    res.status(500).json({ error: 'Errore eliminazione trade' });
   }
 });
 
@@ -1466,8 +1466,8 @@ app.get('/api/equity-history', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Equity history error:', error);
-    res.status(500).json({ error: 'Failed to fetch equity history' });
+    console.error('Errore storico equity:', error);
+    res.status(500).json({ error: 'Errore recupero storico' });
   }
 });
 
@@ -1492,8 +1492,8 @@ app.post('/api/equity-snapshot', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Equity snapshot error:', error);
-    res.status(500).json({ error: 'Failed to save equity snapshot' });
+    console.error('Errore snapshot equity:', error);
+    res.status(500).json({ error: 'Errore salvataggio equity' });
   }
 });
 
@@ -2293,7 +2293,7 @@ app.get('/api/ea/license', authenticateToken, async (req, res) => {
     res.json({ licenses: result.rows });
   } catch (err) {
     console.error('Get licenses error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Errore server' });
   }
 });
 
@@ -2334,7 +2334,7 @@ app.post('/api/ea/license/generate', authenticateToken, async (req, res) => {
 
   } catch (err) {
     console.error('Generate license error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Errore server' });
   }
 });
 
@@ -2348,7 +2348,7 @@ app.post('/api/ea/license/revoke', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Revoke license error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Errore server' });
   }
 });
 
@@ -2629,13 +2629,15 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
       [JSON.stringify(active_services || {}), plan || 'free', userId]
     );
 
-    // If user no longer has any active service, deactivate their EA licenses
+    // If user no longer has any active service that grants EA access, deactivate their EA licenses
+    // EA access comes from: tierpass, tiermanage, or a paid TradesAlba subscription (standard/pro)
     const services = active_services || {};
-    const hasAnyActive = (plan === 'standard' || plan === 'pro') ||
+    const hasEAAccess = 
       services.tierpass?.status === 'active' ||
-      services.tiermanage?.status === 'active';
+      services.tiermanage?.status === 'active' ||
+      services.tradesalba?.status === 'active';
     
-    if (!hasAnyActive) {
+    if (!hasEAAccess) {
       const deactivated = await pool.query(
         'UPDATE ea_licenses SET is_active = false WHERE user_id = $1 AND is_active = true RETURNING id',
         [userId]
@@ -2711,7 +2713,7 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
 
 app.use((req, res) => {
   res.status(404).json({ 
-    error: 'Endpoint not found',
+    error: 'Endpoint non trovato',
     path: req.path 
   });
 });
@@ -2723,7 +2725,7 @@ app.listen(port, () => {
   if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) console.log('📱 Telegram notifications: ACTIVE');
   console.log('🚀 TierAlba API Server');
   console.log('=================================');
-  console.log(`✅ Server running on port ${port}`);
+  console.log(`✅ Server avviato su porta ${port}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 URL: http://localhost:${port}`);
   console.log('=================================');
