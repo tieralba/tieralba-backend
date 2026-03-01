@@ -1773,18 +1773,52 @@
                 </div>
             </div>
 
-            <!-- Signal List -->
-            <div class="card">
-                <div class="card-header" style="flex-wrap:wrap;gap:8px;">
-                    <span class="card-title">Live Signals</span>
-                    <div style="display:flex;gap:6px;">
-                        <button class="cal-filter active" data-sigfilter="all" onclick="filterSignals('all')">All</button>
-                        <button class="cal-filter" data-sigfilter="active" onclick="filterSignals('active')">Active</button>
-                        <button class="cal-filter" data-sigfilter="closed" onclick="filterSignals('closed')">Closed</button>
+            <!-- Signal Tier Tabs -->
+            <div style="display:flex;gap:6px;margin-bottom:1.25rem;">
+                <button class="cal-filter active" id="sigTierFree" onclick="switchSignalTier('free')" style="flex:1;padding:10px;font-weight:700;">🟢 Free Signals</button>
+                <button class="cal-filter" id="sigTierPro" onclick="switchSignalTier('pro')" style="flex:1;padding:10px;font-weight:700;">⭐ Pro Signals</button>
+            </div>
+
+            <!-- Free Signals -->
+            <div id="signalsFreeTab">
+                <div class="card">
+                    <div class="card-header" style="flex-wrap:wrap;gap:8px;">
+                        <span class="card-title">Free Signals</span>
+                        <div style="display:flex;gap:6px;">
+                            <button class="cal-filter active" data-sigfilter-free="all" onclick="filterSignals('all','free')">All</button>
+                            <button class="cal-filter" data-sigfilter-free="active" onclick="filterSignals('active','free')">Active</button>
+                            <button class="cal-filter" data-sigfilter-free="closed" onclick="filterSignals('closed','free')">Closed</button>
+                        </div>
+                    </div>
+                    <div id="signalsListFree" style="min-height:200px;">
+                        <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading signals...</div>
                     </div>
                 </div>
-                <div id="signalsList" style="min-height:200px;">
-                    <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading signals...</div>
+            </div>
+
+            <!-- Pro Signals -->
+            <div id="signalsProTab" style="display:none;">
+                <div class="card" id="signalsProCard">
+                    <div class="card-header" style="flex-wrap:wrap;gap:8px;">
+                        <span class="card-title">Pro Signals</span>
+                        <div style="display:flex;gap:6px;">
+                            <button class="cal-filter active" data-sigfilter-pro="all" onclick="filterSignals('all','pro')">All</button>
+                            <button class="cal-filter" data-sigfilter-pro="active" onclick="filterSignals('active','pro')">Active</button>
+                            <button class="cal-filter" data-sigfilter-pro="closed" onclick="filterSignals('closed','pro')">Closed</button>
+                        </div>
+                    </div>
+                    <div id="signalsListPro" style="min-height:200px;">
+                        <div style="text-align:center;padding:2rem;color:var(--text-3);">Loading signals...</div>
+                    </div>
+                </div>
+                <!-- Locked overlay for free users -->
+                <div id="signalsProLocked" style="display:none;">
+                    <div class="card" style="text-align:center;padding:3rem 2rem;">
+                        <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+                        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Pro Signals</div>
+                        <div style="font-size:14px;color:var(--text-2);margin-bottom:24px;line-height:1.7;">Upgrade to Standard or Pro to unlock unlimited premium trading signals with multi-TP levels and real-time alerts.</div>
+                        <button class="btn-primary" onclick="showUpgradeModal('standard')" style="padding:12px 32px;">Upgrade Now</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3280,7 +3314,7 @@
         applyIndicatorLocks(plan);
         loadRefundHistory();
         loadReferralData();
-        if (plan === 'standard' || plan === 'pro') loadSignals();
+        loadSignals();
 
         // Check for upgrade success
         if (window.location.search.includes('upgrade=success')) {
@@ -4015,7 +4049,7 @@
     // PLAN GATING
     // ══════════════════════════════════════════════
     const planAccess = {
-        free: ['overview', 'calculator', 'calendar', 'referral', 'settings', 'support', 'admin'],
+        free: ['overview', 'signals', 'calculator', 'calendar', 'referral', 'settings', 'support', 'admin'],
         standard: ['overview', 'signals', 'riskguard', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support', 'admin'],
         pro: ['overview', 'signals', 'riskguard', 'experts', 'performance', 'analytics', 'brokers', 'calculator', 'indicators', 'calendar', 'journal', 'referral', 'refund', 'settings', 'support', 'admin']
     };
@@ -4385,21 +4419,49 @@
     // SIGNALS
     // ══════════════════════════════════════════════
     let allSignals = [];
-    let signalFilter = 'all';
+
+    let signalsTier = 'free'; // current visible tier tab
+    let signalFilterFree = 'all';
+    let signalFilterPro = 'all';
+    let freeSignals = [];
+    let proSignals = [];
+    let signalUserTier = 'free';
 
     async function loadSignals() {
         const res = await apiCall('/api/signals');
         if (!res?.signals) return;
+        signalUserTier = res.tier || 'free';
         allSignals = res.signals;
+
+        // Split signals by tier
+        freeSignals = allSignals.filter(s => s.tier === 'free');
+        proSignals = allSignals.filter(s => s.tier !== 'free');
+
         updateSignalStats();
-        renderSignals();
+        renderSignalsFree();
+        renderSignalsPro();
+
+        // Show/hide pro locked overlay
+        const isPaid = signalUserTier === 'standard' || signalUserTier === 'pro';
+        document.getElementById('signalsProCard').style.display = isPaid ? 'block' : 'none';
+        document.getElementById('signalsProLocked').style.display = isPaid ? 'none' : 'block';
+    }
+
+    function switchSignalTier(tier) {
+        signalsTier = tier;
+        document.getElementById('sigTierFree').classList.toggle('active', tier === 'free');
+        document.getElementById('sigTierPro').classList.toggle('active', tier === 'pro');
+        document.getElementById('signalsFreeTab').style.display = tier === 'free' ? 'block' : 'none';
+        document.getElementById('signalsProTab').style.display = tier === 'pro' ? 'block' : 'none';
     }
 
     function updateSignalStats() {
-        const total = allSignals.length;
-        const active = allSignals.filter(s => s.status !== 'closed').length;
-        const wins = allSignals.filter(s => s.result === 'TP' || s.result === 'WIN').length;
-        const losses = allSignals.filter(s => s.result === 'SL' || s.result === 'LOSS').length;
+        // Stats based on what the user can see
+        const visible = signalUserTier === 'free' ? freeSignals : allSignals;
+        const total = visible.length;
+        const active = visible.filter(s => s.status !== 'closed').length;
+        const wins = visible.filter(s => s.result === 'TP' || s.result === 'WIN').length;
+        const losses = visible.filter(s => s.result === 'SL' || s.result === 'LOSS').length;
         const closed = wins + losses;
         const wr = closed > 0 ? ((wins / closed) * 100).toFixed(0) : '0';
 
@@ -4409,22 +4471,29 @@
         document.getElementById('sigStatRecord').textContent = wins + 'W — ' + losses + 'L';
     }
 
-    function renderSignals() {
-        const filtered = signalFilter === 'all' ? allSignals : allSignals.filter(s => signalFilter === 'active' ? s.status !== 'closed' : s.status === 'closed');
-        const container = document.getElementById('signalsList');
+    function renderSignalsFree() {
+        const filtered = signalFilterFree === 'all' ? freeSignals : freeSignals.filter(s => signalFilterFree === 'active' ? s.status !== 'closed' : s.status === 'closed');
+        renderSignalCards(filtered, 'signalsListFree');
+    }
 
-        if (!filtered.length) {
+    function renderSignalsPro() {
+        const filtered = signalFilterPro === 'all' ? proSignals : proSignals.filter(s => signalFilterPro === 'active' ? s.status !== 'closed' : s.status === 'closed');
+        renderSignalCards(filtered, 'signalsListPro');
+    }
+
+    function renderSignalCards(signals, containerId) {
+        const container = document.getElementById(containerId);
+        if (!signals.length) {
             container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3);">No signals yet. Stay tuned!</div>';
             return;
         }
 
-        container.innerHTML = filtered.map(s => {
+        container.innerHTML = signals.map(s => {
             const dir = s.direction?.toLowerCase();
             const isClosed = s.status === 'closed';
             const ago = timeAgo(s.created_at);
             const src = s.source === 'ea' ? 'ea' : '';
 
-            // Result badge with clear labels
             let resultBadge = '';
             if (s.result === 'TP' || s.result === 'WIN') {
                 resultBadge = '<span class="signal-result win">TP HIT</span>';
@@ -4438,13 +4507,11 @@
                 if (!val) return '—';
                 const n = parseFloat(val);
                 if (isNaN(n)) return val;
-                // Remove unnecessary trailing zeros but keep meaningful decimals
-                // JPY pairs: 3 decimals, Indices/Gold: 2, Forex: 5
                 const str = n.toString();
                 if (str.includes('.')) {
                     const dec = str.split('.')[1].length;
                     if (dec <= 2) return n.toFixed(2);
-                    if (n >= 100) return n.toFixed(2); // Gold, indices
+                    if (n >= 100) return n.toFixed(2);
                     return n.toFixed(dec > 5 ? 5 : dec);
                 }
                 return n.toFixed(n >= 100 ? 2 : 5);
@@ -4474,11 +4541,18 @@
         }).join('');
     }
 
-    function filterSignals(filter) {
-        signalFilter = filter;
-        document.querySelectorAll('[data-sigfilter]').forEach(b => b.classList.remove('active'));
-        document.querySelector(`[data-sigfilter="${filter}"]`).classList.add('active');
-        renderSignals();
+    function filterSignals(filter, tier) {
+        if (tier === 'free') {
+            signalFilterFree = filter;
+            document.querySelectorAll('[data-sigfilter-free]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[data-sigfilter-free="${filter}"]`).classList.add('active');
+            renderSignalsFree();
+        } else {
+            signalFilterPro = filter;
+            document.querySelectorAll('[data-sigfilter-pro]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[data-sigfilter-pro="${filter}"]`).classList.add('active');
+            renderSignalsPro();
+        }
     }
 
     function copyPrice(el, value) {
