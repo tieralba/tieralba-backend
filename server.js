@@ -9,8 +9,7 @@
 // ============================================
 
 require('dotenv').config();
-// NOTE: If MetaApi has certificate issues, handle them specifically in the fetch calls
-// rather than disabling TLS verification globally
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Temp fix for MetaApi cert issue
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -101,17 +100,7 @@ pool.connect((err, client, release) => {
 // Helmet: protezione base contro attacchi comuni
 // Configurato per permettere script inline nelle pagine frontend
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://api.telegram.org", "https://*.agiliumtrade.ai"],
-      frameSrc: ["https://js.stripe.com"],
-    }
-  }
+  contentSecurityPolicy: false
 }));
 
 // CORS: permette al frontend di comunicare con il backend
@@ -123,7 +112,7 @@ app.use(cors({
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    callback(new Error('Not allowed by CORS'));
+    callback(null, true); // In production you can restrict this
   },
   credentials: true
 }));
@@ -477,7 +466,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             const serviceNames = { tierpass: 'Tier Pass', tiermanage: 'Tier Manage', tradesalba: 'TradesAlba' };
             const serviceName = serviceNames[abandonedMeta.service] || 'your selected plan';
             const planName = abandonedMeta.planLabel || '';
-            const displayName = abandonedEmail.split('@')[0] || 'there';
             
             await resend.emails.send({
               from: emailFrom(),
@@ -569,17 +557,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 // Body parser: permette di leggere JSON nelle richieste
 app.use(express.json());
-
-// Trust proxy (Railway runs behind a proxy)
-app.set('trust proxy', 1);
-
-// Rate limiting: previene spam/attacchi — PRIMA delle route API
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 2000, // dashboard refresh ogni 15s = ~300 calls/15min per utente
-  message: { error: 'Too many requests, please try again later' }
-});
-app.use('/api/', limiter);
 
 // ============================================
 // MAINTENANCE MODE — coming soon ONLY on custom domain (tieralba.com)
@@ -789,13 +766,19 @@ app.post('/api/checkout', async (req, res) => {
 // Trust proxy (Railway runs behind a proxy)
 app.set('trust proxy', 1);
 
-// Logging richieste (solo in development)
-if (process.env.NODE_ENV !== 'production') {
-  app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-  });
-}
+// Rate limiting: previene spam/attacchi
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minuti
+  max: 2000, // dashboard refresh ogni 15s = ~300 calls/15min per utente
+  message: { error: 'Too many requests, please try again later' }
+});
+app.use('/api/', limiter);
+
+// Logging richieste (utile per debug)
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 // ============================================
 // MIDDLEWARE AUTENTICAZIONE
@@ -2654,8 +2637,6 @@ app.post('/api/admin/update-user', authenticateAdmin, async (req, res) => {
       services.tiermanage?.status === 'active' ||
       services.tradesalba?.status === 'active';
     
-    const hasAnyActive = hasEAAccess;
-
     if (!hasEAAccess) {
       const deactivated = await pool.query(
         'UPDATE ea_licenses SET is_active = false WHERE user_id = $1 AND is_active = true RETURNING id',
